@@ -47,7 +47,7 @@ function solve_hybrid_gpu(nlp)
 end
 
 case = "/home/fpacaud/dev/pglib-opf/pglib_opf_case118_ieee.m"
-# case = "/home/fpacaud/dev/matpower/data/case9.m"
+case = "/home/fpacaud/dev/matpower/data/case9.m"
 nlp = ac_power_model(case; backend=CUDABackend())
 
 # solver = solve_sparse_condensed_gpu(nlp)
@@ -61,7 +61,7 @@ solver_gpu = MadNLPSolver(
     print_level=MadNLP.DEBUG,
     equality_treatment=MadNLP.EnforceEquality,
     fixed_variable_treatment=MadNLP.MakeParameter,
-    max_iter=1,
+    max_iter=3,
     nlp_scaling=true,
     tol=1e-4,
 )

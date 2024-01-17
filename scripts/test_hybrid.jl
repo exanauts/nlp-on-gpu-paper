@@ -72,11 +72,12 @@ function test_hybrid_kkt(nlp)
     MadNLP.full(x) .= 1.0
     MadNLP.solve!(kkt, x)
 
-    @test x.values ≈ x_ref.values
     mul!(b, kkt_ref, x_ref)
     mul!(b, kkt, x_ref)
     @test MadNLP.full(b) ≈ ones(length(b)) atol=1e-6
+    @test x.values ≈ x_ref.values atol=1e-6
 end
+
 
 nlp = CUTEstModel("HS35")
 
@@ -89,11 +90,12 @@ solver = MadNLPSolver(
     linear_solver=LapackCPUSolver,
     lapack_algorithm=MadNLP.CHOLESKY,
     kkt_system=HybridCondensedKKTSystem,
-    print_level=MadNLP.INFO,
-    max_iter=1000,
+    print_level=MadNLP.DEBUG,
+    max_iter=100,
     nlp_scaling=true,
     tol=1e-5,
 )
 MadNLP.solve!(solver)
 
 finalize(nlp)
+

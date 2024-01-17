@@ -287,27 +287,27 @@ function LinearAlgebra.mul!(w::MadNLP.AbstractKKTVector{T}, kkt::HybridCondensed
     xz = view(full(x), n+mi+1:n+mi+m)
 
     # Decompose buffers
-    wx = MadNLP._madnlp_unsafe_wrap(full(w), n)
+    wx = view(full(w), 1:n)
     ws = view(full(w), n+1:n+mi)
     wz = view(full(w), n+mi+1:n+mi+m)
 
     # wz_ineq = view(wz, kkt.ind_ineq)
     # xz_ineq = view(xz, kkt.ind_ineq)
-    wz_ineq = kkt.buffer4 ; fill!(wz_ineq, 0.0)
-    xz_ineq = kkt.buffer5 ; fill!(xz_ineq, 0.0)
+    # wz_ineq = kkt.buffer4
+    # xz_ineq = kkt.buffer5
 
-    index_copy!(xz_ineq, xz, kkt.ind_ineq)
+    # index_copy!(xz_ineq, xz, kkt.ind_ineq)
 
     mul!(wx, Symmetric(kkt.hess_com, :L), xx, alpha, beta)
 
     mul!(wx, kkt.jt_csc, xz, alpha, one(T))
     mul!(wz, kkt.jt_csc', xx, alpha, beta)
-    index_copy!(wz_ineq, wz, kkt.ind_ineq)
-    axpy!(-alpha, xs, wz_ineq)
+    # index_copy!(wz_ineq, wz, kkt.ind_ineq)
+    # axpy!(-alpha, xs, wz_ineq)
 
-    ws .= beta.*ws .- alpha.* xz_ineq
+    # ws .= beta.*ws .- alpha.* xz_ineq
 
-    index_copy!(wz, kkt.ind_ineq, wz_ineq)
+    # index_copy!(wz, kkt.ind_ineq, wz_ineq)
 
     MadNLP._kktmul!(w,x,kkt.reg,kkt.du_diag,kkt.l_lower,kkt.u_lower,kkt.l_diag,kkt.u_diag, alpha, beta)
     return w
@@ -365,14 +365,9 @@ function MadNLP.build_kkt!(kkt::HybridCondensedKKTSystem)
     Σs = view(kkt.pr_diag, n+1:n+mi)
     Σd = kkt.du_diag # TODO: add support
 
-    # TODO: not working on the GPU
-    # Regularization for inequality
-
-    # kkt.diag_buffer[kkt.ind_ineq] .= Σs
     fill!(kkt.diag_buffer, 0.0)
     index_copy!(kkt.diag_buffer, kkt.ind_ineq, Σs)
     # Regularization for equality
-    # kkt.diag_buffer[kkt.ind_eq] .= kkt.gamma
     fixed!(kkt.diag_buffer, kkt.ind_eq, kkt.gamma)
     MadNLP.build_condensed_aug_coord!(kkt)
     return
@@ -389,9 +384,6 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
     ws = view(full(w), n+1:n+mi)
     wc = view(full(w), n+mi+1:n+mi+m)
 
-    # TODO: issue on the GPU
-    # wy = view(wc, kkt.ind_eq)
-    # wz = view(wc, kkt.ind_ineq)
     r1 = kkt.buffer3
     vs = kkt.buffer4
     wz = kkt.buffer5
@@ -406,7 +398,6 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
 
     # Condensation
     fill!(kkt.buffer1, zero(T))
-    # kkt.buffer1[kkt.ind_ineq] .= Σs .* wz .+ ws
     vs .= Σs .* wz .+ ws
     index_copy!(kkt.buffer1, kkt.ind_ineq, vs)
     mul!(wx, kkt.jt_csc, kkt.buffer1, one(T), one(T))
@@ -440,13 +431,15 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
     return w
 end
 
-# function MadNLP.solve_refine_wrapper!(
-#     d,
-#     solver::MadNLP.MadNLPSolver{T, VT, VI, KKT},
-#     p,
-#     w,
-# ) where {T, VT, VI, KKT<:HybridCondensedKKTSystem{T}}
-#     copyto!(d.values, p.values)
-#     MadNLP.solve!(solver.kkt, d)
-#     return true
-# end
+# TODO: Dirty workaround to deactive iterative-refinement inside MadNLP.
+function MadNLP.solve_refine_wrapper!(
+    d,
+    solver::MadNLP.MadNLPSolver{T, VT, VI, KKT},
+    p,
+    w,
+) where {T, VT, VI, KKT<:HybridCondensedKKTSystem{T}}
+    copyto!(d.values, p.values)
+    MadNLP.solve!(solver.kkt, d)
+    return true
+end
+
