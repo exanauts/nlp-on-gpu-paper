@@ -6,6 +6,8 @@ using MadNLP
 using Krylov
 import MadNLP: SparseMatrixCOO, full
 
+include("kernels.jl")
+
 function _extract_subjacobian(jac::SparseMatrixCOO{Tv, Ti}, index_rows::AbstractVector{Int}) where {Tv, Ti}
     m, n = size(jac)
     nrows = length(index_rows)
@@ -115,6 +117,8 @@ struct HybridCondensedKKTSystem{T, VT, MT, QN, VI, VI32, VInd, LS, LS2, EXT} <: 
     buffer2::VT   # dimension me + mi
     buffer3::VT   # dimension n
     buffer4::VT   # dimension mi
+    buffer5::VT   # dimension mi
+    buffer6::VT   # dimension me
 
     # Condensed system Kγ
     aug_com::MT   # dimension n x n
@@ -151,7 +155,7 @@ function MadNLP.create_kkt_system(
     n = cb.nvar
     m = cb.ncon
     ind_ineq = ind_cons.ind_ineq
-    n_slack = length(ind_ineq)
+    mi = length(ind_ineq)
     VI = typeof(ind_ineq)
 
     ind_eq = if isa(ind_ineq, Vector)
@@ -160,7 +164,7 @@ function MadNLP.create_kkt_system(
         ind_ineq_host = Vector(ind_ineq)
         VI(setdiff(1:m, ind_ineq_host))
     end
-    me = m - n_slack
+    me = m - mi
 
     # Evaluate sparsity pattern
     jac_sparsity_I = MadNLP.create_array(cb, Int32, cb.nnzj)
@@ -174,7 +178,7 @@ function MadNLP.create_kkt_system(
 
     n_jac = length(jac_sparsity_I)
     n_hess = length(hess_sparsity_I)
-    n_tot = n + n_slack
+    n_tot = n + mi
     nlb = length(ind_cons.ind_lb)
     nub = length(ind_cons.ind_ub)
 
@@ -188,7 +192,9 @@ function MadNLP.create_kkt_system(
     buffer1 = VT(undef, m)
     buffer2 = VT(undef, m)
     buffer3 = VT(undef, n)
-    buffer4 = VT(undef, n_slack)
+    buffer4 = VT(undef, mi)
+    buffer5 = VT(undef, mi)
+    buffer6 = VT(undef, me)
     hess = VT(undef, n_hess)
     jac = VT(undef, n_jac)
     diag_buffer = VT(undef, m)
@@ -244,7 +250,7 @@ function MadNLP.create_kkt_system(
         quasi_newton,
         reg, pr_diag, du_diag,
         l_diag, u_diag, l_lower, u_lower,
-        buffer1, buffer2, buffer3, buffer4,
+        buffer1, buffer2, buffer3, buffer4, buffer5, buffer6,
         aug_com, diag_buffer, dptr, hptr, jptr,
         linear_solver, iterative_linear_solver,
         ind_ineq, ind_eq, ind_cons.ind_lb, ind_cons.ind_ub,
@@ -269,6 +275,7 @@ function MadNLP.is_inertia_correct(kkt::HybridCondensedKKTSystem, num_pos, num_z
 end
 
 # mul!
+# TODO: problem with synchronization
 function LinearAlgebra.mul!(w::MadNLP.AbstractKKTVector{T}, kkt::HybridCondensedKKTSystem, x::MadNLP.AbstractKKTVector, alpha, beta) where T
     n = size(kkt.hess_com, 1)
     m = size(kkt.jt_csc, 2)
@@ -284,16 +291,23 @@ function LinearAlgebra.mul!(w::MadNLP.AbstractKKTVector{T}, kkt::HybridCondensed
     ws = view(full(w), n+1:n+mi)
     wz = view(full(w), n+mi+1:n+mi+m)
 
-    wz_ineq = view(wz, kkt.ind_ineq)
-    xz_ineq = view(xz, kkt.ind_ineq)
+    # wz_ineq = view(wz, kkt.ind_ineq)
+    # xz_ineq = view(xz, kkt.ind_ineq)
+    wz_ineq = kkt.buffer4 ; fill!(wz_ineq, 0.0)
+    xz_ineq = kkt.buffer5 ; fill!(xz_ineq, 0.0)
+
+    index_copy!(xz_ineq, xz, kkt.ind_ineq)
 
     mul!(wx, Symmetric(kkt.hess_com, :L), xx, alpha, beta)
 
     mul!(wx, kkt.jt_csc, xz, alpha, one(T))
     mul!(wz, kkt.jt_csc', xx, alpha, beta)
+    index_copy!(wz_ineq, wz, kkt.ind_ineq)
     axpy!(-alpha, xs, wz_ineq)
 
     ws .= beta.*ws .- alpha.* xz_ineq
+
+    index_copy!(wz, kkt.ind_ineq, wz_ineq)
 
     MadNLP._kktmul!(w,x,kkt.reg,kkt.du_diag,kkt.l_lower,kkt.u_lower,kkt.l_diag,kkt.u_diag, alpha, beta)
     return w
@@ -304,6 +318,7 @@ MadNLP.get_jacobian(kkt::HybridCondensedKKTSystem) = kkt.jac
 
 # compress_jacobian!
 function MadNLP.compress_jacobian!(kkt::HybridCondensedKKTSystem)
+    fill!(nonzeros(kkt.jt_csc), 0.0)
     MadNLP.transfer!(kkt.jt_csc, kkt.jt_coo, kkt.jt_csc_map)
     nonzeros(kkt.G_csc) .= kkt.jac[kkt.G_csc_map]
     return
@@ -324,6 +339,22 @@ function MadNLP.compress_hessian!(kkt::HybridCondensedKKTSystem)
     MadNLP.transfer!(kkt.hess_com, kkt.hess_raw, kkt.hess_csc_map)
 end
 
+# Equivalent on GPU
+function MadNLP.compress_hessian!(kkt::HybridCondensedKKTSystem{T, VT, MT}) where {T, VT, MT<:CUDA.CUSPARSE.CuSparseMatrixCSC{T, Int32}}
+    fill!(kkt.hess_com.nzVal, zero(T))
+    MadNLPGPU._transfer!(CUDABackend())(kkt.hess_com.nzVal, kkt.ext.hess_com_ptr, kkt.ext.hess_com_ptrptr, kkt.hess_raw.V; ndrange = length(kkt.ext.hess_com_ptrptr)-1)
+    KernelAbstractions.synchronize(CUDABackend())
+end
+function MadNLP.compress_jacobian!(kkt::HybridCondensedKKTSystem{T, VT, MT}) where {T, VT, MT<:CUDA.CUSOLVER.CuSparseMatrixCSC{T, Int32}}
+    fill!(kkt.jt_csc.nzVal, zero(T))
+    if length(kkt.ext.jt_csc_ptrptr) > 1 # otherwise error is thrown
+        MadNLPGPU._transfer!(CUDABackend())(kkt.jt_csc.nzVal, kkt.ext.jt_csc_ptr, kkt.ext.jt_csc_ptrptr, kkt.jt_coo.V; ndrange = length(kkt.ext.jt_csc_ptrptr)-1)
+    end
+    KernelAbstractions.synchronize(CUDABackend())
+    nonzeros(kkt.G_csc) .= kkt.jac[kkt.G_csc_map]
+end
+
+
 # build_kkt!
 function MadNLP.build_kkt!(kkt::HybridCondensedKKTSystem)
     n = size(kkt.hess_com, 1)
@@ -336,9 +367,13 @@ function MadNLP.build_kkt!(kkt::HybridCondensedKKTSystem)
 
     # TODO: not working on the GPU
     # Regularization for inequality
-    kkt.diag_buffer[kkt.ind_ineq] .= Σs
+
+    # kkt.diag_buffer[kkt.ind_ineq] .= Σs
+    fill!(kkt.diag_buffer, 0.0)
+    index_copy!(kkt.diag_buffer, kkt.ind_ineq, Σs)
     # Regularization for equality
-    kkt.diag_buffer[kkt.ind_eq] .= kkt.gamma
+    # kkt.diag_buffer[kkt.ind_eq] .= kkt.gamma
+    fixed!(kkt.diag_buffer, kkt.ind_eq, kkt.gamma)
     MadNLP.build_condensed_aug_coord!(kkt)
     return
 end
@@ -355,11 +390,15 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
     wc = view(full(w), n+mi+1:n+mi+m)
 
     # TODO: issue on the GPU
-    wy = view(wc, kkt.ind_eq)
-    wz = view(wc, kkt.ind_ineq)
-
+    # wy = view(wc, kkt.ind_eq)
+    # wz = view(wc, kkt.ind_ineq)
     r1 = kkt.buffer3
     vs = kkt.buffer4
+    wz = kkt.buffer5
+    wy = kkt.buffer6
+
+    index_copy!(wy, wc, kkt.ind_eq)
+    index_copy!(wz, wc, kkt.ind_ineq)
 
     Σs = view(kkt.pr_diag, n+1:n+mi)
 
@@ -367,7 +406,9 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
 
     # Condensation
     fill!(kkt.buffer1, zero(T))
-    kkt.buffer1[kkt.ind_ineq] .= Σs .* wz .+ ws
+    # kkt.buffer1[kkt.ind_ineq] .= Σs .* wz .+ ws
+    vs .= Σs .* wz .+ ws
+    index_copy!(kkt.buffer1, kkt.ind_ineq, vs)
     mul!(wx, kkt.jt_csc, kkt.buffer1, one(T), one(T))
 
     #  Golub & Greif
@@ -392,7 +433,20 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
     ws .= vj .- wz
     wz .= Σs .* ws .- vs
 
+    index_copy!(wc, kkt.ind_ineq, wz)
+    index_copy!(wc, kkt.ind_eq, wy)
+
     MadNLP.finish_aug_solve!(kkt, w)
     return w
 end
 
+# function MadNLP.solve_refine_wrapper!(
+#     d,
+#     solver::MadNLP.MadNLPSolver{T, VT, VI, KKT},
+#     p,
+#     w,
+# ) where {T, VT, VI, KKT<:HybridCondensedKKTSystem{T}}
+#     copyto!(d.values, p.values)
+#     MadNLP.solve!(solver.kkt, d)
+#     return true
+# end
