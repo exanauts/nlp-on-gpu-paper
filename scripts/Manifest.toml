@@ -2,7 +2,7 @@
 
 julia_version = "1.10.0"
 manifest_format = "2.0"
-project_hash = "ca188da66135ef106fcca12818f55f2c5a91106d"
+project_hash = "0042dc70dfeab8154b42918ba1217ec4a0fbd574"
 
 [[deps.AMD]]
 deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse_jll"]
@@ -91,9 +91,9 @@ uuid = "6e34b625-4abd-537c-b88f-471c36dfa7a0"
 version = "1.0.8+1"
 
 [[deps.CEnum]]
-git-tree-sha1 = "389ad5c84de1ae7cf0e28e381131c98ea87d54fc"
+git-tree-sha1 = "eb4cb44a499229b3b8426dcfb5dd85333951ff90"
 uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
-version = "0.5.0"
+version = "0.4.2"
 
 [[deps.CUDA]]
 deps = ["AbstractFFTs", "Adapt", "BFloat16s", "CEnum", "CUDA_Driver_jll", "CUDA_Runtime_Discovery", "CUDA_Runtime_jll", "Crayons", "DataFrames", "ExprTools", "GPUArrays", "GPUCompiler", "KernelAbstractions", "LLVM", "LLVMLoopInfo", "LazyArtifacts", "Libdl", "LinearAlgebra", "Logging", "NVTX", "Preferences", "PrettyTables", "Printf", "Random", "Random123", "RandomNumbers", "Reexport", "Requires", "SparseArrays", "Statistics", "UnsafeAtomicsLLVM"]
@@ -126,6 +126,18 @@ deps = ["Artifacts", "CUDA_Driver_jll", "JLLWrappers", "LazyArtifacts", "Libdl",
 git-tree-sha1 = "9704e50c9158cf8896c2776b8dbc5edd136caf80"
 uuid = "76a88914-d11a-5bdc-97e0-2f5a05c973a2"
 version = "0.10.1+0"
+
+[[deps.CUDSS]]
+deps = ["CEnum", "CUDA", "CUDSS_jll", "LinearAlgebra", "SparseArrays"]
+git-tree-sha1 = "c1a90b9ab3cf8cf0412fcaa46eb91a4f1a9606a3"
+uuid = "45b445bb-4962-46a0-9369-b4df9d0f772e"
+version = "0.1.0"
+
+[[deps.CUDSS_jll]]
+deps = ["Artifacts", "CUDA_Runtime_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "TOML"]
+git-tree-sha1 = "7d82cd3ec956d1dc36bdb1887561112fa1b10df7"
+uuid = "4889d778-9329-5762-9fec-0578a5d30366"
+version = "0.1.0+0"
 
 [[deps.CUSOLVERRF]]
 deps = ["CUDA", "KLU", "LinearAlgebra", "SparseArrays"]
@@ -278,7 +290,9 @@ version = "1.6.0"
 
 [[deps.ExaModels]]
 deps = ["NLPModels", "SolverCore"]
-path = "../../ExaModels.jl"
+git-tree-sha1 = "f12a185d61f450d20bcde0fb34cdec6c80b0ea63"
+repo-rev = "fp/update_cuda_version"
+repo-url = "https://github.com/sshin23/ExaModels.jl.git"
 uuid = "1037b233-b668-4ce9-9b63-f9f681f55dd2"
 version = "0.4.2"
 
@@ -579,8 +593,11 @@ uuid = "2621e9c9-9eb4-46b1-8089-e8c72242dfb6"
 version = "0.7.0"
 
 [[deps.MadNLPGPU]]
-deps = ["CUDA", "CUSOLVERRF", "KernelAbstractions", "LinearAlgebra", "MadNLP"]
-path = "../../MadNLP.jl/lib/MadNLPGPU"
+deps = ["CUDA", "CUDSS", "CUSOLVERRF", "KernelAbstractions", "LinearAlgebra", "MadNLP", "MadNLPTests", "SparseArrays"]
+git-tree-sha1 = "e74e5a3450f872720b8325bd633381454750aade"
+repo-rev = "fp/hybrid"
+repo-subdir = "lib/MadNLPGPU"
+repo-url = "https://github.com/MadNLP/MadNLP.jl.git"
 uuid = "d72a61cc-809d-412f-99be-fd81f4b8a598"
 version = "0.6.0"
 
@@ -591,6 +608,12 @@ repo-rev = "master"
 repo-subdir = "lib/MadNLPHSL"
 repo-url = "https://github.com/MadNLP/MadNLP.jl.git"
 uuid = "7fb6135f-58fe-4112-84ca-653cf5be0c77"
+version = "0.4.0"
+
+[[deps.MadNLPTests]]
+deps = ["JuMP", "LinearAlgebra", "MadNLP", "NLPModels", "NLPModelsJuMP", "Random", "SparseArrays", "Test"]
+path = "../../MadNLP.jl/lib/MadNLPTests"
+uuid = "b52a2a03-04ab-4a5f-9698-6a2deff93217"
 version = "0.4.0"
 
 [[deps.Markdown]]
@@ -638,6 +661,12 @@ deps = ["FastClosures", "LinearAlgebra", "LinearOperators", "Printf", "SparseArr
 git-tree-sha1 = "51b458add76a938917772ee661ffb9d59b4c7e5d"
 uuid = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
 version = "0.20.0"
+
+[[deps.NLPModelsJuMP]]
+deps = ["JuMP", "LinearAlgebra", "MathOptInterface", "NLPModels", "Printf", "SolverCore", "SparseArrays"]
+git-tree-sha1 = "857a6fe3c5ce6cd45f33398dff62bfe77859586a"
+uuid = "792afdf1-32c1-5681-94e0-d7bf7a5df49e"
+version = "0.12.5"
 
 [[deps.NLSolversBase]]
 deps = ["DiffResults", "Distributed", "FiniteDiff", "ForwardDiff"]
