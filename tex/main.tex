@@ -1,0 +1,150 @@
+% Jinja Template for Latex file
+% Copyright François Pacaud, 2023
+
+\documentclass{article}
+
+\usepackage{amsmath,amsfonts,amssymb,amsthm}
+\usepackage{xcolor,bm,url}
+\usepackage{booktabs}
+\usepackage{tikz}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\title{Solving NLPs on GPU}
+\author{TBD}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+Why solving NLP on GPUs?
+\begin{itemize}
+  \item SIMD abstraction and batch evaluation
+  \item GPU's performance has increased significantly in the last decade, on the contrary to CPUs (post Moore law)
+  \item Our recent work has proved that when used properly,
+    GPUs can solve large-scale NLP 10x faster than state-of-the-art (quote PSCC paper)
+\end{itemize}
+
+
+\subsection{Current state-of-the-art}
+
+\paragraph{GPU for mathematical programming:}
+General overview:
+\begin{itemize}
+  \item GPU used mostly in optimization for machine learning (Jaxopt, QPTH)
+  \item Recent breakthrough in linear programming: a first-order
+    algorithm --- PDHG --- beats Gurobi when running on the GPU.
+\end{itemize}
+
+\paragraph{GPU for nonlinear programming:}
+\begin{itemize}
+  \item Automatic differentiation: if AST represented with a SIMD abstraction,
+    evaluation of the derivatives can be very fast (c.f. ExaModels)
+  \item Linear solvers: current bottleneck, more than 90\% of the solution time spent
+    inside the sparse linear solver.
+    \begin{itemize}
+      \item Previous generation of sparse solvers (e.g. SPRAL)
+        was lagging behind compared to their CPU equivalents (HSL and
+        Pardiso being state-of-the art for nonlinear programming).
+      \item New solvers released by NVIDIA (hidden sparse Cholesky, and now cuDSS).
+        Sparse Cholesky is getting competitive on the GPU, as it avoids
+        extensive numerical pivoting.
+      \item Alternative way to solve the KKT system:
+        iterative methods (Krylov with $K_{2.5}$ formulation)
+        and hybrid methods (Golub \& Greif, cf HyKKT)
+    \end{itemize}
+\end{itemize}
+
+\subsection{Contributions}
+\begin{enumerate}
+  \item A new strategy based on equality relaxation
+    and condensation of the KKT system
+  \item Thorough comparison with alternative approaches
+    (hybrid KKT solver and null-space solver), all implemented
+    inside the same nonlinear optimization solver: MadNLP
+  \item We test the latest sparse solver provided
+    by NVIDIA: cuDSS
+  \item Benchmark on large-scale OPF instances
+    and others (to discuss)
+\end{enumerate}
+
+
+\section{Primal-dual interior-point method}
+Basic recall on IPM.
+\subsection{Problem's formulation and KKT conditions}
+We define the nonlinear program as
+\begin{equation}
+  \begin{aligned}
+    \min_{x \in \mathbb{R}^n} \; & f(x) \\
+    \text{subject to} \quad & g(x) = 0 \\
+                            & h(x) \leq 0
+  \end{aligned}
+\end{equation}
+TO DISCUSS: should we include bounds on $x$?
+
+Using slack variables, the problem is reformulated as
+\begin{equation}
+  \begin{aligned}
+    \min_{x \in \mathbb{R}^n, s \in \mathbb{R}^p} \; & f(x) \\
+    \text{subject to} \quad & g(x) = 0 \, , \quad h(x) + s = 0  \\
+                            & s \geq 0
+  \end{aligned}
+\end{equation}
+
+
+\subsection{Solving the KKT conditions with the interior-point method}
+Basic recall on IPM.
+
+\paragraph{Augmented KKT system.}
+
+\paragraph{Condensed KKT system.}
+
+
+
+\section{Solving KKT systems on the GPU}
+Goal: densification or avoid pivoting.
+\subsection{Golub \& Greif strategy (HyKKT)}
+\subsection{Null-space strategy (Argos)}
+\subsection{A novel equality relaxation strategy}
+
+
+
+\section{Numerical results}
+TO DISCUSS: what do we want to show exactly? Some ideas:
+\begin{itemize}
+  \item Benchmark HyKKT, Argos and the equality relaxation strategy
+    on OPF and SCOPF
+    \begin{itemize}
+      \item NB.: the null-space strategy requires identifying
+        the degrees of freedom of the problem. I am afraid
+        we have to stick to the OPF for the null-space strategy,
+        unless we have another example in mind (optimal control?)
+      \item Do a comparison CPU versus GPU
+      \item Identify
+    \end{itemize}
+\end{itemize}
+
+\section{Conclusion}
+Future extensions:
+\begin{itemize}
+  \item Interplay with first-order method (PDHG for LP)
+  \item Solving LP and QP problems on the GPU with IPM
+  \item From Cholesky to LDL (regularization can
+    ensure the KKT matrix is SQD, c.f. Orban, Saunders).
+\end{itemize}
+
+\bibliographystyle{apalike}
+\bibliography{biblio.bib}
+
+\end{document}
