@@ -291,8 +291,8 @@ function LinearAlgebra.mul!(w::MadNLP.AbstractKKTVector{T}, kkt::HybridCondensed
     ws = view(full(w), n+1:n+mi)
     wz = view(full(w), n+mi+1:n+mi+m)
 
-    # wz_ineq = view(wz, kkt.ind_ineq)
-    # xz_ineq = view(xz, kkt.ind_ineq)
+    wz_ineq = view(wz, kkt.ind_ineq)
+    xz_ineq = view(xz, kkt.ind_ineq)
     # wz_ineq = kkt.buffer4
     # xz_ineq = kkt.buffer5
 
@@ -303,9 +303,9 @@ function LinearAlgebra.mul!(w::MadNLP.AbstractKKTVector{T}, kkt::HybridCondensed
     mul!(wx, kkt.jt_csc, xz, alpha, one(T))
     mul!(wz, kkt.jt_csc', xx, alpha, beta)
     # index_copy!(wz_ineq, wz, kkt.ind_ineq)
-    # axpy!(-alpha, xs, wz_ineq)
+    axpy!(-alpha, xs, wz_ineq)
 
-    # ws .= beta.*ws .- alpha.* xz_ineq
+    ws .= beta.*ws .- alpha.* xz_ineq
 
     # index_copy!(wz, kkt.ind_ineq, wz_ineq)
 
