@@ -4,7 +4,7 @@ Make it a review paper comparing different methods for implementing a nonlinear 
   - HyKKT method
   - condensed space inequality relaxation
   - condensed then reduce
-    
+
   For sparse solver, we compare two options:
   - CUDSS
   - CUSOLVERRF
@@ -35,15 +35,23 @@ The two last methods require efficient sparse Cholesky available on the GPU.
 - Integration of CHOLMOD on the CPU for comparison
 
 
-* To discuss 
+* To discuss
 
 - Improve the HyKKT implementation
-    * Implement iterative refinement on the GPU
-    * Implement AMD ordering for sparse Cholesky
-    * double check the accuracy of the linear solve (and its interplay with CG convergence)
-    * identify the computation bottleneck and address them
+    * Implement iterative refinement on the GPU @FP
+    * double check the accuracy of the linear solve (and its interplay with CG convergence) @FP
+    * identify the computation bottleneck and address them @FP
+    * Implement AMD ordering for sparse Cholesky @AM
+    * scaling of the problem (use KrylovPreconditioner?) @AM
+        ^ Implement symmetric scaling on the GPU
 - Decide what we want to showcase exactly
+    * go deeper into the LA aspect
     * Benchmark on OPF and SCOPF instances?
     * Include additional benchmarks?
-        ^ COPS benchmark in ExaModels?
+        ^ COPS benchmark in ExaModels? Have a look at the Goddard problem
         ^ PDE-constrained optimization?
+- NCL ? Can we finish the implementation in a reasonable time?
+
+
+
+*
