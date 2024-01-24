@@ -1,11 +1,6 @@
-
-#=
+"""
     Kernels for data transfer.
-=#
-
-using CUDA
-using KernelAbstractions
-
+"""
 
 #=
     Default implementation.
@@ -69,5 +64,4 @@ function fixed!(dest::CuVector{T}, idx::CuVector{Ti}, val::T) where {T, Ti<:Inte
     _fixed_kernel!(CUDABackend())(dest, idx, val; ndrange=length(idx))
     KernelAbstractions.synchronize(CUDABackend())
 end
-
 

@@ -2,6 +2,8 @@ using JuMP
 using ExaModels
 using PowerModels
 
+PowerModels.silence()
+
 function get_power_data_ref(case)
     data = PowerModels.parse_file(case)
     PowerModels.standardize_cost_terms!(data, order = 2)
