@@ -163,6 +163,9 @@ function MadNLP.create_kkt_system(
     etc = Dict{Symbol, Any}(
         :cg_iters=>Int[],
         :accuracy=>Float64[],
+        :time_cg=>0.0,
+        :time_backsolve=>0.0,
+        :time_condensation=>0.0,
     )
 
     return HybridCondensedKKTSystem(
@@ -278,7 +281,10 @@ function MadNLP.build_kkt!(kkt::HybridCondensedKKTSystem)
     index_copy!(kkt.diag_buffer, kkt.ind_ineq, Σs)
     # Regularization for equality
     fixed!(kkt.diag_buffer, kkt.ind_eq, kkt.gamma[])
-    MadNLP.build_condensed_aug_coord!(kkt)
+    # Condensation
+    kkt.etc[:time_condensation] += CUDA.@elapsed begin
+        MadNLP.build_condensed_aug_coord!(kkt)
+    end
     return
 end
 
@@ -315,20 +321,22 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
     r1 .= wx
     mul!(r1, G', wy, kkt.gamma[], one(T))    # r1 = wx + γ Gᵀ wy
     wx .= r1                               # (save for later)
-    MadNLP.solve!(kkt.linear_solver, r1)   # r1 = (Kγ)⁻¹ [wx + γ Gᵀ wy]
+    kkt.etc[:time_backsolve] += CUDA.@elapsed begin
+        MadNLP.solve!(kkt.linear_solver, r1)   # r1 = (Kγ)⁻¹ [wx + γ Gᵀ wy]
+    end
     mul!(wy, G, r1, one(T), -one(T))       # -wy + G (Kγ)⁻¹ [wx + γ Gᵀ wy]
 
     # Solve Schur-complement system with a Krylov iterative method.
-    Krylov.solve!(kkt.iterative_linear_solver, kkt.S, wy; atol=1e-12, rtol=0.0, verbose=0)
-
-    cg_iter = kkt.iterative_linear_solver.stats.niter
-    push!(kkt.etc[:cg_iters], cg_iter)
-
+    kkt.etc[:time_cg] += CUDA.@elapsed begin
+        Krylov.solve!(kkt.iterative_linear_solver, kkt.S, wy; atol=1e-12, rtol=0.0, verbose=0)
+    end
     copyto!(wy, kkt.iterative_linear_solver.x)
 
     # Extract solution of Golub & Greif
     mul!(wx, G', wy, -one(T), one(T))
-    MadNLP.solve!(kkt.linear_solver, wx)
+    kkt.etc[:time_backsolve] += CUDA.@elapsed begin
+        MadNLP.solve!(kkt.linear_solver, wx)
+    end
 
     # Extract condensation
     mul!(kkt.buffer2, kkt.jt_csc', wx)
@@ -341,6 +349,11 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
     index_copy!(wc, kkt.ind_eq, wy)
 
     MadNLP.finish_aug_solve!(kkt, w)
+
+    # Save current number of CG iterations for later.
+    cg_iter = kkt.iterative_linear_solver.stats.niter
+    push!(kkt.etc[:cg_iters], cg_iter)
+
     return w
 end
 
@@ -352,7 +365,10 @@ function MadNLP.solve_refine_wrapper!(
     w,
 ) where {T, VT, VI, KKT<:HybridCondensedKKTSystem{T}}
     copyto!(d.values, p.values)
-    MadNLP.solve!(solver.kkt, d)
+
+    solver.cnt.linear_solver_time += @elapsed begin
+        MadNLP.solve!(solver.kkt, d)
+    end
 
     # Compute backsolve's error
     copyto!(full(w), full(p))
