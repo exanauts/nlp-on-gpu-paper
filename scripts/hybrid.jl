@@ -1,5 +1,6 @@
 
 using LinearAlgebra
+using Printf
 using NLPModels
 using SparseArrays
 using MadNLP
@@ -101,7 +102,7 @@ struct HybridCondensedKKTSystem{T, VT, MT, QN, VI, VI32, VInd, LS, LS2, EXT} <: 
     # Schur-complement operator
     S::SchurComplementOperator{T,VT,MT,LS}
 
-    gamma::T
+    gamma::Ref{T}
 
     quasi_newton::QN
     reg::VT       # dimension n + mi
@@ -140,6 +141,8 @@ struct HybridCondensedKKTSystem{T, VT, MT, QN, VI, VI32, VInd, LS, LS2, EXT} <: 
     ind_ub::VI
 
     ext::EXT
+    # Stats
+    etc::Dict{Symbol, Any}
 end
 
 # Build KKT system directly from SparseCallback
@@ -228,7 +231,7 @@ function MadNLP.create_kkt_system(
     G_csc = MT(G_csc_)
     G_csc_map = VI(G_csc_map_)
 
-    gamma = T(10000)
+    gamma = Ref{T}(1000)
 
     cnt.linear_solver_time += @elapsed begin
         linear_solver = opt.linear_solver(aug_com; opt = opt_linear_solver)
@@ -240,6 +243,10 @@ function MadNLP.create_kkt_system(
     iterative_linear_solver = Krylov.CgSolver(me, me, VT)
 
     ext = MadNLP.get_sparse_condensed_ext(VT, hess_com, jptr, jt_csc_map, hess_csc_map)
+    etc = Dict{Symbol, Any}(
+        :cg_iters=>Int[],
+        :accuracy=>Float64[],
+    )
 
     return HybridCondensedKKTSystem(
         hess, hess_raw, hess_com, hess_csc_map,
@@ -254,7 +261,7 @@ function MadNLP.create_kkt_system(
         aug_com, diag_buffer, dptr, hptr, jptr,
         linear_solver, iterative_linear_solver,
         ind_ineq, ind_eq, ind_cons.ind_lb, ind_cons.ind_ub,
-        ext,
+        ext, etc,
     )
 end
 
@@ -368,7 +375,7 @@ function MadNLP.build_kkt!(kkt::HybridCondensedKKTSystem)
     fill!(kkt.diag_buffer, 0.0)
     index_copy!(kkt.diag_buffer, kkt.ind_ineq, Σs)
     # Regularization for equality
-    fixed!(kkt.diag_buffer, kkt.ind_eq, kkt.gamma)
+    fixed!(kkt.diag_buffer, kkt.ind_eq, kkt.gamma[])
     MadNLP.build_condensed_aug_coord!(kkt)
     return
 end
@@ -404,13 +411,17 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
 
     #  Golub & Greif
     r1 .= wx
-    mul!(r1, G', wy, kkt.gamma, one(T))    # r1 = wx + γ Gᵀ wy
+    mul!(r1, G', wy, kkt.gamma[], one(T))    # r1 = wx + γ Gᵀ wy
     wx .= r1                               # (save for later)
     MadNLP.solve!(kkt.linear_solver, r1)   # r1 = (Kγ)⁻¹ [wx + γ Gᵀ wy]
     mul!(wy, G, r1, one(T), -one(T))       # -wy + G (Kγ)⁻¹ [wx + γ Gᵀ wy]
 
     # Solve Schur-complement system with a Krylov iterative method.
-    Krylov.solve!(kkt.iterative_linear_solver, kkt.S, wy; atol=1e-8, rtol=0.0, verbose=0)
+    Krylov.solve!(kkt.iterative_linear_solver, kkt.S, wy; atol=1e-12, rtol=0.0, verbose=0)
+
+    cg_iter = kkt.iterative_linear_solver.stats.niter
+    push!(kkt.etc[:cg_iters], cg_iter)
+
     copyto!(wy, kkt.iterative_linear_solver.x)
 
     # Extract solution of Golub & Greif
@@ -431,7 +442,7 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
     return w
 end
 
-# TODO: Dirty workaround to deactive iterative-refinement inside MadNLP.
+# Custom iterative-refinement
 function MadNLP.solve_refine_wrapper!(
     d,
     solver::MadNLP.MadNLPSolver{T, VT, VI, KKT},
@@ -440,6 +451,14 @@ function MadNLP.solve_refine_wrapper!(
 ) where {T, VT, VI, KKT<:HybridCondensedKKTSystem{T}}
     copyto!(d.values, p.values)
     MadNLP.solve!(solver.kkt, d)
+
+    # Compute backsolve's error
+    copyto!(full(w), full(p))
+    mul!(w, solver.kkt, d, -one(T), one(T))
+    norm_w = norm(full(w), Inf)
+    MadNLP.@debug(solver.logger, @sprintf("%4i %6.2e", 0, norm_w))
+
+    push!(solver.kkt.etc[:accuracy], norm_w)
     return true
 end
 
