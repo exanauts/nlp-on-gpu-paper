@@ -29,25 +29,19 @@ end
 function test_hybrid_kkt(nlp)
     # Parameters
     linear_solver = LapackCPUSolver
-    options = MadNLP.MadNLPOptions(; linear_solver=linear_solver)
-    options_linear_solver = MadNLP.default_options(linear_solver)
-    cnt = MadNLP.MadNLPCounters(; start_time=time())
 
     # Callback
     ind_cons = MadNLP.get_index_constraints(
         nlp,
-        options.fixed_variable_treatment,
-        options.equality_treatment,
     )
     cb = MadNLP.create_callback(
         MadNLP.SparseCallback,
         nlp,
-        options,
     )
 
     # Build reference KKT system (here SparseKKTSystem)
     kkt_ref = MadNLP.create_kkt_system(
-        MadNLP.SparseKKTSystem, cb, options, options_linear_solver, cnt, ind_cons,
+        MadNLP.SparseKKTSystem, cb, ind_cons, linear_solver;
     )
     initialize_kkt!(kkt_ref, cb)
     MadNLP.factorize!(kkt_ref.linear_solver)
@@ -57,7 +51,7 @@ function test_hybrid_kkt(nlp)
 
     # Build HybridCondensedKKTSystem
     kkt = MadNLP.create_kkt_system(
-        HybridCondensedKKTSystem, cb, options, options_linear_solver, cnt, ind_cons,
+        HybridCondensedKKTSystem, cb, ind_cons, linear_solver;
     )
     initialize_kkt!(kkt, cb)
     MadNLP.factorize!(kkt.linear_solver)

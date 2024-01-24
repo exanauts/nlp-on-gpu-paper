@@ -66,10 +66,10 @@ end
 function MadNLP.create_kkt_system(
     ::Type{HybridCondensedKKTSystem},
     cb::MadNLP.SparseCallback{T,VT},
-    opt,
-    opt_linear_solver,
-    cnt,
-    ind_cons
+    ind_cons,
+    linear_solver;
+    opt_linear_solver=MadNLP.default_options(linear_solver),
+    hessian_approximation=MadNLP.ExactHessian,
 ) where {T, VT}
 
     n = cb.nvar
@@ -91,8 +91,8 @@ function MadNLP.create_kkt_system(
     jac_sparsity_J = MadNLP.create_array(cb, Int32, cb.nnzj)
     MadNLP._jac_sparsity_wrapper!(cb,jac_sparsity_I, jac_sparsity_J)
 
-    quasi_newton = MadNLP.create_quasi_newton(opt.hessian_approximation, cb, n)
-    hess_sparsity_I, hess_sparsity_J = MadNLP.build_hessian_structure(cb, opt.hessian_approximation)
+    quasi_newton = MadNLP.create_quasi_newton(MadNLP.ExactHessian, cb, n)
+    hess_sparsity_I, hess_sparsity_J = MadNLP.build_hessian_structure(cb, MadNLP.ExactHessian)
 
     MadNLP.force_lower_triangular!(hess_sparsity_I,hess_sparsity_J)
 
@@ -150,9 +150,7 @@ function MadNLP.create_kkt_system(
 
     gamma = Ref{T}(1000)
 
-    cnt.linear_solver_time += @elapsed begin
-        linear_solver = opt.linear_solver(aug_com; opt = opt_linear_solver)
-    end
+    linear_solver = linear_solver(aug_com; opt = opt_linear_solver)
 
     buf1 = VT(undef, n)
     S = SchurComplementOperator(linear_solver, G_csc, buf1)

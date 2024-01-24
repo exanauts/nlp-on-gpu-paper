@@ -14,8 +14,6 @@ end
 function solve_sparse_condensed(nlp; options...)
     solver = MadNLPSolver(
         nlp;
-        lapack_algorithm=MadNLP.CHOLESKY,
-        cudss_algorithm=MadNLP.CHOLESKY,
         kkt_system=MadNLP.SparseCondensedKKTSystem,
         equality_treatment=MadNLP.RelaxEquality,
         fixed_variable_treatment=MadNLP.RelaxBound,
@@ -28,8 +26,6 @@ end
 function solve_hybrid(nlp; gamma=1e2, options...)
     solver = MadNLPSolver(
         nlp;
-        lapack_algorithm=MadNLP.CHOLESKY,
-        cudss_algorithm=MadNLP.CHOLESKY,
         kkt_system=HybridCondensedKKTSystem,
         equality_treatment=MadNLP.EnforceEquality,
         fixed_variable_treatment=MadNLP.MakeParameter,
