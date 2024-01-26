@@ -39,9 +39,11 @@ end
 end
 function index_copy!(dest::CuVector{T}, src::CuVector{T}, idx::CuVector{Ti}) where {T, Ti<:Integer}
     @assert length(dest) == length(idx)
-    ndrange = (length(dest),)
-    _copy_index_from_kernel!(CUDABackend())(dest, src, idx; ndrange=ndrange)
-    KernelAbstractions.synchronize(CUDABackend())
+    if length(dest) > 0
+        ndrange = (length(dest),)
+        _copy_index_from_kernel!(CUDABackend())(dest, src, idx; ndrange=ndrange)
+        KernelAbstractions.synchronize(CUDABackend())
+    end
 end
 
 @kernel function _copy_index_to_kernel!(dest, src, idx)
@@ -50,9 +52,11 @@ end
 end
 function index_copy!(dest::CuVector{T}, idx::CuVector{Ti}, src::CuVector{T}) where {T, Ti<:Integer}
     @assert length(src) == length(idx)
-    ndrange = (length(src),)
-    _copy_index_to_kernel!(CUDABackend())(dest, src, idx; ndrange=ndrange)
-    KernelAbstractions.synchronize(CUDABackend())
+    if length(src) > 0
+        ndrange = (length(src),)
+        _copy_index_to_kernel!(CUDABackend())(dest, src, idx; ndrange=ndrange)
+        KernelAbstractions.synchronize(CUDABackend())
+    end
 end
 
 @kernel function _fixed_kernel!(dest, idx, val)
