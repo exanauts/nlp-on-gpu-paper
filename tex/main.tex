@@ -36,8 +36,7 @@ Why solving NLP on GPUs?
     GPUs can solve large-scale NLP 10x faster than state-of-the-art (quote PSCC paper)
 \end{itemize}
 
-
-\subsection{Current state-of-the-art}
+\subsection{Current state-of-the-art (FP, SS)}
 
 \paragraph{GPU for mathematical programming:}
 General overview:
@@ -66,7 +65,7 @@ General overview:
     \end{itemize}
 \end{itemize}
 
-\subsection{Contributions}
+\subsection{Contributions (FP)}
 \begin{enumerate}
   \item A new strategy based on equality relaxation
     and condensation of the KKT system
@@ -82,7 +81,7 @@ General overview:
 
 \section{Primal-dual interior-point method}
 Basic recall on IPM.
-\subsection{Problem's formulation and KKT conditions}
+\subsection{Problem's formulation and KKT conditions ( FP)}
 We define the nonlinear program as
 \begin{equation}
   \begin{aligned}
@@ -103,7 +102,7 @@ Using slack variables, the problem is reformulated as
 \end{equation}
 
 
-\subsection{Solving the KKT conditions with the interior-point method}
+\subsection{Solving the KKT conditions with the interior-point method (FP)}
 Basic recall on IPM.
 
 \paragraph{Augmented KKT system.}
@@ -114,9 +113,9 @@ Basic recall on IPM.
 
 \section{Solving KKT systems on the GPU}
 Goal: densification or avoid pivoting.
-\subsection{Golub \& Greif strategy (HyKKT)}
-\subsection{Null-space strategy (Argos)}
-\subsection{A novel equality relaxation strategy}
+\subsection{Golub \& Greif strategy (HyKKT) (FP)}
+\subsection{Null-space strategy (Argos) (FP)}
+\subsection{A novel equality relaxation strategy (SS)}
 
 
 
@@ -135,6 +134,11 @@ TO DISCUSS: what do we want to show exactly? Some ideas:
         COPS benchmark in ExaModels
     \end{itemize}
 \end{itemize}
+
+\begin{itemize}
+  \item SS: run a benchmark on moonshot
+\end{itemize}
+
 
 \section{Conclusion}
 Future extensions:
