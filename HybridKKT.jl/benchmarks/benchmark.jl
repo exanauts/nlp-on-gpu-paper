@@ -189,7 +189,17 @@ end
     print_level = verbose ? MadNLP.INFO : MadNLP.ERROR
 
     # if quick
-    cases = filter!(e->(occursin("pglib_opf_case",e) && occursin("ieee",e)),readdir(PGLIB_PATH))
+    cases = if quick
+        filter!(e->(occursin("pglib_opf_case",e) && occursin("ieee",e)),readdir(PGLIB_PATH))
+    else
+        filter!(
+            e->(
+                occursin("pglib_opf_case",e) &&
+                (occursin("ieee",e) || occursin("pegase", e) || occursin("goc", e))
+                ),
+            readdir(PGLIB_PATH),
+        )
+    end
 
     @info "[CPU] Benchmark SparseKKTSystem+HSL"
     results = run_benchmark(benchmark_hsl, cases, ntrials; tol=tol, print_level=print_level)
