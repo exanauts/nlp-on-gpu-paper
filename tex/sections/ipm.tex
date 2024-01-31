@@ -2,7 +2,7 @@
 The interior-point method (IPM) is among the most popular algorithm
 to solve nonlinear program. The basis of the algorithm is to
 reformulate the KKT conditions of the nonlinear program as a smooth
-system of nonlinear equations. In a standard implementation, the
+system of nonlinear equations~\cite{nocedal_numerical_2006}. In a standard implementation, the
 resulting system is solved iteratively with a Newton method used in conjunction
 with a line-search method for globalization. In this section, we
 give a brief description of a nonlinear program in \S\ref{sec:ipm:problem}
@@ -108,10 +108,10 @@ We note that at a fixed parameter $\mu$, the function $F_\mu(\cdot)$
 is smooth. Hence, the system \eqref{eq:kkt_ipm} can be solved iteratively
 using a regular Newton method. For a given primal-dual variable
 $w_k := (x_k, s_k, y_k, z_k, u_k, v_k)$, the Newton step writes out
-$w_{k+1} = w_k + \alpha_k \Delta w_k$, with $\Delta w_k$ solution of the linear system
+$w_{k+1} = w_k + \alpha_k d_k$, with $d_k$ solution of the linear system
 \begin{equation}
   \label{eq:newton_step}
-  \nabla_w F(w_k) \Delta w_k = -F(w_k) \; .
+  \nabla_w F(w_k) d_k = -F(w_k) \; .
 \end{equation}
 The step $\alpha_k$ is computed using a line-search algorithm, in a way
 that ensures that the bounded variables remain positive: $(x_{k+1}, s_{k+1}, u_{k+1}, v_{k+1}) > 0$.
@@ -136,12 +136,12 @@ the $6 \times 6$ system:
     0 & V & 0 & 0 & 0 & S
   \end{bmatrix}
   \begin{bmatrix}
-    \Delta x \\
-    \Delta s \\
-    \Delta y \\
-    \Delta z \\
-    \Delta u \\
-    \Delta v
+    d_x \\
+    d_s \\
+    d_y \\
+    d_z \\
+    d_u \\
+    d_v
   \end{bmatrix}
   % = -F_\mu(w_k) \; .
   = - \begin{bmatrix}
@@ -154,7 +154,7 @@ the $6 \times 6$ system:
        S_k v_k - \mu e
   \end{bmatrix} \; ,
 \end{equation}
-with the Hessian $W = \nabla^2_x L(w_k)$ and
+where we have introduced the Hessian $W = \nabla^2_x L(w_k)$ and
 the two Jacobians $G = \nabla g(x_k)$, $H = \nabla h(x_k)$.
 
 \paragraph{Augmented KKT system.}
@@ -172,10 +172,10 @@ symmetric $4 \times 4$ system, called the \emph{augmented KKT system}:
     H & I & 0 & 0
   \end{bmatrix}
   \begin{bmatrix}
-    \Delta x \\
-    \Delta s \\
-    \Delta y \\
-    \Delta z
+    d_x \\
+    d_s \\
+    d_y \\
+    d_z
   \end{bmatrix}
   = - \begin{bmatrix}
     r_1 \\ r_2 \\ r_3 \\ r_4
@@ -193,8 +193,8 @@ $r_3 = g(x_k)$,
 $r_4 = h(x_k) + s_k$.
 Once \eqref{eq:kkt:augmented} solved, we recover the
 update on the bound multipliers with
-$\Delta u = - X^{-1}(U \Delta x + X u_k - \mu e)$,
-$\Delta v = - S^{-1}(V \Delta s + S v_k - \mu e)$.
+$d_u = - X^{-1}(U d_x + X u_k - \mu e)$,
+$d_v = - S^{-1}(V d_s + S v_k - \mu e)$.
 
 The system \eqref{eq:kkt:augmented} is usually factorized using
 a inertia-revealing LBL factorization. The block diagonal term
@@ -204,7 +204,7 @@ a solution with a Krylov iterative method.
 \paragraph{Condensed KKT system.}
 The $4 \times 4$ KKT system \eqref{eq:kkt:augmented} can be further
 reduced into a $2 \times 2$ system by eliminating the two blocks
-$(\Delta s, \Delta z)$ associated to the inequality constraints.
+$(d_s, d_z)$ associated to the inequality constraints.
 The resulting system is called the \emph{condensed KKT system}:
 \begin{equation}
   \label{eq:kkt:condensed}
@@ -214,17 +214,39 @@ The resulting system is called the \emph{condensed KKT system}:
     G & 0
   \end{bmatrix}
   \begin{bmatrix}
-    \Delta x \\ \Delta y
+    d_x \\ d_y
   \end{bmatrix}
   =
   -
   \begin{bmatrix}
     r_1 + H^\top(\Sigma_s r_4 - r_2) \\ r_3
   \end{bmatrix}
+  =:
+  \begin{bmatrix}
+    \hat{r}_1 \\ \hat{r}_2
+  \end{bmatrix}
    \; ,
 \end{equation}
 where we have introduced the \emph{condensed matrix} $K := W + \Sigma_x + H^\top \Sigma_s H$.
 Using the solution of the system~\eqref{eq:kkt:condensed},
 we recover the updates on the slacks and inequality multipliers with
-$\Delta s = -r_4 - H\Delta x$ and $\Delta z = -r_2 - \Sigma_s \Delta s$.
+$d_s = -r_4 - Hd_x$ and $d_z = -r_2 - \Sigma_s d_s$.
+
+\subsection{Discussion}
+We have obtained three different formulations for the KKT system.
+The original formulation \eqref{eq:kkt:unreduced} is not symmetric, but
+has a better conditioning than the two alternatives \eqref{eq:kkt:augmented}
+and \eqref{eq:kkt:condensed}. For that reason, it is usually adopted
+in the iterative refinement step used to refine the solution returned by
+a direct solver~\cite{wachter2006implementation}. The second formulation~\eqref{eq:kkt:augmented} is
+used by default in mature nonlinear solvers~\cite{wachter2006implementation,waltz2006interior}. The KKT system
+is usually factorized using a LBL factorization: for sparse matrices, the Duff and Reid
+multifrontal algorithm~\cite{duff1983multifrontal} is usually the method of choice (as implemented in the linear solvers HSL
+MA27 and MA57~\cite{duff2004ma57}). On its end, the condensed KKT system~\eqref{eq:kkt:condensed}
+has been discarded in traditional solvers, as it is conditioning is higher
+than \eqref{eq:kkt:augmented}, leading to less accurate solution. In addition,
+the condensed matrix $K$ can potentially lead to additional fill-in
+in the direct factorization~\cite[Section 19.3, p.571]{nocedal_numerical_2006}.
+For that reason, only the solver Knitro~\cite{waltz2006interior} supports computing the descent direction
+with \eqref{eq:kkt:condensed}.
 

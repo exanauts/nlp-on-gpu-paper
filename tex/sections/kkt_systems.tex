@@ -1,5 +1,113 @@
 \section{Solving KKT systems on the GPU}
-Goal: densification or avoid pivoting.
-\subsection{Golub \& Greif strategy (HyKKT) (FP)}
+The GPU has emerged as one of the new prominent landscape
+for numerical computing. GPUs are using a SIMD formalism
+that yields excellent throughput for parallelizing small-scale
+operations, but their use remains limited as soon as the computational
+pattern becomes more complex. With their heavy use of numerical
+pivoting, sparse factorization algorithms are notoriously hard to implement
+on a GPU for that exact reason. In particular, previous works have
+shown that GPU-based linear solvers lag far behind their equivalent
+on the CPU to factorize the system~\eqref{eq:kkt:augmented}
+\cite{tasseff2019exploring,swirydowicz2021linear}. Two strategies
+have emerged to overcome this challenge: densify the solution
+of the KKT system~\cite{pacaud2022condensed} or use a sparse factorization that
+does not require numerical pivoting~\cite{regev2023hykkt,shin2023accelerating}.
+Interestingly, all methods are using the condensed KKT system~\eqref{eq:kkt:condensed}.
+
 \subsection{Null-space strategy (Argos) (FP)}
+The first strategy to solve the condensed KKT system~\eqref{eq:kkt:condensed}
+is to reduce it to a dense matrix. This
+method is known as a \emph{reduced Hessian method} in the
+terminology of the optimization community \cite{biegler1995reduced}
+and as a \emph{null-space strategy} in the linear algebra
+community~\cite[Section 6]{benzi2005numerical}.
+
+We suppose $G$ is full-rank.
+Then there exists a permutation matrix $P \in \mathbb{R}^{n \times n}$
+such that we can reorder the Jacobian of the equality constraint
+$G \in \mathbb{R}^{m_e \times n}$ as $GP = \begin{bmatrix}
+  G_d & G_i
+\end{bmatrix}$, where $G_d$ is a $m_e \times m_e$ nonsingular matrix.
+The matrix
+\begin{equation}
+  \label{eq:nullspace}
+  Z = P \begin{bmatrix}
+    - G_d^{-1} G_i \\ I
+  \end{bmatrix} \; ,
+\end{equation}
+is a basis for the null-space of the Jacobian $G$, as $GZ = 0$.
+Interestingly, the null-space basis can be used to reduce the condensed
+KKT system~\eqref{eq:kkt:condensed}.
+
+\begin{proposition}[Reduction]
+  Let $Z$ be the null-space basis defined in \eqref{eq:nullspace}.
+  Then the condensed KKT system~\eqref{eq:kkt:condensed}
+  is equivalent to the \emph{reduced KKT system}
+  \begin{equation}
+    Z^\top K Z p_i =
+    Z^\top [\hat{r}_1 - K Y (GY)^{-1} \hat{r}_2] \; .
+  \end{equation}
+\end{proposition}
+
+In practice, the matrix $Z$ is never assembled explicitly.
+If a LU decomposition of $G_d$ is available, then we can
+implement $Z$ as a linear operator encoding the multiplications
+$Z x$ and $Z^\top y$.
+
+For generic nonlinear programs,
+there exists no obvious permutation $P$ to build the null-space
+matrix~\eqref{eq:nullspace}. However, for certain applications the
+permutation is directly given by the structure of the problem
+(coordinate decomposition).
+Such problems usually arise in engineering, where one can split
+the variable $x$ into two sets consisting resp. of \emph{state variables} (dependent)
+and \emph{control variables} (independent). Classical applications
+are optimal control problems, optimal power flow (OPF) or PDE-constrained optimization.
+An alternative is to compute an orthonormal decomposition using a QR factorization
+to build the matrix $Z$, but such strategy is not effective in the
+large-scale regime.
+
+
+
+\subsection{Golub \& Greif strategy (HyKKT) (FP)}
+The Golub \& Greif~\cite{golub2003solving} strategy reformulates the KKT system
+in a form amenable for a solution inside a hybrid linear solver.
+It has been recently revisited in \cite{regev2023hykkt}
+to solve the condensed KKT system~\eqref{eq:kkt:condensed} on the GPU.
+
+The trick is to reformulate the KKT system \eqref{eq:kkt:condensed}
+in the equivalent form
+\begin{equation}
+  \label{eq:kkt:hykkt}
+  \begin{bmatrix}
+    K_\gamma & G^\top \\
+    G & 0
+  \end{bmatrix}
+  \begin{bmatrix}
+    d_x \\ d_y
+  \end{bmatrix}
+  =
+  \begin{bmatrix}
+    \hat{r}_1 + \gamma G^\top \hat{r}_2 \\
+    \hat{r}_2
+  \end{bmatrix}
+\end{equation}
+where we have introduced the regularized matrix $K_\gamma := K + \gamma G^\top G$.
+If $G$ is full-rank ang $\gamma$ is large enough, the projected condensed matrix $Z^\top K Z$
+is positive definite if and only if $K_\gamma$ is uniformly positive definite.
+HyKKT exploits that property to solve \eqref{eq:kkt:hykkt} using a hybrid
+direct-iterative method:
+\begin{enumerate}
+  \item Factorize $K_\gamma$ using sparse Cholesky ;
+  \item Solve the Schur complement system using CG:
+    \begin{equation}
+      (G K_\gamma^{-1} G^\top) d_y = G K_\gamma^{-1} (\hat{r}_1 + \gamma G^\top \hat{r}_2) - \hat{r}_2 \; .
+    \end{equation}
+  \item Solve the system $K_\gamma d_x = \hat{r}_1 + \gamma G^\top \hat{r}_2 - G^\top \hat{r}_2$.
+\end{enumerate}
+Numerically, the method requires a sparse Cholesky factorization used
+in conjunction with a CG algorithm. The sparse Cholesky factorization
+has the advantage of being stable without pivoting, rendering the algorithm
+tractable on a GPU.
+
 \subsection{A novel equality relaxation strategy (SS)}
