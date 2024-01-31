@@ -1,0 +1,50 @@
+\section{Introduction}
+Why solving NLP on GPUs?
+\begin{itemize}
+  \item SIMD abstraction and batch evaluation
+  \item GPU's performance has increased significantly in the last decade, on the contrary to CPUs (post Moore law)
+  \item Our recent work has proved that when used properly,
+    GPUs can solve large-scale NLP 10x faster than state-of-the-art (quote PSCC paper)
+\end{itemize}
+
+\subsection{Current state-of-the-art (FP, SS)}
+
+\paragraph{GPU for mathematical programming:}
+General overview:
+\begin{itemize}
+  \item GPU used mostly in optimization for machine learning (Jaxopt, QPTH)
+  \item Recent breakthrough in linear programming: a first-order
+    algorithm --- PDHG --- beats Gurobi when running on the GPU.
+\end{itemize}
+
+\paragraph{GPU for nonlinear programming:}
+\begin{itemize}
+  \item Automatic differentiation: if AST represented with a SIMD abstraction,
+    evaluation of the derivatives can be very fast (c.f. ExaModels)
+  \item Linear solvers: current bottleneck, more than 90\% of the solution time spent
+    inside the sparse linear solver.
+    \begin{itemize}
+      \item Previous generation of sparse solvers (e.g. SPRAL)
+        was lagging behind compared to their CPU equivalents (HSL and
+        Pardiso being state-of-the art for nonlinear programming).
+      \item New solvers released by NVIDIA (hidden sparse Cholesky, and now cuDSS).
+        Sparse Cholesky is getting competitive on the GPU, as it avoids
+        extensive numerical pivoting.
+      \item Alternative way to solve the KKT system:
+        iterative methods (Krylov with $K_{2.5}$ formulation)
+        and hybrid methods (Golub \& Greif, cf HyKKT)
+    \end{itemize}
+\end{itemize}
+
+\subsection{Contributions (FP)}
+\begin{enumerate}
+  \item A new strategy based on equality relaxation
+    and condensation of the KKT system
+  \item Thorough comparison with alternative approaches
+    (hybrid KKT solver and null-space solver), all implemented
+    inside the same nonlinear optimization solver: MadNLP
+  \item We test the latest sparse solver provided
+    by NVIDIA: cuDSS
+  \item Benchmark on large-scale OPF instances
+    and others (to discuss)
+\end{enumerate}

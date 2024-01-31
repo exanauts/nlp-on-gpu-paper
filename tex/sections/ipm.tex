@@ -1,0 +1,230 @@
+\section{Primal-dual interior-point method}
+The interior-point method (IPM) is among the most popular algorithm
+to solve nonlinear program. The basis of the algorithm is to
+reformulate the KKT conditions of the nonlinear program as a smooth
+system of nonlinear equations. In a standard implementation, the
+resulting system is solved iteratively with a Newton method used in conjunction
+with a line-search method for globalization. In this section, we
+give a brief description of a nonlinear program in \S\ref{sec:ipm:problem}
+and detail the Newton step solved at each IPM iteration in \S\ref{sec:ipm:kkt}.
+
+\subsection{Problem's formulation and KKT conditions ( FP)}
+\label{sec:ipm:problem}
+We are interested in solving the following nonlinear program:
+\begin{equation}
+  \label{eq:problem}
+    \min_{x \in \mathbb{R}^n} \;  f(x)
+\quad \text{subject to}\quad
+\left\{
+  \begin{aligned}
+    & g(x) = 0 \; , ~ h(x) \leq 0 \\
+      & x \geq 0  \; ,
+  \end{aligned}
+\right.
+\end{equation}
+with $f:\mathbb{R}^n \to \mathbb{R}$ a real-valued function
+encoding the objective, $g: \mathbb{R}^n \to \mathbb{R}^{m_e}$
+a function defining the equality constraints, and $h: \mathbb{R}^{n} \to
+\mathbb{R}^{m_i}$ a function encoding the inequality constraints.
+In addition, the variable $x$ is subject to simple bounds $x \geq 0$.
+In what follows, we suppose that the functions $f, g, h$ are smooth
+and twice differentiable.
+
+By introducing a set of slack variables $s \geq 0$, the problem
+\eqref{eq:problem} is equivalent to
+\begin{equation}
+  \label{eq:slack_problem}
+    \min_{x \in \mathbb{R}^n, s \in \mathbb{R}^{m_i}} \;  f(x)
+    \quad \text{subject to} \quad
+    \left\{
+  \begin{aligned}
+    & g(x) = 0 \; , ~ h(x) + s = 0 \\
+      & x \geq 0  \; , ~ s \geq 0  \; .
+  \end{aligned}
+  \right.
+\end{equation}
+Using the formulation~\eqref{eq:slack_problem}, the inequality constraints
+are directly encoded inside the variable bounds.
+
+In \eqref{eq:slack_problem},
+we note by $y \in \mathbb{R}^{m_e}$ the multipliers associated
+to the equality constraints and $z \in \mathbb{R}^{m_i}$ the multipliers
+associated to the inequality constraints. Similarly, we note
+by $(u, v) \in \mathbb{R}^{n + m_i}$ the multipliers associated
+respectively to the bounds on the variables $x$ and the slacks $s$.
+Using the dual multipliers $(y, z, v, w)$,
+the Lagrangian of \eqref{eq:slack_problem} writes out
+\begin{equation}
+  \label{eq:lagrangian}
+  L(x, s; y, z, u, v) = f(x) + y^\top g(x) + z^\top \big(h(x) +s\big)
+  - u^\top x - v^\top s \; .
+\end{equation}
+The KKT conditions of \eqref{eq:slack_problem} are:
+\begin{subequations}
+  \label{eq:kktconditions}
+    \begin{align}
+      & \nabla f(x) + \nabla g(x)^\top y + \nabla h(x)^\top z - v = 0 \\
+      & z - w = 0 \\
+      & g(x) = 0 \\
+      & h(x) + s = 0 \\
+      \label{eq:kktconditions:compx}
+      & 0 \leq x \perp u \geq 0 \\
+      \label{eq:kktconditions:comps}
+      & 0 \leq s \perp v \geq 0
+    \end{align}
+\end{subequations}
+The notation $x \perp u$ is a shorthand to the complementarity
+condition $x_i u_i = 0$ for all $i=1\cdots, n$.
+
+\subsection{Solving the KKT conditions with the interior-point method (FP)}
+\label{sec:ipm:kkt}
+The interior-point method aims at finding a stationary point
+associated to the KKT conditions~\eqref{eq:kktconditions}. However,
+the complementarity constraints \eqref{eq:kktconditions:compx}-\eqref{eq:kktconditions:comps}
+render the KKT conditions non-smooth, rendering difficult to find a method
+to solve the whole system~\eqref{eq:kktconditions}.
+IPM uses a homotopy continuation method to solve a simplified
+version of \eqref{eq:kktconditions}, parameterized by a barrier
+parameter $\mu > 0$. For positive $(x, s, u, v) > 0$, we solve the system
+\begin{equation}
+  \label{eq:kkt_ipm}
+  F_\mu(x, s, y, z, u, v) =
+  \begin{bmatrix}
+       \nabla f(x) + \nabla g(x)^\top y + \nabla h(x)^\top z - u  \\
+       z - v  \\
+       g(x)  \\
+       h(x) + s  \\
+       X u - \mu e  \\
+       S v - \mu e
+  \end{bmatrix}
+  = 0 \; ,
+\end{equation}
+where we have introduced the diagonal matrices $X = \diag(x_1, \cdots, x_n)$
+and $S = \diag(s_1, \cdots, s_{m_i})$.
+As we drive the barrier paramater to $0$, we recover the original
+KKT conditions~\eqref{eq:kktconditions}.
+
+We note that at a fixed parameter $\mu$, the function $F_\mu(\cdot)$
+is smooth. Hence, the system \eqref{eq:kkt_ipm} can be solved iteratively
+using a regular Newton method. For a given primal-dual variable
+$w_k := (x_k, s_k, y_k, z_k, u_k, v_k)$, the Newton step writes out
+$w_{k+1} = w_k + \alpha_k \Delta w_k$, with $\Delta w_k$ solution of the linear system
+\begin{equation}
+  \label{eq:newton_step}
+  \nabla_w F(w_k) \Delta w_k = -F(w_k) \; .
+\end{equation}
+The step $\alpha_k$ is computed using a line-search algorithm, in a way
+that ensures that the bounded variables remain positive: $(x_{k+1}, s_{k+1}, u_{k+1}, v_{k+1}) > 0$.
+Once the iterates are sufficiently closed to the central path,
+the IPM decreases the barrier term $\mu$ to find a solution closer to
+the original KKT conditions~\eqref{eq:kktconditions}.
+
+In IPM, the bulk of the workload is the computation of the Newton
+step \eqref{eq:newton_step}, which involves (i) evaluating the Jacobian
+$\nabla_w F_\mu(w_k)$ and (ii) solving the linear system.
+The Newton step~\eqref{eq:newton_step} can be explicited with
+the $6 \times 6$ system:
+\begin{equation}
+  \label{eq:kkt:unreduced}
+  \tag{$K_3$}
+  \begin{bmatrix}
+    W & 0 & G^\top & H^\top & -I & 0 \\
+    0 & 0 & 0 & I & 0 & -I \\
+    G & 0 & 0 & 0 & 0 & 0 \\
+    H & I & 0 & 0 & 0 & 0 \\
+    U & 0 & 0 & 0 & X & 0 \\
+    0 & V & 0 & 0 & 0 & S
+  \end{bmatrix}
+  \begin{bmatrix}
+    \Delta x \\
+    \Delta s \\
+    \Delta y \\
+    \Delta z \\
+    \Delta u \\
+    \Delta v
+  \end{bmatrix}
+  % = -F_\mu(w_k) \; .
+  = - \begin{bmatrix}
+    \nabla_x L(w_k) \\
+       % \nabla f(x_k) + \nabla g(x_k)^\top y_k + \nabla h(x_k)^\top z_k - v_k  \\
+       z_k - v_k  \\
+       g(x_k)  \\
+       h(x_k) + s_k  \\
+       X_k u_k - \mu e  \\
+       S_k v_k - \mu e
+  \end{bmatrix} \; ,
+\end{equation}
+with the Hessian $W = \nabla^2_x L(w_k)$ and
+the two Jacobians $G = \nabla g(x_k)$, $H = \nabla h(x_k)$.
+
+\paragraph{Augmented KKT system.}
+The system~\eqref{eq:kkt:unreduced} is not symmetric. For
+that reason it is usual to remove the blocks associated
+to the bounds multipliers $(u, v)$ and solve instead the equivalent
+symmetric $4 \times 4$ system, called the \emph{augmented KKT system}:
+\begin{equation}
+  \label{eq:kkt:augmented}
+  \tag{$K_2$}
+  \begin{bmatrix}
+    W + \Sigma_x & 0 & G^\top & H^\top \\
+    0 & \Sigma_s & 0& I \\
+    G & 0 & 0 & 0 \\
+    H & I & 0 & 0
+  \end{bmatrix}
+  \begin{bmatrix}
+    \Delta x \\
+    \Delta s \\
+    \Delta y \\
+    \Delta z
+  \end{bmatrix}
+  = - \begin{bmatrix}
+    r_1 \\ r_2 \\ r_3 \\ r_4
+       % \nabla f(x_k) + \nabla g(x_k)^\top y_k + \nabla h(x_k)^\top z_k   \\
+       % z_k - w_k  \\
+       % g(x_k)  \\
+       % h(x_k) + s_k
+  \end{bmatrix} \; ,
+\end{equation}
+with the diagonal matrices $\Sigma_x = X^{-1} U$ and $\Sigma_s = S^{-1} V$.
+The right-hand-sides are given respectively by
+$r_1 = \nabla f(x_k) + \nabla g(x_k)^\top y_k + \nabla h(x_k)^\top z_k + \mu X^{-1} e$,
+$r_2 = z_k + \mu S^{-1} e$,
+$r_3 = g(x_k)$,
+$r_4 = h(x_k) + s_k$.
+Once \eqref{eq:kkt:augmented} solved, we recover the
+update on the bound multipliers with
+$\Delta u = - X^{-1}(U \Delta x + X u_k - \mu e)$,
+$\Delta v = - S^{-1}(V \Delta s + S v_k - \mu e)$.
+
+The system \eqref{eq:kkt:augmented} is usually factorized using
+a inertia-revealing LBL factorization. The block diagonal term
+$\Sigma_x$ and $\Sigma_s$ are usually poorly conditioned, preventing
+a solution with a Krylov iterative method.
+
+\paragraph{Condensed KKT system.}
+The $4 \times 4$ KKT system \eqref{eq:kkt:augmented} can be further
+reduced into a $2 \times 2$ system by eliminating the two blocks
+$(\Delta s, \Delta z)$ associated to the inequality constraints.
+The resulting system is called the \emph{condensed KKT system}:
+\begin{equation}
+  \label{eq:kkt:condensed}
+  \tag{$K_1$}
+  \begin{bmatrix}
+    K & G^\top \\
+    G & 0
+  \end{bmatrix}
+  \begin{bmatrix}
+    \Delta x \\ \Delta y
+  \end{bmatrix}
+  =
+  -
+  \begin{bmatrix}
+    r_1 + H^\top(\Sigma_s r_4 - r_2) \\ r_3
+  \end{bmatrix}
+   \; ,
+\end{equation}
+where we have introduced the \emph{condensed matrix} $K := W + \Sigma_x + H^\top \Sigma_s H$.
+Using the solution of the system~\eqref{eq:kkt:condensed},
+we recover the updates on the slacks and inequality multipliers with
+$\Delta s = -r_4 - H\Delta x$ and $\Delta z = -r_2 - \Sigma_s \Delta s$.
+
