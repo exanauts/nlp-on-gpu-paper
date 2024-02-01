@@ -90,6 +90,9 @@ preliminary benchmark has shown that this new solver is significantly
 faster than the previous sparse solvers interfaced in CUDA (as benchmarked in \cite{swirydowicz2021linear}).
 As it does not require expensive numerical pivoting operations, sparse Cholesky
 is easier to port on the GPU than the more complicated LU and LBL factorizations.
+Coupled with a GPU-accelerated automatic differentiation library, a Cholesky
+solver can solved a nonlinear program ten times faster than state-of-the-art
+methods~\cite{shin2023accelerating}.
 
 An alternative thread of research is looking at iterative methods to solve the Newton steps efficiently on the GPU.
 Iterative methods often require reformulating the Newton step to avoid
@@ -101,8 +104,27 @@ to be tractable~\cite{cao2016augmented,regev2023hykkt}. In particular,
 hybrid method~\cite{golub2003solving} to solve the KKT systems arising in
 the interior-point methods, with promising results on the GPU.
 
+\subsection{Contributions}
+In this article, we assess the current capabilities of modern GPUs
+to solve large-scale nonconvex nonlinear programs to optimality.
+To this end, we use a GPU-accelerated primal-dual interior-point method
+that leverages the GPU-accelerated automatic differentiation
+backend introduced in \cite{shin2023accelerating} when coupled with
+an efficient sparse linear solver running on the GPU.
+Compared to classical CPU implementations,
+we move beyond the intrinsic limitations of the LBL factorization
+illustrated in \cite{tasseff2019exploring,swirydowicz2021linear} and
+compare three recent alternatives to solve the KKT system on the GPU:
+the null-space strategy of \cite{pacaud2022condensed}, the hybrid
+KKT solver introduced in \cite{regev2023hykkt} and the sparse
+condensed KKT system of \cite{shin2023accelerating}.
+We add a wrapper to the sparse linear solver {\tt cuDSS} to solve
+the KKT systems with a cutting edge sparse linear solver.
+We assess the strength
+and weaknesses of each method, both in term of accuracy and in term of running time.
+We gauge the speed-up on a benchmark we get compared to a state-of-the-art method running
+on the CPU, using both consumer and professional GPUs.
 
-\subsection{Contributions (FP)}
 \begin{enumerate}
   \item A new strategy based on equality relaxation
     and condensation of the KKT system
@@ -114,3 +136,4 @@ the interior-point methods, with promising results on the GPU.
   \item Benchmark on large-scale OPF instances
     and others (to discuss)
 \end{enumerate}
+
