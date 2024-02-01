@@ -15,6 +15,7 @@ does not require numerical pivoting~\cite{regev2023hykkt,shin2023accelerating}.
 Interestingly, all methods are using the condensed KKT system~\eqref{eq:kkt:condensed}.
 
 \subsection{Null-space strategy (Argos) (FP)}
+\label{sec:kkt:nullspace}
 The first strategy to solve the condensed KKT system~\eqref{eq:kkt:condensed}
 is to reduce it to a dense matrix. This
 method is known as a \emph{reduced Hessian method} in the
@@ -26,37 +27,71 @@ We suppose $G$ is full-rank.
 Then there exists a permutation matrix $P \in \mathbb{R}^{n \times n}$
 such that we can reorder the Jacobian of the equality constraint
 $G \in \mathbb{R}^{m_e \times n}$ as $GP = \begin{bmatrix}
-  G_d & G_i
+  G_d & G_u
 \end{bmatrix}$, where $G_d$ is a $m_e \times m_e$ nonsingular matrix.
 The matrix
 \begin{equation}
   \label{eq:nullspace}
   Z = P \begin{bmatrix}
-    - G_d^{-1} G_i \\ I
+    - G_d^{-1} G_u \\ I
   \end{bmatrix} \; ,
 \end{equation}
 is a basis for the null-space of the Jacobian $G$, as $GZ = 0$.
-Interestingly, the null-space basis can be used to reduce the condensed
-KKT system~\eqref{eq:kkt:condensed}.
-
-\begin{proposition}[Reduction]
-  Let $Z$ be the null-space basis defined in \eqref{eq:nullspace}.
-  Then the condensed KKT system~\eqref{eq:kkt:condensed}
-  is equivalent to the \emph{reduced KKT system}
-  \begin{equation}
-    Z^\top K Z p_i =
-    Z^\top [\hat{r}_1 - K Y (GY)^{-1} \hat{r}_2] \; .
-  \end{equation}
-\end{proposition}
-
 In practice, the matrix $Z$ is never assembled explicitly.
 If a LU decomposition of $G_d$ is available, then we can
 implement $Z$ as a linear operator encoding the multiplications
 $Z x$ and $Z^\top y$.
 
-For generic nonlinear programs,
+Interestingly, the null-space basis can be used to reduce the condensed
+KKT system~\eqref{eq:kkt:condensed}.
+
+\begin{proposition}[Reduced KKT system]
+  Let $Z$ be the null-space basis defined in \eqref{eq:nullspace}.
+  Let $\hat{p}_x$ be a particular solution satisfying $G \hat{p}_x = \hat{r}_2$.
+  Let $(p_x, p_y)$ be
+  solution of the condensed KKT system~\eqref{eq:kkt:condensed}.
+  Then $p_x= \hat{p}_x + Z p_u$, with $p_u$ solution of the \emph{reduced KKT system}
+  \begin{equation}
+    \label{eq:kkt:reduced}
+    \tag{$K_0$}
+    Z^\top K Z p_u =
+    Z^\top [\hat{r}_1 - K \hat{p}_x ] \; ,
+  \end{equation}
+  and $p_y$ is solution of the normal equation $G G^\top p_y = G (\hat{r}_1 - K p_x)$.
+\end{proposition}
+\begin{proof}
+  A solution $(p_x, p_y)$ of \eqref{eq:kkt:condensed} satisfies
+  \begin{equation}
+    \label{eq:proof:reduced1}
+    K p_x + G^\top p_y = \hat{r}_1 \; , \quad
+    G p_x = \hat{r}_1  \; .
+  \end{equation}
+  Using the particular solution $\hat{p}_x$, we define
+  $p_x = \hat{p}_x + Z p_u$. Replacing in \eqref{eq:proof:reduced1},
+  we get $K (\hat{p}_x + Z p_u) = \hat{r}_1 - G^\top p_y$.
+  Multiplying on the left by $Z^\top$ and using $Z^\top G^\top = 0$,
+  we recover the expression in \eqref{eq:kkt:reduced}.
+  The dual solution $p_y$ is solution of the overdetermined
+  system of equations $G^\top p_y = \hat{r}_1 - K p_x$.
+  Multiplying on the left by $G$, we get $G G^\top p_y =
+  G (\hat{r}_1 - K p_x)$.
+\end{proof}
+
+The reduced matrix $Z^\top K Z$ appearing in the reduced KKT system
+\eqref{eq:kkt:reduced} is usually dense, with dimension $(n-m_e) \times
+(n - m_e)$. For that reason, the null-space strategy is effective
+when the number of degrees of freedom $n - m_e$ is small.
+The matrix $Z^\top K Z$ has a higher conditioning than the original
+condensed matrix $K$, prohibiting a solution of \eqref{eq:kkt:reduced}
+with iterative method~\cite{gould2001solution}. For that reason
+it is recommended to assemble $Z^\top K Z$ explicitly. Our previous
+investigations have shown that if a LU factorization of $G_d$ is
+available, we can assemble $Z^\top K Z$ efficiently on the GPU
+using batched linear solves~\cite{pacaud2022condensed}.
+
+A limitation of the null-space strategy is that
 there exists no obvious permutation $P$ to build the null-space
-matrix~\eqref{eq:nullspace}. However, for certain applications the
+matrix~\eqref{eq:nullspace} for generic nonlinear programs. However, for certain applications the
 permutation is directly given by the structure of the problem
 (coordinate decomposition).
 Such problems usually arise in engineering, where one can split
@@ -70,13 +105,13 @@ large-scale regime.
 
 
 \subsection{Golub \& Greif strategy (HyKKT) (FP)}
+\label{sec:kkt:golubgreif}
 The Golub \& Greif~\cite{golub2003solving} strategy reformulates the KKT system
-in a form amenable for a solution inside a hybrid linear solver.
+using an Augmented Lagrangian formulation.
 It has been recently revisited in \cite{regev2023hykkt}
 to solve the condensed KKT system~\eqref{eq:kkt:condensed} on the GPU.
 
-The trick is to reformulate the KKT system \eqref{eq:kkt:condensed}
-in the equivalent form
+The trick is to reformulate the condensed KKT system \eqref{eq:kkt:condensed} in the equivalent form
 \begin{equation}
   \label{eq:kkt:hykkt}
   \begin{bmatrix}
@@ -93,21 +128,36 @@ in the equivalent form
   \end{bmatrix}
 \end{equation}
 where we have introduced the regularized matrix $K_\gamma := K + \gamma G^\top G$.
-If $G$ is full-rank ang $\gamma$ is large enough, the projected condensed matrix $Z^\top K Z$
-is positive definite if and only if $K_\gamma$ is uniformly positive definite.
-HyKKT exploits that property to solve \eqref{eq:kkt:hykkt} using a hybrid
-direct-iterative method:
+For a large-enough parameter $\gamma$, the matrix $K_\gamma$ is positive definite.
+\begin{proposition}[\cite{regev2023hykkt}, Theorem 1, p.7]
+  We suppose $G$ is full row rank. Then there exists $\gamma_{min}$
+  such that, for all $\gamma > \gamma_{min}$, $K_\gamma$ is positive definite
+  if and only if $Z^\top K Z$ is positive definite.
+\end{proposition}
+
+The linear solver HyKKT~\cite{regev2023hykkt}
+exploits that property to solve \eqref{eq:kkt:hykkt} using a hybrid
+direct-iterative method. The method solves the linear system
+\eqref{eq:kkt:hykkt} using the following steps:
 \begin{enumerate}
-  \item Factorize $K_\gamma$ using sparse Cholesky ;
-  \item Solve the Schur complement system using CG:
+  \item Assemble $K_\gamma$ and factorize it using sparse Cholesky ;
+  \item Solve the Schur complement of \eqref{eq:kkt:hykkt} using a conjugate gradient (CG)
+    algorithm to recover the dual descent direction:
     \begin{equation}
       (G K_\gamma^{-1} G^\top) d_y = G K_\gamma^{-1} (\hat{r}_1 + \gamma G^\top \hat{r}_2) - \hat{r}_2 \; .
     \end{equation}
-  \item Solve the system $K_\gamma d_x = \hat{r}_1 + \gamma G^\top \hat{r}_2 - G^\top \hat{r}_2$.
+  \item Solve the system $K_\gamma d_x = \hat{r}_1 + \gamma G^\top \hat{r}_2 - G^\top d_y$
+    to get the primal descent direction.
 \end{enumerate}
-Numerically, the method requires a sparse Cholesky factorization used
-in conjunction with a CG algorithm. The sparse Cholesky factorization
-has the advantage of being stable without pivoting, rendering the algorithm
-tractable on a GPU.
+The method uses a sparse Cholesky factorization used in conjunction with a CG algorithm.
+The sparse Cholesky factorization has the advantage of being stable without
+numerical pivoting, rendering the algorithm tractable on a GPU.
+Each CG iteration requires the application of a backsolve with the
+factors of $K_\gamma$, an operation that can be numerically demanding. For that reason, the
+hybrid method HyKKT requires a small number of iterations to be numerically efficient.
+Fortunately, the eigenvalues of the Schur-complement $G K_\gamma^{-1} G^\top$
+converge to a single value as we increase the regularization parameter
+$\gamma$ (\cite[Theorem 4]{regev2023hykkt}). The larger the $\gamma$, the less iterations is required in the CG algorithm.
+
 
 \subsection{A novel equality relaxation strategy (SS)}
