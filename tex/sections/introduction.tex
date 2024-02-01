@@ -1,40 +1,106 @@
 \section{Introduction}
-Why solving NLP on GPUs?
-\begin{itemize}
-  \item SIMD abstraction and batch evaluation
-  \item GPU's performance has increased significantly in the last decade, on the contrary to CPUs (post Moore law)
-  \item Our recent work has proved that when used properly,
-    GPUs can solve large-scale NLP 10x faster than state-of-the-art (quote PSCC paper)
-\end{itemize}
+Graphical Processing Units (GPUs) have become a standard parallel computing platform
+for scientific computing. With their SIMD architectures,
+GPUs offer massive parallel computing capability that benefits to many
+applications that can exploit coarse grain parallelism and high-memory bandwidth.
+In addition, framework as CUDA has revolutionized High Performance Computing (HPC)
+by bringing to a general audience parallel capabilities that was previously
+exclusive to expensive supercomputers. In the post-Moore law area, GPUs
+are getting more power-efficient than CPUs to run parallel workloads, as they require
+fewer transistors to process multiple tasks in parallel.
 
-\subsection{Current state-of-the-art (FP, SS)}
+Despite their tremendous impacts in machine learning, the
+adoption of GPUs in the mathematical optimization community has
+remained limited. Most of the optimization solvers have been developed
+in the 1990s and have been heavily optimized for CPU architectures.
+The use of GPUs has been hindered by the limited support of
+sparse matrix operations, an operation difficult to parallelize
+on SIMD architectures. However, the landscape has changed in the
+recent years thanks to a few key changes.
+(1) The performance of sparse matrix operations have been improved
+in the CUDA library, mostly due to the novel tensorcores used
+in recent GPUs~\cite{markidis2018nvidia}.
+(2) There is a growing interests in solving optimization
+problems in batch, where all problems are sharing the same
+structures but have different parameterization~\cite{amos2017optnet,pineda2022theseus}.
+(3) GPUs are offering umatched performance for automatic differentiation,
+both for machine learning~\cite{jax2018github} and scientific computing applications \cite{enzyme2021}.
+In fact, most engineering problems are formulated with a limited
+number of patterns that are repeated throughout the model: by factorizing
+the common pattern and evaluating them in parallel in a SIMD formalism,
+we can achieve speed-of-light performance~\cite{shin2023accelerating}.
+(4) With the emergence of new exascale architectures in supercomputing,
+GPUs have become the primary factor to achieve performance in
+supercomputing.
 
-\paragraph{GPU for mathematical programming:}
-General overview:
-\begin{itemize}
-  \item GPU used mostly in optimization for machine learning (Jaxopt, QPTH)
-  \item Recent breakthrough in linear programming: a first-order
-    algorithm --- PDHG --- beats Gurobi when running on the GPU.
-\end{itemize}
+\subsection{Current state-of-the-art}
+For all the reasons listed before, there is an increasing interest
+to solve optimization problems on the GPU.
 
-\paragraph{GPU for nonlinear programming:}
-\begin{itemize}
-  \item Automatic differentiation: if AST represented with a SIMD abstraction,
-    evaluation of the derivatives can be very fast (c.f. ExaModels)
-  \item Linear solvers: current bottleneck, more than 90\% of the solution time spent
-    inside the sparse linear solver.
-    \begin{itemize}
-      \item Previous generation of sparse solvers (e.g. SPRAL)
-        was lagging behind compared to their CPU equivalents (HSL and
-        Pardiso being state-of-the art for nonlinear programming).
-      \item New solvers released by NVIDIA (hidden sparse Cholesky, and now cuDSS).
-        Sparse Cholesky is getting competitive on the GPU, as it avoids
-        extensive numerical pivoting.
-      \item Alternative way to solve the KKT system:
-        iterative methods (Krylov with $K_{2.5}$ formulation)
-        and hybrid methods (Golub \& Greif, cf HyKKT)
-    \end{itemize}
-\end{itemize}
+\paragraph{GPU for mathematical programming.}
+The machine learning community has been a strong advocate
+for porting mathematical optimization on the GPU. One of the most
+promising application is the embedding of mathematical programs
+inside neural network, a task that required to batch the solution
+of the optimization model for the training algorithm to be efficient~\cite{amos2017optnet,pineda2022theseus}.
+This has lead to the development of prototype code solving
+thousand of (small) optimization problem in parallel on the GPU.
+However, it is not trivial to solve large-scale optimization problems,
+as the previous generations of prototypes was reliant on dense linear solver
+to solve the Newton step inside their algorithm.
+
+For that reason, porting first-order algorithms on the GPU
+has gained momentum.
+These algorithms depend mostly on (sparse) matrix-vector operations, that run
+very efficiently on modern GPUs. Hence, we can counterbalance
+the relative inaccuracy of first-order method by running more
+iterations of the algorithm.
+A recent breakthrough~\cite{lu2023cupdlp,lu2023cupdlp2} has shown that a first-order algorithm
+can beat Gurobi (a state-of-the-art LP solver) in solving large-scale linear program:
+the first-order iterations are so efficient on the GPU that we can solve the
+LP problems down to a tolerance of $10^{-8}$, which was unseen before.
+
+
+\paragraph{GPU for nonlinear programming.}
+The success of first-order algorithms in classical mathematical programming
+relies on convex assumptions that are non trivial to replicate
+in nonlinear programming. In fact, most engineering problems embed complex
+physical equations that are likely to break any convex structure in  the problem.
+Previous experiments on the OPF problem have shown that even a simple
+algorithm as ADMM has trouble to converge as soon as we decrease the
+tolerance.
+
+Hence, second-order methods remain competitive with regards to their first-order
+siblings. A second-order algorithm requires to solve a Newton step at each
+iteration, which relies heavily on non-trivial linear algebra operations.
+In the large-scale regime, computing the Newton step translates to the
+factorization of a sparse matrix.
+Unfortunately, the previous generation of GPU-accelerated sparse linear
+solvers were lagging behind their CPU equivalents, as illustrated in
+subsequent surveys~\cite{tasseff2019exploring,swirydowicz2021linear}.
+A workaround has been to use a null-space strategy to reduce the Newton
+step down to a dense matrix, which can be factorized efficiently on the GPU.
+Our previous researches have shown that the method plays nicely with the interior-point
+methods if the number of degrees of freedom in the problem is small~\cite{pacaud2022condensed}.
+Fortunately, sparse solvers are getting increasingly better with the newest
+generations of GPUs. In particular, NVIDIA has released in November 2023
+a new sparse direct solver that implements a sparse LU, a sparse Cholesky
+and a sparse LDL factorizations: {\tt cuDSS}. Our
+preliminary benchmark has shown that this new solver is significantly
+faster than the previous sparse solvers interfaced in CUDA (as benchmarked in \cite{swirydowicz2021linear}).
+As it does not require expensive numerical pivoting operations, sparse Cholesky
+is easier to port on the GPU than the more complicated LU and LBL factorizations.
+
+An alternative thread of research is looking at iterative methods to solve the Newton steps efficiently on the GPU.
+Iterative methods often require reformulating the Newton step to avoid
+badly conditioning matrices, which has limited their use inside interior-point
+algorithms. New results give promising outlooks for convex problems~\cite{ghannad2022linear},
+but nonconvex problems often requires an Augmented Lagrangian reformulation
+to be tractable~\cite{cao2016augmented,regev2023hykkt}. In particular,
+\cite{regev2023hykkt} presents an interesting use of the Golub and Greif
+hybrid method~\cite{golub2003solving} to solve the KKT systems arising in
+the interior-point methods, with promising results on the GPU.
+
 
 \subsection{Contributions (FP)}
 \begin{enumerate}

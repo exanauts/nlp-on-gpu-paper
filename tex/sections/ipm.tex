@@ -8,7 +8,7 @@ with a line-search method for globalization. In this section, we
 give a brief description of a nonlinear program in \S\ref{sec:ipm:problem}
 and detail the Newton step solved at each IPM iteration in \S\ref{sec:ipm:kkt}.
 
-\subsection{Problem's formulation and KKT conditions ( FP)}
+\subsection{Problem's formulation and KKT conditions}
 \label{sec:ipm:problem}
 We are interested in solving the following nonlinear program:
 \begin{equation}
@@ -76,7 +76,7 @@ The KKT conditions of \eqref{eq:slack_problem} are:
 The notation $x \perp u$ is a shorthand to the complementarity
 condition $x_i u_i = 0$ for all $i=1\cdots, n$.
 
-\subsection{Solving the KKT conditions with the interior-point method (FP)}
+\subsection{Solving the KKT conditions with the interior-point method}
 \label{sec:ipm:kkt}
 The interior-point method aims at finding a stationary point
 associated to the KKT conditions~\eqref{eq:kktconditions}. However,

@@ -14,7 +14,7 @@ of the KKT system~\cite{pacaud2022condensed} or use a sparse factorization that
 does not require numerical pivoting~\cite{regev2023hykkt,shin2023accelerating}.
 Interestingly, all methods are using the condensed KKT system~\eqref{eq:kkt:condensed}.
 
-\subsection{Null-space strategy (Argos) (FP)}
+\subsection{Null-space strategy}
 \label{sec:kkt:nullspace}
 The first strategy to solve the condensed KKT system~\eqref{eq:kkt:condensed}
 is to reduce it to a dense matrix. This
@@ -104,7 +104,7 @@ large-scale regime.
 
 
 
-\subsection{Golub \& Greif strategy (HyKKT) (FP)}
+\subsection{Golub \& Greif strategy}
 \label{sec:kkt:golubgreif}
 The Golub \& Greif~\cite{golub2003solving} strategy reformulates the KKT system
 using an Augmented Lagrangian formulation.
@@ -161,3 +161,29 @@ $\gamma$ (\cite[Theorem 4]{regev2023hykkt}). The larger the $\gamma$, the less i
 
 
 \subsection{A novel equality relaxation strategy (SS)}
+
+
+\subsection{Discussion}
+We have introduced three different algorithms to solve
+the KKT system on the GPU. On the contrary to classical CPU algorithm,
+the three methods do not require computing a sparse LBL factorization of the KKT
+system by using alternate reformulation based on the condensed KKT
+system~\eqref{eq:kkt:condensed}.
+The three methods have their advantages and their downsides.
+
+The first method is based on a null-space
+strategy and reduced the KKT system down to a dense matrix $Z^\top K Z$, easy
+to factorize on the GPU. The downside is that assembling the reduced
+matrix $Z^\top K Z$ can be challenging if the number of degrees of freedom
+is too high. The second strategy uses an augmented Lagrangian formulation
+of the KKT system. It requires a sparse Cholesky factorization (stable without numerical
+pivoting, hence favorable for the GPU) and uses it to solve the Schur-complement system
+using a CG algorithm. The performance of the method depends on a parameter $\gamma$, that
+has to be tuned independently. The larger the $\gamma$, the faster is the convergence
+in the CG algorithm, but the worst is the accuracy of the linear solve. Hence, a trade-off
+has to be found. Eventually the third method uses an equality relaxation strategy to
+solve the condensed KKT system~\eqref{eq:kkt:condensed} directly. It just requires
+a sparse Cholesky solver to factorize~\eqref{eq:kkt:condensed}. However, the method
+solves a relaxation of the original problem~\eqref{eq:problem}, limiting the accuracy
+of the solution.
+
