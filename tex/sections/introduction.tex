@@ -68,7 +68,7 @@ in nonlinear programming. In fact, most engineering problems embed complex
 physical equations that are likely to break any convex structure in  the problem.
 Previous experiments on the OPF problem have shown that even a simple
 algorithm as ADMM has trouble to converge as soon as we decrease the
-tolerance.
+tolerance below $10^{-3}$~\cite{kim2021leveraging}.
 
 Hence, second-order methods remain competitive with regards to their first-order
 siblings. A second-order algorithm requires to solve a Newton step at each
@@ -121,19 +121,8 @@ condensed KKT system of \cite{shin2023accelerating}.
 We add a wrapper to the sparse linear solver {\tt cuDSS} to solve
 the KKT systems with a cutting edge sparse linear solver.
 We assess the strength
-and weaknesses of each method, both in term of accuracy and in term of running time.
-We gauge the speed-up on a benchmark we get compared to a state-of-the-art method running
-on the CPU, using both consumer and professional GPUs.
-
-\begin{enumerate}
-  \item A new strategy based on equality relaxation
-    and condensation of the KKT system
-  \item Thorough comparison with alternative approaches
-    (hybrid KKT solver and null-space solver), all implemented
-    inside the same nonlinear optimization solver: MadNLP
-  \item We test the latest sparse solver provided
-    by NVIDIA: cuDSS
-  \item Benchmark on large-scale OPF instances
-    and others (to discuss)
-\end{enumerate}
-
+and weaknesses of each method, both in term of accuracy and of running time.
+We gauge the speed-up on a benchmark and compare the performance to a state-of-the-art method running
+on the CPU. We move beyond the classical OPF instances we used in our previous works,
+and include additional large-scale problems coming from the COPS
+non-linear benchmark~\cite{dolan2004benchmarking} and used in the Mittelmann benchmark.
