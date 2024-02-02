@@ -10,10 +10,11 @@ inequality constraints, and is implemented using our package ExaModels.jl.
 It is acknowledge that this particular instance is challenging to solve
 with IPM, as it requires a non-trivial amount of primal-dual regularization
 to achieve convergence.
-Our previous work has pointed that the KKT solver is the bottleneck
+Our previous work has pointed that the KKT solver is the current bottleneck
 in the numerical implementation~\cite{shin2023accelerating}.
 
 \subsubsection{Null-space strategy}
+TODO
 
 \subsubsection{Golub \& Greif strategy}
 In Figure~\ref{fig:hybrid:gamma} we depict the evolution of the number
@@ -83,6 +84,39 @@ profile, we highlight the bottlenecks of each KKT solvers.
 
 
 \subsection{Benchmark on OPF instances}
+The previous subsection has detailed the performance of the
+three KKT solvers on a specific instance, and highlighted
+the respective downsides of the null-space strategy,
+the Golub \& Greif strategy and the equality relaxation strategy.
+Now, we run a full benchmark on difficult OPF instances taken
+from the PGLIB benchmark~\cite{babaeinejadsarookolaee2019power}.
+We comapre our 3 GPU-accelerated KKT solvers with HSL ma27 running
+on the CPU.
+The results are displayed in Table~\ref{tab:opf:benchmark}.
+
+\begin{table}[!ht]
+  \centering
+  \resizebox{\textwidth}{!}{
+    \begin{tabular}{|l|rrrr|rrrr|rrrr|}
+      \hline
+& \multicolumn{4}{c|}{\bf HSL ma27} &
+      \multicolumn{4}{c|}{\bf eq. relaxation+cuDSS} &
+      \multicolumn{4}{c|}{\bf HyKKT+cuDSS} \\
+      \hline
+      Case & it & AD & lin & total & it & AD & lin & total & it & AD & lin & total \\
+                                                   \hline
+      1354\_pegase & 45 & 0.06 & 0.31 & 0.47 & 58 & 0.04 & 0.10 & 0.36 & 42 & 0.04 & 0.14 & 0.41 \\
+      2869\_pegase & 52 & 0.24 & 0.99 & 1.60 & 70 & 0.06 & 0.20 & 0.63 & 51 & 0.05 & 0.29 & 0.72 \\
+      8387\_pegase & 70 & 0.83 & 5.09 & 7.49 & 83 & 0.09 & 1.04 & 2.23 & 70 & 0.11 & 7.42 & 8.72 \\
+      9241\_pegase & 63 & 0.88 & 5.30 & 7.69 & 86 & 0.10 & 0.72 & 1.99 & 62 & 0.09 & 1.25 & 2.51 \\
+      13659\_pegase & 58 & 1.16 & 6.58 & 9.54 & 93 & 0.12 & 1.52 & 3.23 & 57 & 0.09 & 1.19 & 2.79 \\
+      \hline
+    \end{tabular}
+  }
+  \caption{OPF benchmark \label{tab:opf:benchmark}}
+\end{table}
+
+
 
 \subsection{Benchmark on COPS instances}
 
