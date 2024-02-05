@@ -24,12 +24,40 @@ include(joinpath(@__DIR__, "..", "scripts", "opf", "model.jl"))
 
 CUDA.allowscalar(false)
 
-
 N_COLUMNS = Dict{Symbol, Int}(
-    :benchmark_hsl => 5,
-    :benchmark_sparse_condensed => 5,
-    :benchmark_hybrid => 9,
+    :benchmark_hsl => 6,
+    :benchmark_sparse_condensed => 6,
+    :benchmark_hybrid => 10,
 )
+
+FULL_BENCHMARK = [
+    "pglib_opf_case10000_goc.m",
+    "pglib_opf_case10480_goc.m",
+    "pglib_opf_case1354_pegase.m",
+    "pglib_opf_case13659_pegase.m",
+    "pglib_opf_case179_goc.m",
+    "pglib_opf_case19402_goc.m",
+    "pglib_opf_case2000_goc.m",
+    "pglib_opf_case2312_goc.m",
+    # "pglib_opf_case24464_goc.m",
+    "pglib_opf_case2742_goc.m",
+    "pglib_opf_case2869_pegase.m",
+    "pglib_opf_case30000_goc.m",
+    "pglib_opf_case3022_goc.m",
+    "pglib_opf_case3970_goc.m",
+    "pglib_opf_case4020_goc.m",
+    "pglib_opf_case4601_goc.m",
+    "pglib_opf_case4619_goc.m",
+    "pglib_opf_case4837_goc.m",
+    "pglib_opf_case4917_goc.m",
+    "pglib_opf_case500_goc.m",
+    "pglib_opf_case793_goc.m",
+    "pglib_opf_case8387_pegase.m",
+    "pglib_opf_case89_pegase.m",
+    "pglib_opf_case9241_pegase.m",
+    "pglib_opf_case9591_goc.m",
+]
+
 
 function refresh_memory()
     GC.gc(true)
@@ -44,11 +72,13 @@ function benchmark_hsl(nlp, ntrials; options...)
 
     t_total, t_callbacks, t_linear_solver = (0.0, 0.0, 0.0)
     n_it, obj = 0, 0.0
+    status = 0
     ## Benchmark
     for _ in 1:ntrials
         solver = MadNLP.MadNLPSolver(nlp; linear_solver=Ma27Solver, options...)
-        MadNLP.solve!(solver)
+        results = MadNLP.solve!(solver)
 
+        status += Int(results.status)
         t_total += solver.cnt.total_time
         t_callbacks += solver.cnt.eval_function_time
         t_linear_solver += solver.cnt.linear_solver_time
@@ -59,6 +89,7 @@ function benchmark_hsl(nlp, ntrials; options...)
     end
 
     return (
+        status / ntrials,
         n_it / ntrials,
         obj / ntrials,
         t_total / ntrials,
@@ -81,6 +112,7 @@ function benchmark_sparse_condensed(nlp, ntrials; options...)
 
     t_total, t_callbacks, t_linear_solver = (0.0, 0.0, 0.0)
     n_it, obj = 0, 0.0
+    status = 0
     ## Benchmark
     for _ in 1:ntrials
         solver = MadNLP.MadNLPSolver(
@@ -90,8 +122,9 @@ function benchmark_sparse_condensed(nlp, ntrials; options...)
             fixed_variable_treatment=MadNLP.RelaxBound,
             options...,
         )
-        MadNLP.solve!(solver)
+        results = MadNLP.solve!(solver)
 
+        status += Int(results.status)
         t_total += solver.cnt.total_time
         t_callbacks += solver.cnt.eval_function_time
         t_linear_solver += solver.cnt.linear_solver_time
@@ -102,6 +135,7 @@ function benchmark_sparse_condensed(nlp, ntrials; options...)
     end
 
     return (
+        status / ntrials,
         n_it / ntrials,
         obj / ntrials,
         t_total / ntrials,
@@ -125,6 +159,7 @@ function benchmark_hybrid(nlp, ntrials; gamma=1e5, options...)
     t_backsolve, t_condensation, t_cg = (0.0, 0.0, 0.0)
     n_it, obj = 0, 0.0
     cg_iters = 0.0
+    status = 0
     ## Benchmark
     for _ in 1:ntrials
         solver = MadNLP.MadNLPSolver(
@@ -135,8 +170,9 @@ function benchmark_hybrid(nlp, ntrials; gamma=1e5, options...)
             options...,
         )
         solver.kkt.gamma[] = gamma
-        MadNLP.solve!(solver)
+        results = MadNLP.solve!(solver)
 
+        status += Int(results.status)
         t_total += solver.cnt.total_time
         t_callbacks += solver.cnt.eval_function_time
         t_linear_solver += solver.cnt.linear_solver_time
@@ -151,6 +187,7 @@ function benchmark_hybrid(nlp, ntrials; gamma=1e5, options...)
     end
 
     return (
+        status / ntrials,
         n_it / ntrials,
         obj / ntrials,
         t_total / ntrials,
@@ -203,13 +240,7 @@ end
     cases = if quick
         filter!(e->(occursin("pglib_opf_case",e) && occursin("ieee",e)),readdir(PGLIB_PATH))
     else
-        filter!(
-            e->(
-                occursin("pglib_opf_case",e) &&
-                occursin("pegase", e) || occursin("goc", e))
-                ),
-            readdir(PGLIB_PATH),
-        )
+        FULL_BENCHMARK
     end
 
     if solver == "all" || solver == "hsl"
@@ -248,7 +279,7 @@ end
         writedlm(output_file, [cases results])
     end
 
-    if (solver == "all" || solver == "sckkt-cpu") && CUDA.has_cuda()
+    if (solver == "all" || solver == "sckkt-cuda") && CUDA.has_cuda()
         @info "[CUDA] Benchmark SparseCondensedKKTSystem+CUDSS"
         results = run_benchmark(
             benchmark_sparse_condensed,
@@ -264,7 +295,7 @@ end
         writedlm(output_file, [cases results])
     end
 
-    if (solver == "all" || solver == "hckkt-cpu") && CUDA.has_cuda()
+    if (solver == "all" || solver == "hckkt-cuda") && CUDA.has_cuda()
         @info "[CUDA] Benchmark HybridCondensedKKTSystem+CUDSS"
         results = run_benchmark(
             benchmark_hybrid,
@@ -277,7 +308,7 @@ end
             cudss_algorithm=MadNLP.BUNCHKAUFMAN,
             print_level=print_level,
         )
-        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hckkt-cudss-cholesky-$(gamma_).csv")
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hckkt-cudss-ldl-$(gamma_).csv")
         writedlm(output_file, [cases results])
     end
 end
