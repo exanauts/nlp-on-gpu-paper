@@ -40,17 +40,18 @@ the algorithm.
 \begin{figure}[!ht]
   \centering
   \resizebox{\textwidth}{!}{
-  \begin{tabular}{r|rrrrr|rrrrr}
-  \toprule
-  & \multicolumn{5}{c}{\bf CHOLMOD (CPU)} & \multicolumn{5}{c}{\bf cuDSS (CUDA)} \\
+  \begin{tabular}{|r|rrrrr|rrrrr|}
+  \hline
+  & \multicolumn{5}{c|}{\bf CHOLMOD (CPU)} & \multicolumn{5}{c|}{\bf cuDSS (CUDA)} \\
+  \hline
   $\gamma$ & \# it & cond. (s) & CG (s) & linsol (s) & IPM (s) & \# it & cond. (s) & CG (s) & linsol (s) & IPM (s) \\
-  \midrule
+  \hline
   $10^4$ & 63 & 0.42 & 16.87 & 21.36 & 23.85 & 62 & 0.09 & 30.24 & 31.05 & 33.51 \\
   $10^5$ & 63 & 0.42 & 6.13 & 10.66 & 13.42 & 62 & 0.09 & 10.44 & 11.24 & 13.64 \\
   $10^6$ & 63 & 0.43 & 2.58 & 7.09 & 9.53 & 62 & 0.09 & 4.53 & 5.33 & 7.69 \\
   $10^7$ & 63 & 0.43 & 1.42 & 6.11 & 8.81 & 62 & 0.09 & 2.44 & 3.24 & 5.62 \\
   $10^8$ & 105 & 1.11 & 1.78 & 12.39 & 16.77 & 90 & 0.20 & 2.51 & 3.82 & 7.90 \\
-  \bottomrule
+  \hline
   \end{tabular}
   }
   \includegraphics[width=\textwidth]{../figures/hybrid-gamma.pdf}
@@ -70,11 +71,72 @@ the algorithm.
 
 
 
-
-
-
 \subsubsection{Equality relaxation strategy}
-Assess the impact of $\varepsilon$ on the performance
+We now analyze the numerical performance of the equality relaxation strategy described in
+Section~\ref{sec:kkt:sckkt}. The method solves the KKT system~\eqref{eq:kkt:condensed}
+using a direct solver, as the relaxed problem does not have any equality constraints.
+The parameter $\varepsilon$ used in the equality relaxation $-\varepsilon \leq g(x) \leq \varepsilon$
+is set equal to the IPM tolerance $\varepsilon_{tol}$: in practice, it does not
+make sense to set a parameter $\varepsilon$ below the IPM tolerance as the
+inequality constraints are satisfied only up to a tolerance $\pm \varepsilon_{tol}$
+in IPM.
+
+We compare the performance obtained by the equality relaxation strategy
+in Table~\ref{tab:sckkt:performance}, for different values of $\varepsilon_{tol}$.
+We display both the runing times on the CPU (using Cholmod) and on the GPU
+(using cuDSS), as well as the relative accuracy achieved as we decrease the tolerance
+$\varepsilon_{tol}$: we compare the solution
+returned by the equality relaxation strategy together
+with the solution returned by MadNLP when running on the CPU
+with HSL ma27 for a tight tolerance ($\varepsilon_{tol} = 10^{-8}$).
+We observe that we cannot solve the relaxed problem in MadNLP
+with a tolerance below $10^{-5}$. Indeed, the slacks associated
+to the relaxed equality constraints $-\varepsilon \leq g(x) \leq \varepsilon$
+are converging to a value below $2 \varepsilon$ at the optimum,
+leading to highly ill-conditionned terms in the diagonal matrices
+$\Sigma_s$: despite being easier to solve, the conditioning
+of the relaxed problem is preventing the IPM solver to converge
+to a solution more accurate than $10^{-5}$.
+
+This observation is corroborated by the results in Table~\ref{tab:sckkt:performance}.
+Overall, we observe that the method is converging fast
+if the tolerance $\varepsilon_{tol}$ is above $10^{-4}$.
+The method benefits from the GPU-accelerated linear solver cUDSS, as
+the running time decreases by a factor of 4 compared to CHOLMOD
+running on the CPU. However, the method remains inaccurate:
+for $\varepsilon_{tol} = 10^{-4}$, we get a $0.5$\% error on the objective,
+and a $10$\% error on the primal solution.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{|l|rr|rr|rr|}
+    \hline
+    & \multicolumn{2}{c|}{\bf CPU (Cholmod)} & \multicolumn{2}{c|}{\bf CUDA (cuDSS)} & \multicolumn{2}{c|}{\bf accuracy} \\
+    \hline
+    $\varepsilon_{tol}$ & \#it & time (s) & \#it & time (s) & $\delta_{obj}$ & $\delta_{x}$ \\
+    \hline
+    $10^{-2}$ & 86  & 11.7 & 86  & 1.9  & $3.4 \times 10^{-1}$ & 0.66 \\
+    $10^{-3}$ & 85  & 11.7 & 85  & 1.8  & $3.9 \times 10^{-2}$ & 0.22 \\
+    $10^{-4}$ & 88  & 14.1 & 86  & 2.1  & $4.1 \times 10^{-3}$ & 0.10 \\
+    $10^{-5}$ & 140 & 38.0 & 184 & 11.7 & $4.6 \times 10^{-4}$ & 0.06 \\
+    \hline
+  \end{tabular}
+  \caption{Performance of the equality-relaxation
+    strategy as we decrease the IPM tolerance $\varepsilon_{tol}$.
+    \label{tab:sckkt:performance}.
+    The table displays the wall time on the CPU (using Cholmod)
+    and on the GPU (using cuDSS). We display the
+    relative errors on the objective $\delta_{obj}$
+    and on the primal solution $\delta_x$.
+  }
+\end{table}
+
+
+
+
+
+
+
 
 \subsubsection{Performance profile}
 Now, we look at a detailed performance profile that decomposes
@@ -97,25 +159,47 @@ The results are displayed in Table~\ref{tab:opf:benchmark}.
 \begin{table}[!ht]
   \centering
   \resizebox{\textwidth}{!}{
-    \begin{tabular}{|l|rrrr|rrrr|rrrr|}
-      \hline
+		\begin{tabular}{|l|rrrr|rrrr|rrrr|}
+			\hline
 & \multicolumn{4}{c|}{\bf HSL ma27} &
-      \multicolumn{4}{c|}{\bf eq. relaxation+cuDSS} &
-      \multicolumn{4}{c|}{\bf HyKKT+cuDSS} \\
-      \hline
-      Case & it & AD & lin & total & it & AD & lin & total & it & AD & lin & total \\
-                                                   \hline
-      1354\_pegase & 45 & 0.06 & 0.31 & 0.47 & 58 & 0.04 & 0.10 & 0.36 & 42 & 0.04 & 0.14 & 0.41 \\
-      2869\_pegase & 52 & 0.24 & 0.99 & 1.60 & 70 & 0.06 & 0.20 & 0.63 & 51 & 0.05 & 0.29 & 0.72 \\
-      8387\_pegase & 70 & 0.83 & 5.09 & 7.49 & 83 & 0.09 & 1.04 & 2.23 & 70 & 0.11 & 7.42 & 8.72 \\
-      9241\_pegase & 63 & 0.88 & 5.30 & 7.69 & 86 & 0.10 & 0.72 & 1.99 & 62 & 0.09 & 1.25 & 2.51 \\
-      13659\_pegase & 58 & 1.16 & 6.58 & 9.54 & 93 & 0.12 & 1.52 & 3.23 & 57 & 0.09 & 1.19 & 2.79 \\
-      \hline
-    \end{tabular}
+			\multicolumn{4}{c|}{\bf eq. relaxation+cuDSS} &
+			\multicolumn{4}{c|}{\bf HyKKT+cuDSS} \\
+			\hline
+			Case & it & AD & lin & total & it & AD & lin & total & it & AD & lin & total \\
+			\hline
+			89\_pegase & 30 & 0.00 & 0.02 & 0.03 & 34 & 0.02 & 0.05 & 0.16 & 30 & 0.03 & 0.06 & 0.18 \\
+			179\_goc & 43 & 0.01 & 0.04 & 0.06 & 46 & 0.03 & 0.05 & 0.18 & 43 & 0.03 & 0.06 & 0.21 \\
+			500\_goc & 35 & 0.01 & 0.09 & 0.14 & 36 & 0.03 & 0.04 & 0.18 & 35 & 0.03 & 0.06 & 0.21 \\
+			793\_goc & 31 & 0.02 & 0.11 & 0.17 & 40 & 0.03 & 0.06 & 0.21 & 31 & 0.03 & 0.09 & 0.24 \\
+			1354\_pegase & 45 & 0.06 & 0.33 & 0.54 & 58 & 0.04 & 0.09 & 0.35 & 42 & 0.04 & 0.14 & 0.41 \\
+			\hline
+			2000\_goc & 38 & 0.11 & 0.61 & 0.93 & 42 & 0.03 & 0.08 & 0.36 & 38 & 0.04 & 0.13 & 0.43 \\
+			2312\_goc & 40 & 0.08 & 0.56 & 0.83 & 47 & 0.03 & 0.11 & 0.38 & 38 & 0.04 & 0.18 & 0.47 \\
+			2742\_goc & 122 & 0.42 & 3.68 & 7.30 & 153 & 0.18 & 0.57 & 11.06 & NA & NA & NA & NA \\
+			2869\_pegase & 52 & 0.38 & 1.03 & 1.75 & 70 & 0.06 & 0.19 & 0.63 & 51 & 0.05 & 0.26 & 0.67 \\
+			3022\_goc & 49 & 0.16 & 0.87 & 1.30 & 50 & 0.04 & 0.15 & 0.49 & 47 & 0.04 & 0.20 & 0.56 \\
+			\hline
+			3970\_goc & 45 & 0.41 & 1.84 & 2.67 & 46 & 0.04 & 0.15 & 0.60 & 44 & 0.05 & 0.23 & 0.72 \\
+			4020\_goc & 59 & 0.67 & 3.79 & 5.01 & 74 & 0.06 & 0.38 & 1.03 & 57 & 0.06 & 0.42 & 1.05 \\
+			4601\_goc & 66 & 0.80 & 2.86 & 4.24 & 70 & 0.06 & 0.25 & 0.83 & 66 & 0.07 & 0.39 & 1.04 \\
+			4619\_goc & 46 & 0.68 & 3.05 & 4.26 & 61 & 0.05 & 0.23 & 0.85 & 46 & 0.05 & 0.32 & 0.92 \\
+			4837\_goc & 56 & 0.75 & 2.41 & 3.76 & 57 & 0.05 & 0.30 & 0.81 & 55 & 0.06 & 0.38 & 0.95 \\
+			\hline
+			4917\_goc & 57 & 0.52 & 1.79 & 3.01 & 59 & 0.05 & 0.24 & 0.73 & 55 & 0.05 & 0.31 & 0.83 \\
+			8387\_pegase & 70 & 0.84 & 5.28 & 7.91 & 83 & 0.09 & 0.98 & 2.15 & 70 & 0.10 & 6.91 & 8.08 \\
+			9241\_pegase & 63 & 1.04 & 5.73 & 8.38 & 86 & 0.09 & 0.66 & 1.90 & 62 & 0.07 & 1.16 & 2.33 \\
+			9591\_goc & 65 & 1.11 & 11.09 & 13.84 & 70 & 0.07 & 0.54 & 1.65 & 64 & 0.08 & 0.87 & 2.06 \\
+			10000\_goc & 77 & 1.01 & 5.66 & 8.32 & 76 & 0.08 & 0.41 & 1.34 & 75 & 0.10 & 0.86 & 1.88 \\
+			\hline
+			10480\_goc & 66 & 1.04 & 11.47 & 14.59 & 73 & 0.09 & 0.84 & 2.25 & 65 & 0.08 & 1.21 & 2.61 \\
+			13659\_pegase & 58 & 1.04 & 7.00 & 10.17 & 93 & 0.12 & 1.45 & 3.13 & 57 & 0.07 & 1.16 & 2.65 \\
+			19402\_goc & 70 & 2.45 & 34.16 & 40.27 & 110 & 0.21 & 4.62 & 8.10 & 70 & 0.12 & 2.40 & 4.89 \\
+			30000\_goc & 136 & 5.04 & 44.28 & 56.39 & 811 & 1.40 & 54.66 & 72.38 & 128 & 0.25 & 4.02 & 7.22 \\
+			\hline
+		\end{tabular}
   }
-  \caption{OPF benchmark \label{tab:opf:benchmark}}
+  \caption{OPF benchmark \label{tab:opf:benchmark}, solved with a tolerance of {\tt tol=1e-4}}
 \end{table}
-
 
 
 \subsection{Benchmark on COPS instances}
