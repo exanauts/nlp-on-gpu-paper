@@ -59,7 +59,6 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
         richardson_tol=1e-12,
         print_level=MadNLP.INFO,
         max_iter=1,
-        tol=tol,
     )
     MadNLP.solve!(solver)
     # Warmup
@@ -102,7 +101,6 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
         richardson_tol=1e-12,
         print_level=MadNLP.INFO,
         max_iter=1,
-        tol=tol,
     )
     MadNLP.solve!(solver)
     for (k, tol) in enumerate([1e-2, 1e-3, 1e-4, 1e-5])
