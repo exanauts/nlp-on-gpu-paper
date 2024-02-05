@@ -134,6 +134,7 @@ function benchmark_hybrid(nlp, ntrials; gamma=1e5, options...)
             fixed_variable_treatment=MadNLP.MakeParameter,
             options...,
         )
+        solver.kkt.gamma[] = gamma
         MadNLP.solve!(solver)
 
         t_total += solver.cnt.total_time
@@ -179,14 +180,24 @@ function run_benchmark(benchmark, cases, ntrials; use_gpu=false, options...)
     return results
 end
 
-@main function main(; verbose::Bool=false, quick::Bool=false, tol::Float64=1e-4, ntrials::Int=3, gpu::Bool=false)
+@main function main(;
+    solver="all",
+    verbose::Bool=false,
+    quick::Bool=false,
+    tol::Float64=1e-4,
+    gamma::Float64=1e8,
+    ntrials::Int=3,
+)
     if !isdir(RESULTS_DIR)
         mkpath(RESULTS_DIR)
     end
+    if solver ∈ ("all", "sckkt-gpu", "hckkt-gpu") && !CUDA.has_cuda()
+        @info("CUDA is not available on this machine.")
+    end
 
     flag = quick ? "short" : "full"
-
     print_level = verbose ? MadNLP.INFO : MadNLP.ERROR
+    gamma_ = Int(log10(gamma))
 
     # if quick
     cases = if quick
@@ -195,44 +206,49 @@ end
         filter!(
             e->(
                 occursin("pglib_opf_case",e) &&
-                (occursin("ieee",e) || occursin("pegase", e) || occursin("goc", e))
+                occursin("pegase", e) || occursin("goc", e))
                 ),
             readdir(PGLIB_PATH),
         )
     end
 
-    @info "[CPU] Benchmark SparseKKTSystem+HSL"
-    results = run_benchmark(benchmark_hsl, cases, ntrials; tol=tol, print_level=print_level)
-    output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hsl-ma27.csv")
-    writedlm(output_file, [cases results])
+    if solver == "all" || solver == "hsl"
+        @info "[CPU] Benchmark SparseKKTSystem+HSL"
+        results = run_benchmark(benchmark_hsl, cases, ntrials; tol=tol, print_level=print_level)
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hsl-ma27.csv")
+        writedlm(output_file, [cases results])
+    end
 
+    if solver == "all" || solver == "sckkt-cpu"
+        @info "[CPU] Benchmark SparseCondensedKKTSystem+CHOLMOD"
+        results = run_benchmark(
+            benchmark_sparse_condensed,
+            cases,
+            ntrials;
+            tol=tol,
+            linear_solver=HybridKKT.CHOLMODSolver,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-sckkt-cholmod.csv")
+        writedlm(output_file, [cases results])
+    end
 
-    @info "[CPU] Benchmark SparseCondensedKKTSystem+CHOLMOD"
-    results = run_benchmark(
-        benchmark_sparse_condensed,
-        cases,
-        ntrials;
-        tol=tol,
-        linear_solver=HybridKKT.CHOLMODSolver,
-        print_level=print_level,
-    )
-    output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-sckkt-cholmod.csv")
-    writedlm(output_file, [cases results])
+    if solver == "all" || solver == "hckkt-cpu"
+        @info "[CPU] Benchmark HybridCondensedKKTSystem+CHOLMOD"
+        results = run_benchmark(
+            benchmark_hybrid,
+            cases,
+            ntrials;
+            gamma=gamma,
+            tol=tol,
+            linear_solver=HybridKKT.CHOLMODSolver,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hckkt-cholmod-$(gamma_).csv")
+        writedlm(output_file, [cases results])
+    end
 
-    @info "[CPU] Benchmark HybridCondensedKKTSystem+CHOLMOD"
-    results = run_benchmark(
-        benchmark_hybrid,
-        cases,
-        ntrials;
-        gamma=1e8,
-        tol=tol,
-        linear_solver=HybridKKT.CHOLMODSolver,
-        print_level=print_level,
-    )
-    output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hckkt-cholmod-8.csv")
-    writedlm(output_file, [cases results])
-
-    if gpu && CUDA.has_cuda()
+    if (solver == "all" || solver == "sckkt-cpu") && CUDA.has_cuda()
         @info "[CUDA] Benchmark SparseCondensedKKTSystem+CUDSS"
         results = run_benchmark(
             benchmark_sparse_condensed,
@@ -246,20 +262,22 @@ end
         )
         output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-sckkt-cudss-cholesky.csv")
         writedlm(output_file, [cases results])
+    end
 
+    if (solver == "all" || solver == "hckkt-cpu") && CUDA.has_cuda()
         @info "[CUDA] Benchmark HybridCondensedKKTSystem+CUDSS"
         results = run_benchmark(
             benchmark_hybrid,
             cases,
             ntrials;
-            gamma=1e8,
+            gamma=gamma,
             use_gpu=true,
             tol=tol,
             linear_solver=MadNLPGPU.CUDSSSolver,
-            cudss_algorithm=MadNLP.CHOLESKY,
+            cudss_algorithm=MadNLP.BUNCHKAUFMAN,
             print_level=print_level,
         )
-        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hckkt-cudss-cholesky-8.csv")
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hckkt-cudss-cholesky-$(gamma_).csv")
         writedlm(output_file, [cases results])
     end
 end
