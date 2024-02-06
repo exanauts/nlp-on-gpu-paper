@@ -83,7 +83,7 @@ in IPM.
 
 We compare the performance obtained by the equality relaxation strategy
 in Table~\ref{tab:sckkt:performance}, for different values of $\varepsilon_{tol}$.
-We display both the runing times on the CPU (using Cholmod) and on the GPU
+We display both the runing times on the CPU (using CHOLMOD) and on the GPU
 (using cuDSS), as well as the relative accuracy achieved as we decrease the tolerance
 $\varepsilon_{tol}$: we compare the solution
 returned by the equality relaxation strategy together
@@ -106,12 +106,18 @@ the running time decreases by a factor of 4 compared to CHOLMOD
 running on the CPU. However, the method remains inaccurate:
 for $\varepsilon_{tol} = 10^{-4}$, we get a $0.5$\% error on the objective,
 and a $10$\% error on the primal solution.
+To achieve convergence for the lower tolerance $\varepsilon_{tol} = 10^{-5}$,
+we had to decrease the tolerance of the iterative refinement
+to $10^{-12}$ to get a solution accurate enough in the linear solve:
+this explains the significant slowdown, as we have to perform more
+backsolve per iteration thanks to the additional iterative refinement
+iterations.
 
 \begin{table}[!ht]
   \centering
   \begin{tabular}{|l|rr|rr|rr|}
     \hline
-    & \multicolumn{2}{c|}{\bf CPU (Cholmod)} & \multicolumn{2}{c|}{\bf CUDA (cuDSS)} & \multicolumn{2}{c|}{\bf accuracy} \\
+    & \multicolumn{2}{c|}{\bf CPU (CHOLMOD)} & \multicolumn{2}{c|}{\bf CUDA (cuDSS)} & \multicolumn{2}{c|}{\bf accuracy} \\
     \hline
     $\varepsilon_{tol}$ & \#it & time (s) & \#it & time (s) & $\delta_{obj}$ & $\delta_{x}$ \\
     \hline
@@ -124,24 +130,44 @@ and a $10$\% error on the primal solution.
   \caption{Performance of the equality-relaxation
     strategy as we decrease the IPM tolerance $\varepsilon_{tol}$.
     \label{tab:sckkt:performance}.
-    The table displays the wall time on the CPU (using Cholmod)
+    The table displays the wall time on the CPU (using CHOLMOD)
     and on the GPU (using cuDSS). We display the
-    relative errors on the objective $\delta_{obj}$
-    and on the primal solution $\delta_x$.
+    relative errors on the objective $\delta_{obj} = (f(x_{hsl}^\sharp) - f(x_{sc}^\sharp))/f(x_{hsl}^\sharp)$
+    and on the primal solution $\delta_x = \|x_{hsl}^\sharp - x_{sc}^\sharp\|_\infty
+    / \|x_{hsl}^\sharp\|_\infty$.
   }
 \end{table}
-
-
-
-
-
-
 
 
 \subsubsection{Performance profile}
 Now, we look at a detailed performance profile that decomposes
 the total running time spent at each iteration. Using the performance
 profile, we highlight the bottlenecks of each KKT solvers.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{minipage}{.5\textwidth}
+  \includegraphics[width=\textwidth]{../figures/pprof.pdf} \qquad
+  \end{minipage}\hfill
+  \begin{minipage}{.5\textwidth}
+  \resizebox{.8\textwidth}{!}{
+    \begin{tabular}{lrrrr}
+      \toprule
+       & build & factorize & backsolve & accuracy \\
+      \midrule
+      hsl & 2.86e-03 & 4.78e-02 & 1.74e-02 & 7.80e-07 \\
+      sckkt-cpu & 5.41e-03 & 5.05e-02 & 1.96e-02 & 1.36e-04 \\
+      hckkt-cpu & 5.20e-03 & 5.10e-02 & 3.02e-02 & 3.28e-03 \\
+      sckkt-cuda & 1.55e-03 & 1.81e-02 & 1.01e-02 & 8.64e-06 \\
+      hckkt-cuda & 1.40e-03 & 1.43e-02 & 5.22e-02 & 2.66e-03 \\
+      \bottomrule
+    \end{tabular}
+  }
+  \end{minipage}
+  \caption{Performance profile}
+\end{figure}
+
+
 
 
 
@@ -152,7 +178,7 @@ the respective downsides of the null-space strategy,
 the Golub \& Greif strategy and the equality relaxation strategy.
 Now, we run a full benchmark on difficult OPF instances taken
 from the PGLIB benchmark~\cite{babaeinejadsarookolaee2019power}.
-We comapre our 3 GPU-accelerated KKT solvers with HSL ma27 running
+We compare our 3 GPU-accelerated KKT solvers with HSL ma27 running
 on the CPU.
 The results are displayed in Table~\ref{tab:opf:benchmark}.
 
