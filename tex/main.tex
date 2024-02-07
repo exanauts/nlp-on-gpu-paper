@@ -21,12 +21,36 @@
 \DeclareMathOperator{\diag}{diag}
 \DeclareMathOperator{\argmin}{arg\,min}
 
-\title{Solving NLPs on GPU: current state-of-the-art}
+\title{Nonlinear programming on GPU: current state-of-the-art}
 \author{TBD}
 \date{\today}
 
 \begin{document}
 \maketitle
+
+\begin{abstract}
+  Solving generic nonlinear programs requires the
+  successive solution of large-scale indefinite symmetric matrix.
+  The sparse factorization of such matrices relies
+  on expensive numerical pivoting operations
+  which are notoriously hard to parallelize on a GPU.
+  A workaround is to reformulate the successive KKT systems
+  in a form more amenable for the GPU, either by densifying
+  it using a null-space method or by reducing it down
+  to a symmetric positive-definite system, whose factorization using
+  Cholesky run efficiently on the GPU.
+  In this paper, we test three concurrent methods for solving
+  KKT systems on the GPU using the newly released cuDSS solver,
+  which implements the three sparse factorization routines LU, LDL
+  and Cholesky, all offering uncompromising performance on NVIDIA GPU.
+  We benchmark the three methods using various large-scale nonlinear programs,
+  taken from the PGLIB and COPS benchmarks.
+  We illustrate the advantages and the downsides of the three methods.
+  We find that GPUs shine to compute quick and dirty results down to a medium convergence tolerance
+  --- with a 10x speed-up compared to a state-of-the-art CPU routine --- but
+  with a limited robustness.
+\end{abstract}
+
 
 % \tableofcontents
 

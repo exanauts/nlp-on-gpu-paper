@@ -115,6 +115,7 @@ iterations.
 
 \begin{table}[!ht]
   \centering
+  \resizebox{.8\textwidth}{!}{
   \begin{tabular}{|l|rr|rr|rr|}
     \hline
     & \multicolumn{2}{c|}{\bf CPU (CHOLMOD)} & \multicolumn{2}{c|}{\bf CUDA (cuDSS)} & \multicolumn{2}{c|}{\bf accuracy} \\
@@ -127,6 +128,7 @@ iterations.
     $10^{-5}$ & 140 & 38.0 & 184 & 11.7 & $4.6 \times 10^{-4}$ & 0.06 \\
     \hline
   \end{tabular}
+  }
   \caption{Performance of the equality-relaxation
     strategy as we decrease the IPM tolerance $\varepsilon_{tol}$.
     \label{tab:sckkt:performance}.
