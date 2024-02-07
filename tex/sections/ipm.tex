@@ -1,10 +1,11 @@
 \section{Primal-dual interior-point method}
 The interior-point method (IPM) is among the most popular algorithm
-to solve nonlinear program. The basis of the algorithm is to
+to solve nonlinear programs. The basis of the algorithm is to
 reformulate the KKT conditions of the nonlinear program as a smooth
-system of nonlinear equations~\cite{nocedal_numerical_2006}. In a standard implementation, the
-resulting system is solved iteratively with a Newton method used in conjunction
-with a line-search method for globalization. In this section, we
+system of nonlinear equations using a homotopy method~\cite{nocedal_numerical_2006}.
+In a standard implementation, the
+resulting system is solved iteratively with a Newton method (used in conjunction
+with a line-search method for globalization). In this section, we
 give a brief description of a nonlinear program in \S\ref{sec:ipm:problem}
 and detail the Newton step solved at each IPM iteration in \S\ref{sec:ipm:kkt}.
 
@@ -17,7 +18,7 @@ We are interested in solving the following nonlinear program:
 \quad \text{subject to}\quad
 \left\{
   \begin{aligned}
-    & g(x) = 0 \; , ~ h(x) \leq 0 \\
+    & g(x) = 0 \; , ~ h(x) \leq 0 \; , \\
       & x \geq 0  \; ,
   \end{aligned}
 \right.
@@ -30,30 +31,28 @@ In addition, the variable $x$ is subject to simple bounds $x \geq 0$.
 In what follows, we suppose that the functions $f, g, h$ are smooth
 and twice differentiable.
 
-By introducing a set of slack variables $s \geq 0$, the problem
-\eqref{eq:problem} is equivalent to
+We reformulate \eqref{eq:problem} using slack variables $s \geq 0$
+into the equivalent formulation
 \begin{equation}
   \label{eq:slack_problem}
     \min_{x \in \mathbb{R}^n, s \in \mathbb{R}^{m_i}} \;  f(x)
     \quad \text{subject to} \quad
     \left\{
   \begin{aligned}
-    & g(x) = 0 \; , ~ h(x) + s = 0 \\
+    & g(x) = 0 \; , ~ h(x) + s = 0 \; , \\
       & x \geq 0  \; , ~ s \geq 0  \; .
   \end{aligned}
   \right.
 \end{equation}
-Using the formulation~\eqref{eq:slack_problem}, the inequality constraints
+In~\eqref{eq:slack_problem}, the inequality constraints
 are directly encoded inside the variable bounds.
 
-In \eqref{eq:slack_problem},
-we note by $y \in \mathbb{R}^{m_e}$ the multipliers associated
+We note by $y \in \mathbb{R}^{m_e}$ the multipliers associated
 to the equality constraints and $z \in \mathbb{R}^{m_i}$ the multipliers
 associated to the inequality constraints. Similarly, we note
 by $(u, v) \in \mathbb{R}^{n + m_i}$ the multipliers associated
 respectively to the bounds on the variables $x$ and the slacks $s$.
-Using the dual multipliers $(y, z, v, w)$,
-the Lagrangian of \eqref{eq:slack_problem} writes out
+Using the multipliers $(y, z, v, w)$, the Lagrangian of \eqref{eq:slack_problem} writes out
 \begin{equation}
   \label{eq:lagrangian}
   L(x, s; y, z, u, v) = f(x) + y^\top g(x) + z^\top \big(h(x) +s\big)
@@ -63,8 +62,8 @@ The KKT conditions of \eqref{eq:slack_problem} are:
 \begin{subequations}
   \label{eq:kktconditions}
     \begin{align}
-      & \nabla f(x) + \nabla g(x)^\top y + \nabla h(x)^\top z - v = 0 \\
-      & z - w = 0 \\
+      & \nabla f(x) + \nabla g(x)^\top y + \nabla h(x)^\top z - u = 0 \\
+      & z - v = 0 \\
       & g(x) = 0 \\
       & h(x) + s = 0 \\
       \label{eq:kktconditions:compx}
@@ -73,19 +72,20 @@ The KKT conditions of \eqref{eq:slack_problem} are:
       & 0 \leq s \perp v \geq 0
     \end{align}
 \end{subequations}
-The notation $x \perp u$ is a shorthand to the complementarity
+The notation $x \perp u$ is a shorthand for the complementarity
 condition $x_i u_i = 0$ for all $i=1\cdots, n$.
 
 \subsection{Solving the KKT conditions with the interior-point method}
 \label{sec:ipm:kkt}
 The interior-point method aims at finding a stationary point
-associated to the KKT conditions~\eqref{eq:kktconditions}. However,
-the complementarity constraints \eqref{eq:kktconditions:compx}-\eqref{eq:kktconditions:comps}
-render the KKT conditions non-smooth, rendering difficult to find a method
-to solve the whole system~\eqref{eq:kktconditions}.
-IPM uses a homotopy continuation method to solve a simplified
+associated to the KKT conditions~\eqref{eq:kktconditions}.
+The complementarity constraints \eqref{eq:kktconditions:compx}-\eqref{eq:kktconditions:comps}
+render the KKT conditions non-smooth, rendering difficult the solution of
+the whole system~\eqref{eq:kktconditions}.
+Instead, IPM uses a homotopy continuation method to solve a simplified
 version of \eqref{eq:kktconditions}, parameterized by a barrier
-parameter $\mu > 0$. For positive $(x, s, u, v) > 0$, we solve the system
+parameter $\mu > 0$~\cite[Chapter 19]{nocedal_numerical_2006}.
+For positive $(x, s, u, v) > 0$, we solve the system
 \begin{equation}
   \label{eq:kkt_ipm}
   F_\mu(x, s, y, z, u, v) =
@@ -101,7 +101,7 @@ parameter $\mu > 0$. For positive $(x, s, u, v) > 0$, we solve the system
 \end{equation}
 where we have introduced the diagonal matrices $X = \diag(x_1, \cdots, x_n)$
 and $S = \diag(s_1, \cdots, s_{m_i})$.
-As we drive the barrier paramater to $0$, we recover the original
+As we drive the barrier parameter $\mu$ to $0$, we recover the original
 KKT conditions~\eqref{eq:kktconditions}.
 
 We note that at a fixed parameter $\mu$, the function $F_\mu(\cdot)$
@@ -114,16 +114,17 @@ $w_{k+1} = w_k + \alpha_k d_k$, with $d_k$ solution of the linear system
   \nabla_w F(w_k) d_k = -F(w_k) \; .
 \end{equation}
 The step $\alpha_k$ is computed using a line-search algorithm, in a way
-that ensures that the bounded variables remain positive: $(x_{k+1}, s_{k+1}, u_{k+1}, v_{k+1}) > 0$.
+that ensures that the bounded variables remain positive
+at the next primal-dual iterate: $(x_{k+1}, s_{k+1}, u_{k+1}, v_{k+1}) > 0$.
 Once the iterates are sufficiently closed to the central path,
 the IPM decreases the barrier term $\mu$ to find a solution closer to
 the original KKT conditions~\eqref{eq:kktconditions}.
 
 In IPM, the bulk of the workload is the computation of the Newton
 step \eqref{eq:newton_step}, which involves (i) evaluating the Jacobian
-$\nabla_w F_\mu(w_k)$ and (ii) solving the linear system.
-The Newton step~\eqref{eq:newton_step} can be explicited with
-the $6 \times 6$ system:
+$\nabla_w F_\mu(w_k)$ and (ii) solving the linear system to compute
+the next descent direction $d_k$.
+The Newton step~\eqref{eq:newton_step} expands as the $6 \times 6$ linear system:
 \begin{equation}
   \label{eq:kkt:unreduced}
   \tag{$K_3$}
@@ -156,11 +157,13 @@ the $6 \times 6$ system:
 \end{equation}
 where we have introduced the Hessian $W = \nabla^2_x L(w_k)$ and
 the two Jacobians $G = \nabla g(x_k)$, $H = \nabla h(x_k)$.
+In addition, we define $U := \diag(u_1, \cdots, u_n)$
+and $V = \diag(v_1, \cdots, v_{m_i})$.
 
 \paragraph{Augmented KKT system.}
-The system~\eqref{eq:kkt:unreduced} is not symmetric. For
-that reason it is usual to remove the blocks associated
-to the bounds multipliers $(u, v)$ and solve instead the equivalent
+The system~\eqref{eq:kkt:unreduced} is not symmetric.
+It is usual to remove the blocks associated
+to the bound multipliers $(u, v)$ and solve instead the equivalent
 symmetric $4 \times 4$ system, called the \emph{augmented KKT system}:
 \begin{equation}
   \label{eq:kkt:augmented}
@@ -197,7 +200,8 @@ $d_u = - X^{-1}(U d_x + X u_k - \mu e)$,
 $d_v = - S^{-1}(V d_s + S v_k - \mu e)$.
 
 The system \eqref{eq:kkt:augmented} is usually factorized using
-a inertia-revealing LBL factorization. The block diagonal term
+an inertia-revealing LBL factorization.
+Unfortunately, the block diagonal term
 $\Sigma_x$ and $\Sigma_s$ are usually poorly conditioned, preventing
 a solution with a Krylov iterative method.
 
@@ -232,21 +236,25 @@ Using the solution of the system~\eqref{eq:kkt:condensed},
 we recover the updates on the slacks and inequality multipliers with
 $d_s = -r_4 - Hd_x$ and $d_z = -r_2 - \Sigma_s d_s$.
 
+\paragraph{Iterative refinement.} TODO
+
 \subsection{Discussion}
-We have obtained three different formulations for the KKT system.
+We have obtained three different formulations for the KKT system
+appearing at each IPM iteration.
 The original formulation \eqref{eq:kkt:unreduced} is not symmetric, but
 has a better conditioning than the two alternatives \eqref{eq:kkt:augmented}
 and \eqref{eq:kkt:condensed}. For that reason, it is usually adopted
 in the iterative refinement step used to refine the solution returned by
 a direct solver~\cite{wachter2006implementation}. The second formulation~\eqref{eq:kkt:augmented} is
-used by default in mature nonlinear solvers~\cite{wachter2006implementation,waltz2006interior}. The KKT system
-is usually factorized using a LBL factorization: for sparse matrices, the Duff and Reid
+used by default in mature nonlinear solvers~\cite{wachter2006implementation,waltz2006interior}.
+The system~\eqref{eq:kkt:augmented} is factorized using a LBL factorization: for sparse matrices, the Duff and Reid
 multifrontal algorithm~\cite{duff1983multifrontal} is usually the method of choice (as implemented in the linear solvers HSL
-MA27 and MA57~\cite{duff2004ma57}). On its end, the condensed KKT system~\eqref{eq:kkt:condensed}
-has been discarded in traditional solvers, as it is conditioning is higher
-than \eqref{eq:kkt:augmented}, leading to less accurate solution. In addition,
+MA27 and MA57~\cite{duff2004ma57}).
+On its end, the condensed KKT system~\eqref{eq:kkt:condensed}
+has been discarded in traditional solvers, as its conditioning is higher
+than \eqref{eq:kkt:augmented} implying less accurate solutions. In addition,
 the condensed matrix $K$ can potentially lead to additional fill-in
 in the direct factorization~\cite[Section 19.3, p.571]{nocedal_numerical_2006}.
-For that reason, only the solver Knitro~\cite{waltz2006interior} supports computing the descent direction
-with \eqref{eq:kkt:condensed}.
+For that reason, Knitro~\cite{waltz2006interior} is the only solver
+that supports computing the descent direction with \eqref{eq:kkt:condensed}.
 

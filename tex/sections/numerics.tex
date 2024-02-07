@@ -2,16 +2,99 @@
 
 \subsection{Implementation}
 
+\paragraph{IPM solver.}
+We have implemented the three KKT solvers in our nonlinear IPM solver
+MadNLP~\cite{shin2021graph}, using the {\tt AbstractKKTSystem} abstraction.
+MadNLP is able to deport most of the IPM algorithm on the GPU,
+at the exception of basic IPM operations used for the coordination
+(such as the filter line-search algorithm).
+
+\paragraph{Evaluation of the nonlinear models.}
+We use the modeler ExaModels.jl~\cite{shin2023accelerating}
+to implement all the nonlinear programs used in our benchmark.
+ExaModels.jl allows to deport the computation on the GPU, leading
+to fast evaluation of the first and second-order derivatives.
+
+\paragraph{Linear solvers.}
+We factorize the KKT systems assembled inside MadNLP
+using different sparse linear solvers, depending on the KKT formulation
+and the device we are using. Namely,
+\begin{itemize}
+  \item {\tt HSL ma27}: Implement the LBL factorization
+    on the CPU. Solve the augmented KKT system~\eqref{eq:kkt:augmented}.
+    This solver is used as the reference running on the CPU.
+  \item {\tt CHOLMOD}: Implement Cholesky factorization on the CPU
+    (using AMD ordering by default). Factorize the condensed
+    matrix $K_\gamma$ appearing in \eqref{eq:kkt:hykkt}.
+    This solver is used to assess the performance of the
+    Golub \& Greif strategy when running on the CPU.
+  \item {\tt cuDSS}: Unified interface to compute the Cholesky,
+    LU or LDL decompositions on an NVIDIA GPU. We use the Cholesky
+    factorization to decompose the same condensed matrix $K_\gamma$.
+    This newly released solver is the contender in our benchmark.
+\end{itemize}
+
+For the Krylov iterative method, we rely on the implementation
+provided in the Julia package Krylov.jl~\cite{montoison2023krylov},
+where all methods have been ported on the GPU.
+
+
 \subsection{Performance analysis on a large-scale instance}
 We first assess the performance of each KKT solver
-on a large-scale OPF instance: {\tt case9241pegase}. The model
-has a total of 85,568 variables, 82,679 equality constraints and 48,147
-inequality constraints, and is implemented using our package ExaModels.jl.
-It is acknowledge that this particular instance is challenging to solve
+on a large-scale OPF instance, taken from
+the PGLIB benchmark~\cite{babaeinejadsarookolaee2019power}: {\tt case9241pegase}.
+We have implemented the model in ExaModels.jl, to support
+the evaluation of the GPU: our formulation has
+a total of 85,568 variables, 82,679 equality constraints and 48,147
+inequality constraints.jl.
+It is acknowledged that this particular instance is challenging to solve
 with IPM, as it requires a non-trivial amount of primal-dual regularization
 to achieve convergence.
 Our previous work has pointed that the KKT solver is the current bottleneck
 in the numerical implementation~\cite{shin2023accelerating}.
+
+\subsubsection{Individual performance of the linear solvers}
+First, we assess the individual performance of the cuDSS solver when factorizing
+the matrix $K_\gamma$ at the first IPM iteration (here with $\gamma = 10^7$).
+We compare the analysis
+time, the factorization time and the triangular solve time with CHOLMOD.
+The results are displayed in Table~\ref{tab:linsol:time}. We benchmark the
+three decomposition implemented in cuDSS (Cholesky, LU and LDL), and look at
+the accuracy obtained in the backsolve. We observe the analysis phase
+is almost 10 times slower for cuDSS, compared to CHOLMOD. That operation
+has to be computed only once, meaning that cost is amortized if we run
+many IPM iterations. The refactorization is about twice as fast in cuDSS,
+with a time almost independent from the algorithm being used. The backsolve
+is 3 times slower, as the triangular solve algorithm does not parallelize
+well on a GPU. In term of accuracy, the quality of the solution remains on
+par with CHOLMOD, except for the LDL decomposition which lags behind by at least
+2 orders of magnitude.
+
+
+\begin{table}[!ht]
+  \centering
+  \resizebox{\textwidth}{!}{
+  \begin{tabular}{|lrrrr|}
+  \hline
+  & analysis (s) & factorization (s) & backsolve (s) & accuracy \\
+  \hline
+    cholmod        & 0.065 & $4.50\times 10^{-2}$& $2.23 \times 10^{-3}$& $1.84 \times 10^{-13}$ \\
+    cudss-cholesky & 0.441 & $1.93\times 10^{-2}$& $7.66 \times 10^{-3}$& $1.74 \times 10^{-13}$ \\
+    cudss-lu       & 0.454 & $2.03\times 10^{-2}$& $6.69 \times 10^{-3}$& $1.70 \times 10^{-13}$ \\
+    cudss-ldl      & 0.454 & $2.04\times 10^{-2}$& $6.95 \times 10^{-3}$& $3.36 \times 10^{-11}$ \\
+  \hline
+  \end{tabular}
+  }
+  \caption{Comparing the performance of cuDSS with CHOLMOD.
+    The matrix $K_\gamma$ is symmetric positive definite, with
+    a size $n = 85,568$. The matrix is super sparse: the number of nonzeroes is $1,057,200$ ($0.01$\%).
+    \label{tab:linsol:time}
+  }
+\end{table}
+
+
+
+
 
 \subsubsection{Null-space strategy}
 TODO

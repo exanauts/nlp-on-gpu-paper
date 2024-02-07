@@ -23,7 +23,7 @@ in recent GPUs~\cite{markidis2018nvidia}.
 (2) There is a growing interest in solving optimization
 problems in batch, for problems sharing the same
 structures but with different parameterization~\cite{amos2017optnet,pineda2022theseus}.
-(3) GPUs are offering umatched performance for automatic differentiation,
+(3) GPUs are offering unmatched performance for automatic differentiation,
 both for machine learning~\cite{jax2018github} and scientific computing applications \cite{enzyme2021}.
 In fact, most engineering problems are formulated with a limited
 number of common patterns repeated throughout the model: once
@@ -83,7 +83,7 @@ generations of GPUs. In particular, NVIDIA has released in November 2023
 a new sparse direct solver that implements a sparse LU, a sparse Cholesky
 and a sparse LDL factorizations: {\tt cuDSS}. Our
 preliminary benchmark has shown that this new solver is significantly
-faster than the previous sparse solvers interfaced in CUDA (as benchmarked in \cite{swirydowicz2021linear}).
+faster than the previous sparse solvers interfaced in CUDA~\cite{swirydowicz2021linear}.
 As it does not require expensive numerical pivoting operations, sparse Cholesky
 is easier to port on the GPU than the more complicated LU and LBL factorizations.
 Coupled with a GPU-accelerated automatic differentiation library, a Cholesky
