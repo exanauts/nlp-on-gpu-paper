@@ -18,9 +18,9 @@ else
         "Please set environment variable `PGLIB_PATH` to run benchmark with PowerModels.jl")
 end
 
-const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "opf")
+const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "opf")
 
-include(joinpath(@__DIR__, "..", "scripts", "opf", "model.jl"))
+include(joinpath(@__DIR__, "model.jl"))
 
 CUDA.allowscalar(false)
 

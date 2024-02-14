@@ -17,8 +17,9 @@ else
         "Please set environment variable `PGLIB_PATH` to run benchmark with PowerModels.jl")
 end
 
-const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "hybrid")
-include(joinpath(@__DIR__, "..", "scripts", "opf", "model.jl"))
+const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "hybrid")
+
+include(joinpath(@__DIR__, "model.jl"))
 
 function solve_hybrid(nlp, gamma; options...)
     solver = MadNLP.MadNLPSolver(

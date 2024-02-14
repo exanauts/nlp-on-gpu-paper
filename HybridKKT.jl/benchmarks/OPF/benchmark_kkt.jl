@@ -2,11 +2,11 @@
 using DelimitedFiles
 using Comonicon
 
-include(joinpath(@__DIR__, "common.jl"))
-include(joinpath(@__DIR__, "..", "scripts", "opf", "model.jl"))
+include(joinpath(@__DIR__, "..", "common.jl"))
+include(joinpath(@__DIR__, "model.jl"))
 
 # Setup #
-const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "kkt")
+const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "kkt")
 
 function benchmark_kkt(solver, ntrials)
     MadNLP.solve!(solver)

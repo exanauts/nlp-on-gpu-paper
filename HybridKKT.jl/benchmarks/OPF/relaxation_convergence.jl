@@ -12,7 +12,7 @@ using CUDA
 using HybridKKT
 
 if !@isdefined ac_power_model
-    include(joinpath(@__DIR__, "..", "scripts", "opf", "model.jl"))
+    include(joinpath(@__DIR__, "model.jl"))
 end
 
 if haskey(ENV, "PGLIB_PATH")

@@ -6,13 +6,6 @@ using MadNLPHSL
 using MadNLPGPU
 using HybridKKT
 
-if haskey(ENV, "PGLIB_PATH")
-    const PGLIB_PATH = ENV["PGLIB_PATH"]
-else
-    error("Unable to find path to PGLIB benchmark.\n"*
-        "Please set environment variable `PGLIB_PATH` to run benchmark with PowerModels.jl")
-end
-
 CUDA.allowscalar(false)
 
 function refresh_memory()
@@ -39,7 +32,7 @@ function build_sckkt_solver(nlp; options...)
     )
 end
 
-function build_hckkt_solver(nlp, gamma; options...)
+function build_hckkt_solver(nlp; gamma=1e7, options...)
     solver = MadNLP.MadNLPSolver(
         nlp;
         kkt_system=HybridKKT.HybridCondensedKKTSystem,
