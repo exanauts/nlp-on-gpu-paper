@@ -15,6 +15,7 @@ struct HybridCondensedKKTSystem{T, VT, MT, QN, VI, VI32, VInd, LS, LS2, EXT} <: 
     # Jacobian of equality constraints
     G_csc::MT
     G_csc_map::Union{Nothing, VI}
+    ind_eq_jac::Union{Nothing, VI}
 
     # Schur-complement operator
     S::SchurComplementOperator{T,VT,MT,LS}
@@ -131,10 +132,12 @@ function MadNLP.create_kkt_system(
 
     jt_csc, jt_csc_map = MadNLP.coo_to_csc(jt_coo)
     hess_com, hess_csc_map = MadNLP.coo_to_csc(hess_raw)
-    aug_com, dptr, hptr, jptr = MadNLP.build_condensed_aug_symbolic(
-        hess_com,
-        jt_csc
-    )
+    init_condensation = CUDA.@elapsed begin
+        aug_com, dptr, hptr, jptr = MadNLP.build_condensed_aug_symbolic(
+            hess_com,
+            jt_csc
+        )
+    end
 
     # Build Jacobian of equality constraints
     jac_coo = SparseMatrixCOO(
@@ -143,14 +146,17 @@ function MadNLP.create_kkt_system(
         Vector(jac_sparsity_J),
         Vector(jac),
     )
-    G_csc_, G_csc_map_ = _extract_subjacobian(jac_coo, Vector(ind_eq))
+    G_csc_, G_csc_map_, ind_eq_jac_ = _extract_subjacobian(jac_coo, Vector(ind_eq))
     MT = typeof(hess_com)
     G_csc = MT(G_csc_)
     G_csc_map = VI(G_csc_map_)
+    ind_eq_jac = VI(ind_eq_jac_)
 
     gamma = Ref{T}(1000)
 
-    linear_solver = linear_solver(aug_com; opt = opt_linear_solver)
+    init_linear_solver = CUDA.@elapsed begin
+        linear_solver = linear_solver(aug_com; opt = opt_linear_solver)
+    end
 
     buf1 = VT(undef, n)
     S = SchurComplementOperator(linear_solver, G_csc, buf1)
@@ -164,12 +170,14 @@ function MadNLP.create_kkt_system(
         :time_cg=>0.0,
         :time_backsolve=>0.0,
         :time_condensation=>0.0,
+        :time_init_condensation=>init_condensation,
+        :time_init_linear_solver=>init_linear_solver,
     )
 
     return HybridCondensedKKTSystem(
         hess, hess_raw, hess_com, hess_csc_map,
         jac, jt_coo, jt_csc, jt_csc_map,
-        G_csc, G_csc_map,
+        G_csc, G_csc_map, ind_eq_jac,
         S,
         gamma,
         quasi_newton,
@@ -200,7 +208,6 @@ function MadNLP.is_inertia_correct(kkt::HybridCondensedKKTSystem, num_pos, num_z
 end
 
 # mul!
-# TODO: problem with synchronization
 function LinearAlgebra.mul!(w::MadNLP.AbstractKKTVector{T}, kkt::HybridCondensedKKTSystem, x::MadNLP.AbstractKKTVector, alpha, beta) where T
     n = size(kkt.hess_com, 1)
     m = size(kkt.jt_csc, 2)
@@ -218,21 +225,14 @@ function LinearAlgebra.mul!(w::MadNLP.AbstractKKTVector{T}, kkt::HybridCondensed
 
     wz_ineq = view(wz, kkt.ind_ineq)
     xz_ineq = view(xz, kkt.ind_ineq)
-    # wz_ineq = kkt.buffer4
-    # xz_ineq = kkt.buffer5
-
-    # index_copy!(xz_ineq, xz, kkt.ind_ineq)
 
     mul!(wx, Symmetric(kkt.hess_com, :L), xx, alpha, beta)
 
     mul!(wx, kkt.jt_csc, xz, alpha, one(T))
     mul!(wz, kkt.jt_csc', xx, alpha, beta)
-    # index_copy!(wz_ineq, wz, kkt.ind_ineq)
     axpy!(-alpha, xs, wz_ineq)
 
     ws .= beta.*ws .- alpha.* xz_ineq
-
-    # index_copy!(wz, kkt.ind_ineq, wz_ineq)
 
     MadNLP._kktmul!(w,x,kkt.reg,kkt.du_diag,kkt.l_lower,kkt.u_lower,kkt.l_diag,kkt.u_diag, alpha, beta)
     return w
@@ -245,7 +245,7 @@ MadNLP.get_jacobian(kkt::HybridCondensedKKTSystem) = kkt.jac
 function MadNLP.compress_jacobian!(kkt::HybridCondensedKKTSystem)
     fill!(nonzeros(kkt.jt_csc), 0.0)
     MadNLP.transfer!(kkt.jt_csc, kkt.jt_coo, kkt.jt_csc_map)
-    nonzeros(kkt.G_csc) .= kkt.jac[kkt.G_csc_map]
+    transfer_coef!(kkt.G_csc, kkt.G_csc_map, kkt.jac, kkt.ind_eq_jac)
     return
 end
 
@@ -371,10 +371,13 @@ function MadNLP.solve_refine_wrapper!(
     # Compute backsolve's error
     copyto!(full(w), full(p))
     mul!(w, solver.kkt, d, -one(T), one(T))
-    norm_w = norm(full(w), Inf)
-    MadNLP.@debug(solver.logger, @sprintf("%4i %6.2e", 0, norm_w))
+    norm_w = norm(full(w), 2)
+    norm_b = norm(full(p), 2)
 
-    # push!(solver.kkt.etc[:accuracy], norm_w)
+    residual_ratio = norm_w / (1.0 + norm_b)
+    MadNLP.@debug(solver.logger, @sprintf("%4i %6.2e", 0, residual_ratio))
+
+    push!(solver.kkt.etc[:accuracy], residual_ratio)
     return true
 end
 

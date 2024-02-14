@@ -222,7 +222,7 @@ end
     verbose::Bool=false,
     quick::Bool=false,
     tol::Float64=1e-4,
-    gamma::Float64=1e8,
+    gamma::Float64=1e7,
     ntrials::Int=3,
 )
     if !isdir(RESULTS_DIR)

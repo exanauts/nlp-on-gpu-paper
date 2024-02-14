@@ -53,21 +53,31 @@ function _extract_subjacobian(jac::SparseMatrixCOO{Tv, Ti}, index_rows::Abstract
     G_i = zeros(Ti, nnzg)
     G_j = zeros(Ti, nnzg)
     G_v = zeros(Tv, nnzg)
+    ind_eq_jac = zeros(Int, nnzg)
 
     k, cnt = 1, 1
     for (i, j) in zip(jac.I, jac.J)
         if is_row_selected[i]
             G_i[cnt] = new_index[i]
             G_j[cnt] = j
-            G_v[cnt] = k
+            ind_eq_jac[cnt] = k
             cnt += 1
         end
         k += 1
     end
 
     G = sparse(G_i, G_j, G_v, nrows, n)
-    mapG = convert.(Int, nonzeros(G))
+    G.nzval .= 1:nnz(G)
 
-    return G, mapG
+    # build inverse mapping between jac_coo and G_csc
+    mapG = zeros(Int, nnzg)
+    k = 0
+    for (i, j) in zip(jac.I, jac.J)
+        if is_row_selected[i]
+            mapG[k += 1] = G[new_index[i], j]
+        end
+    end
+
+    return G, mapG, ind_eq_jac
 end
 

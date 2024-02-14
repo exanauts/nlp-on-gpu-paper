@@ -29,6 +29,15 @@ function fixed!(dest::AbstractVector{T}, idx::AbstractVector{Ti}, val::T) where 
     end
 end
 
+function transfer_coef!(G::SparseMatrixCSC, map::Vector{Int}, coefs::Vector{Tv}, ind_eq) where Tv
+    valsG = nonzeros(G)
+    fill!(valsG, zero(Tv))
+    for k in 1:length(map)
+        valsG[map[k]] += coefs[ind_eq[k]]
+    end
+    return
+end
+
 #=
     KA implementation.
 =#
