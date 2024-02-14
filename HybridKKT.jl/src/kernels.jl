@@ -78,3 +78,16 @@ function fixed!(dest::CuVector{T}, idx::CuVector{Ti}, val::T) where {T, Ti<:Inte
     KernelAbstractions.synchronize(CUDABackend())
 end
 
+@kernel function _transfer_coef_kernel!(valsG, to_map, valJ, fr_map)
+    k = @index(Global, Linear)
+    @inbounds begin
+        Atomix.@atomic valsG[to_map[k]] += valJ[fr_map[k]]
+    end
+end
+function transfer_coef!(G::CUSPARSE.CuSparseMatrixCSC, map::CuVector{Int}, coefs::CuVector{Tv}, ind_eq) where Tv
+    valsG = nonzeros(G)
+    fill!(valsG, zero(Tv))
+    _transfer_coef_kernel!(CUDABackend())(valsG, map, coefs, ind_eq; ndrange=length(map))
+    return
+end
+

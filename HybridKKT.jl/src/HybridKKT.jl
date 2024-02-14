@@ -12,6 +12,7 @@ import MadNLP: SparseMatrixCOO, full
 
 using CUDA
 using KernelAbstractions
+import Atomix
 
 export HybridCondensedKKTSystem
 

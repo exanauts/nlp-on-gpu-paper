@@ -15,8 +15,9 @@ function MadNLP.compress_jacobian!(kkt::HybridCondensedKKTSystem{T, VT, MT}) whe
         MadNLPGPU._transfer!(CUDABackend())(kkt.jt_csc.nzVal, kkt.ext.jt_csc_ptr, kkt.ext.jt_csc_ptrptr, kkt.jt_coo.V; ndrange = length(kkt.ext.jt_csc_ptrptr)-1)
     end
     KernelAbstractions.synchronize(CUDABackend())
-    # TODO: check for potential race condition
-    copyto!(view(nonzeros(kkt.G_csc), kkt.G_csc_map), view(kkt.jac, kkt.ind_eq_jac))
+    if length(kkt.ind_eq) > 0
+        transfer_coef!(kkt.G_csc, kkt.G_csc_map, kkt.jac, kkt.ind_eq_jac)
+    end
 end
 
 # N.B: we use the custom function implemented in MadNLPGPU
