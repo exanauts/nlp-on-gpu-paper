@@ -58,7 +58,7 @@ end
     nlp = ac_power_model(datafile)
 
     @info "Benchmark KKT with HSL"
-    solver = build_hsl_solver(nlp; max_iter=1, print_level=MadNLP.ERROR)
+    solver = build_ma27_solver(nlp; max_iter=1, print_level=MadNLP.ERROR)
     results[1, :] .= benchmark_kkt(solver, ntrials)
 
     @info "Benchmark KKT with SparseCondensedKKTSystem+CHOLMOD"

@@ -120,10 +120,17 @@ end
     end
     index = [parse_name(it) for it in instances]
 
-    if solver == "all" || solver == "hsl"
-        @info "[CPU] Benchmark SparseKKTSystem+HSL"
-        results = run_benchmark(build_hsl_solver, instances, ntrials; tol=tol, print_level=print_level)
+    if solver == "all" || solver == "ma27"
+        @info "[CPU] Benchmark SparseKKTSystem+ma27"
+        results = run_benchmark(build_ma27_solver, instances, ntrials; tol=tol, print_level=print_level)
         output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-hsl-ma27.csv")
+        writedlm(output_file, [index results])
+    end
+
+    if solver == "all" || solver == "ma57"
+        @info "[CPU] Benchmark SparseKKTSystem+ma57"
+        results = run_benchmark(build_ma57_solver, instances, ntrials; tol=tol, print_level=print_level)
+        output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-hsl-ma57.csv")
         writedlm(output_file, [index results])
     end
 

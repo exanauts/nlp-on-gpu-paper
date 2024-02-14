@@ -14,10 +14,18 @@ function refresh_memory()
     return
 end
 
-function build_hsl_solver(nlp; options...)
+function build_ma27_solver(nlp; options...)
     return MadNLPSolver(
         nlp;
         linear_solver=Ma27Solver,
+        options...,
+    )
+end
+
+function build_ma57_solver(nlp; options...)
+    return MadNLPSolver(
+        nlp;
+        linear_solver=Ma57Solver,
         options...,
     )
 end
