@@ -103,7 +103,9 @@ version = "0.4.2"
 
 [[deps.COPSBenchmark]]
 deps = ["Ipopt", "JuMP", "Random"]
-path = "../../COPSBenchmark.jl"
+git-tree-sha1 = "699e075a957c094ad4001b55ed3573e583e430d7"
+repo-rev = "fp/hybrid"
+repo-url = "https://github.com/MadNLP/COPSBenchmark.jl"
 uuid = "3c263af4-7bba-497b-afe4-00c59a0a48a5"
 version = "0.1.0"
 
@@ -654,13 +656,18 @@ version = "0.5.13"
 
 [[deps.MadNLP]]
 deps = ["Libdl", "LinearAlgebra", "Logging", "MathOptInterface", "NLPModels", "Pkg", "Printf", "SolverCore", "SparseArrays", "SuiteSparse"]
-path = "../../MadNLP.jl"
+git-tree-sha1 = "4314f146f6b4cbbe0968e2a8b129cce2d7c8dda8"
+repo-rev = "fp/hybrid"
+repo-url = "https://github.com/MadNLP/MadNLP.jl.git"
 uuid = "2621e9c9-9eb4-46b1-8089-e8c72242dfb6"
 version = "0.7.0"
 
 [[deps.MadNLPGPU]]
 deps = ["AMD", "CUDA", "CUDSS", "CUSOLVERRF", "KernelAbstractions", "LinearAlgebra", "MadNLP", "MadNLPTests", "SparseArrays"]
-path = "../../MadNLP.jl/lib/MadNLPGPU"
+git-tree-sha1 = "8cca9367b4ad8b4a561075d8435c48bb7b50be6c"
+repo-rev = "fp/hybrid"
+repo-subdir = "lib/MadNLPGPU"
+repo-url = "https://github.com/MadNLP/MadNLP.jl.git"
 uuid = "d72a61cc-809d-412f-99be-fd81f4b8a598"
 version = "0.6.0"
 
