@@ -89,6 +89,7 @@ par with CHOLMOD, except for the LDL decomposition which lags behind by at least
     The matrix $K_\gamma$ is symmetric positive definite, with
     a size $n = 85,568$. The matrix is super sparse: the number of nonzeroes is $1,057,200$ ($0.01$\%).
     \label{tab:linsol:time}
+    (A30 GPU)
   }
 \end{table}
 
@@ -147,6 +148,7 @@ the algorithm.
     to the primal-dual regularization performed inside the IPM algorithm,
     applied when the matrix $K_\gamma$ is not positive definite.
     \label{fig:hybrid:gamma}
+    (A30 GPU)
   }
 \end{figure}
 
@@ -217,7 +219,7 @@ iterations.
     and on the GPU (using cuDSS). We display the
     relative errors on the objective $\delta_{obj} = (f(x_{hsl}^\sharp) - f(x_{sc}^\sharp))/f(x_{hsl}^\sharp)$
     and on the primal solution $\delta_x = \|x_{hsl}^\sharp - x_{sc}^\sharp\|_\infty
-    / \|x_{hsl}^\sharp\|_\infty$.
+    / \|x_{hsl}^\sharp\|_\infty$. (A30 GPU)
   }
 \end{table}
 
@@ -247,7 +249,7 @@ profile, we highlight the bottlenecks of each KKT solvers.
     \end{tabular}
   }
   \end{minipage}
-  \caption{Performance profile}
+  \caption{Performance profile (A30 GPU)}
 \end{figure}
 
 
@@ -268,7 +270,7 @@ The results are displayed in Table~\ref{tab:opf:benchmark}.
 \begin{table}[!ht]
   \centering
   \resizebox{\textwidth}{!}{
-		\begin{tabular}{|l|rrrr|rrrr|rrrr|}
+		\begin{tabular}{|l|rrr >{\bfseries}r|rrr >{\bfseries}r|rrr >{\bfseries}r|}
 			\hline
 & \multicolumn{4}{c|}{\bf HSL ma27} &
 			\multicolumn{4}{c|}{\bf eq. relaxation+cuDSS} &
@@ -284,7 +286,7 @@ The results are displayed in Table~\ref{tab:opf:benchmark}.
 			\hline
 			2000\_goc & 38 & 0.11 & 0.61 & 0.93 & 42 & 0.03 & 0.08 & 0.36 & 38 & 0.04 & 0.13 & 0.43 \\
 			2312\_goc & 40 & 0.08 & 0.56 & 0.83 & 47 & 0.03 & 0.11 & 0.38 & 38 & 0.04 & 0.18 & 0.47 \\
-			2742\_goc & 122 & 0.42 & 3.68 & 7.30 & 153 & 0.18 & 0.57 & 11.06 & NA & NA & NA & NA \\
+			2742\_goc & 122 & 0.42 & 3.68 & 7.30 & 153 & 0.18 & 0.57 & 11.06 & - & - & - & - \\
 			2869\_pegase & 52 & 0.38 & 1.03 & 1.75 & 70 & 0.06 & 0.19 & 0.63 & 51 & 0.05 & 0.26 & 0.67 \\
 			3022\_goc & 49 & 0.16 & 0.87 & 1.30 & 50 & 0.04 & 0.15 & 0.49 & 47 & 0.04 & 0.20 & 0.56 \\
 			\hline
@@ -307,38 +309,40 @@ The results are displayed in Table~\ref{tab:opf:benchmark}.
 			\hline
 		\end{tabular}
   }
-  \caption{OPF benchmark \label{tab:opf:benchmark}, solved with a tolerance of {\tt tol=1e-4}}
+  \caption{OPF benchmark \label{tab:opf:benchmark}, solved with a tolerance {\tt tol=1e-4} (A30 GPU)}
 \end{table}
 
 
 \subsection{Benchmark on COPS instances}
 
+
 \begin{table}[!ht]
   \centering
   \resizebox{\textwidth}{!}{
-    \begin{tabular}{|l|rrr|rrr|rrr|rrr|rrr|}
+    \begin{tabular}{|l|rr >{\bfseries}r|rr >{\bfseries}r|rr >{\bfseries}r|rr >{\bfseries}r|rr >{\bfseries}r|}
     \hline
     & \multicolumn{3}{c|}{\bf HSL ma27} &
 			\multicolumn{3}{c|}{\bf SCKKT+cholmod} &
-			\multicolumn{3}{c|}{\bf SCKKT+cudss} &
-			\multicolumn{3}{c|}{\bf HyKKT+cudss} &
+			\multicolumn{3}{c|}{\bf SCKKT+cuDSS} &
+			\multicolumn{3}{c|}{\bf HyKKT+cholmod} &
 			\multicolumn{3}{c|}{\bf HyKKT+cuDSS} \\
     \hline
                     & it & lin & total & it & lin & total & it & lin & total & it & lin & total & it & lin & total \\
     \hline
-    bearing\_400    & 10 & 7.53 & {\bf 7.84}& 11 & 1.57 & {\bf 1.97}& 11 & 0.21 & {\bf 1.42}& 10 & 1.87 & {\bf 2.19}& 10 & 0.78 & {\bf 2.10}\\
-    camshape\_6400  & 21 & 0.08 & {\bf 0.15}& 17 & 0.02 & {\bf 0.07}& 15 & 0.02 & {\bf 0.10}& 21 & 0.02 & {\bf 0.09}& 18 & 0.03 & {\bf 0.13}\\
-    elec\_400       & 185 & 72.77 & {\bf 80.12}& 118 & 10.64 & {\bf 13.55}& 127 & 7.63 & {\bf 14.78}& 98 & 8.25 & {\bf 10.71}& 91 & 0.63 & {\bf 8.12}\\
-    gasoil\_3200    & 18 & 0.89 & {\bf 4.85}& 14 & 0.52 & {\bf 0.97}& 12 & 0.20 & {\bf 1.25}& 18 & 0.85 & {\bf 1.32}& 18 & 0.92 & {\bf 2.29}\\
-    marine\_1600    & 14 & 0.60 & {\bf 0.84}& 21 & 0.45 & {\bf 0.70}& 19 & 0.25 & {\bf 0.88}& 13 & 0.30 & {\bf 0.46}& 13 & 0.36 & {\bf 0.89}\\
-    pinene\_3200    & 10 & 1.08 & {\bf 6.22}& 30 & 2.29 & {\bf 3.70}& 23 & 0.68 & {\bf 2.85}& 10 & 2.74 & {\bf 3.30}& 10 & 3.86 & {\bf 5.35}\\
-    robot\_1600     & 61 & 0.94 & {\bf 1.26}& - & - & - & - & - & - & 57 & 0.52 & {\bf 0.75}& 42 & 0.26 & {\bf 1.45}\\
-    steering\_12800 & 17 & 0.79 & {\bf 1.06}& 15 & 0.24 & {\bf 0.65}& 13 & 0.10 & {\bf 1.65}& 12 & 0.50 & {\bf 0.77}& 11 & 0.54 & {\bf 2.32}\\
+			bearing\_400 & 10 & 6.89 & 7.26 & 11 & 1.77 & 2.16 & 11 & 0.08 & 0.83 & 10 & 2.39 & 2.72 & 10 & 0.33 & 1.10 \\
+			camshape\_6400 & 21 & 0.09 & 0.14 & 17 & 0.02 & 0.07 & 15 & 0.01 & 0.09 & 21 & 0.03 & 0.10 & 18 & 0.02 & 0.12 \\
+			elec\_400 & 185 & 68.46 & 77.85 & 118 & 11.02 & 14.29 & 127 & 4.12 & 6.99 & 98 & 8.91 & 11.75 & 92 & 0.43 & 3.10 \\
+			gasoil\_3200 & 18 & 0.88 & 7.30 & 14 & 0.51 & 0.96 & 12 & 0.06 & 0.82 & 18 & 0.88 & 1.36 & 18 & 0.29 & 1.22 \\
+			marine\_1600 & 14 & 0.61 & 0.94 & 21 & 0.44 & 0.69 & 19 & 0.09 & 0.51 & 13 & 0.32 & 0.48 & 13 & 0.12 & 0.51 \\
+			pinene\_3200 & 10 & 0.95 & 8.31 & 30 & 2.25 & 3.57 & 23 & 0.16 & 1.51 & 10 & 2.71 & 3.38 & 10 & 1.28 & 2.34 \\
+			robot\_1600 & 61 & 0.94 & 1.28 & - & - & - & - & - & - & 57 & 0.58 & 0.80 & 49 & 0.13 & 1.17 \\
+			steering\_12800 & 17 & 0.73 & 0.98 & 15 & 0.25 & 0.63 & 13 & 0.04 & 1.09 & 12 & 0.48 & 0.75 & 11 & 0.17 & 1.36 \\
     \hline
     \end{tabular}
   }
-  \caption{COPS benchmark , solved with a tolerance of {\tt tol=1e-4}\label{tab:cops:benchmark}}
+  \caption{COPS benchmark , solved with a tolerance {\tt tol=1e-4}\label{tab:cops:benchmark} (A30 GPU)}
 \end{table}
+
 
 \begin{table}
   \centering
