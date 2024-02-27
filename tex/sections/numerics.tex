@@ -94,11 +94,7 @@ par with CHOLMOD, except for the LDL decomposition which lags behind by at least
 \end{table}
 
 
-
-\subsubsection{Null-space strategy}
-TODO
-
-\subsubsection{Golub \& Greif strategy}
+\subsubsection{Tuning the Golub \& Greif strategy}
 In Figure~\ref{fig:hybrid:gamma} we depict the evolution of the number
 of CG iterations and accuracy, while increasing the parameter $\gamma$
 from $10^4$ to $10^8$. The associated table details the time spent
@@ -122,7 +118,7 @@ the algorithm.
 \begin{figure}[!ht]
   \centering
   \resizebox{\textwidth}{!}{
-  \begin{tabular}{|r|rrrrr|rrrrr|}
+  \begin{tabular}{|r|rrrr >{\bfseries}r|rrrr >{\bfseries}r|}
   \hline
   & \multicolumn{5}{c|}{\bf CHOLMOD (CPU)} & \multicolumn{5}{c|}{\bf cuDSS (CUDA)} \\
   \hline
@@ -153,8 +149,7 @@ the algorithm.
 \end{figure}
 
 
-
-\subsubsection{Equality relaxation strategy}
+\subsubsection{Tuning the equality relaxation strategy}
 We now analyze the numerical performance of the equality relaxation strategy described in
 Section~\ref{sec:kkt:sckkt}. The method solves the KKT system~\eqref{eq:kkt:condensed}
 using a direct solver, as the relaxed problem does not have any equality constraints.
@@ -224,35 +219,39 @@ iterations.
 \end{table}
 
 
-\subsubsection{Performance profile}
-Now, we look at a detailed performance profile that decomposes
-the total running time spent at each iteration. Using the performance
-profile, we highlight the bottlenecks of each KKT solvers.
+\subsubsection{Breakdown of the time spent in one IPM iteration}
+Now, we decompose the total wall running time spent at a single
+IPM iteration, for the different linear solvers we have at our disposal.
+We look at the 5th IPM iteration obtained when solving {\tt case9241pegase}.
+The results are displayed in Figure~\ref{fig:timebreakdown}. We observe
+that building the KKT system represents only a fraction of the computation time, compared
+to the factorization and the backsolve. The solver {\tt cuDSS} is significantly
+faster to refactorize the KKT system, compared to the other linear solvers running on the CPU (ma27 and CHOLMOD).
+The backsolve is the bottleneck operation for HyKKT, as it has to run a
+full CG algorithm to solve the system~\eqref{eq:kkt:schurcomplhykkt}. Hence, the performance
+of the HyKKT algorithm significantly improves if we manage to reduce the total
+number of iterations in the CG algorithm, e.g. by increasing the parameter $\gamma$.
 
 \begin{figure}[!ht]
   \centering
-  \begin{minipage}{.5\textwidth}
-  \includegraphics[width=\textwidth]{../figures/pprof.pdf} \qquad
-  \end{minipage}\hfill
-  \begin{minipage}{.5\textwidth}
-  \resizebox{.8\textwidth}{!}{
-    \begin{tabular}{lrrrr}
-      \toprule
-       & build & factorize & backsolve & accuracy \\
-      \midrule
+  \resizebox{.6\textwidth}{!}{
+    \begin{tabular}{|l|rrrr|}
+      \hline
+       & build (s) & factorize (s) & backsolve (s) & accuracy \\
+      \hline
       hsl & 2.86e-03 & 4.78e-02 & 1.74e-02 & 7.80e-07 \\
       sckkt-cpu & 5.41e-03 & 5.05e-02 & 1.96e-02 & 1.36e-04 \\
       hckkt-cpu & 5.20e-03 & 5.10e-02 & 3.02e-02 & 3.28e-03 \\
       sckkt-cuda & 1.55e-03 & 1.81e-02 & 1.01e-02 & 8.64e-06 \\
       hckkt-cuda & 1.40e-03 & 1.43e-02 & 5.22e-02 & 2.66e-03 \\
-      \bottomrule
+      \hline
     \end{tabular}
   }
-  \end{minipage}
-  \caption{Performance profile (A30 GPU)}
+  \includegraphics[width=.7\textwidth]{../figures/breakdown.pdf}
+  \caption{Breakdown of the time spent in one IPM iteration
+    for different linear solvers, when solving {\tt case9241pegase} (A30 GPU)
+  \label{fig:timebreakdown}}
 \end{figure}
-
-
 
 
 
@@ -264,8 +263,37 @@ the Golub \& Greif strategy and the equality relaxation strategy.
 Now, we run a full benchmark on difficult OPF instances taken
 from the PGLIB benchmark~\cite{babaeinejadsarookolaee2019power}.
 We compare our 3 GPU-accelerated KKT solvers with HSL ma27 running
-on the CPU.
-The results are displayed in Table~\ref{tab:opf:benchmark}.
+on the CPU. The results are displayed in Table~\ref{tab:opf:benchmark}
+for an IPM tolerance set to $10^{-4}$.
+We complement the table with a Dolan \& Moré performance profile~\cite{dolan2002benchmarking} displayed
+in Figure~\ref{fig:opf:pprof}.
+
+Overall, the performance of HSL ma27 is consistent with what was reported
+in \cite{babaeinejadsarookolaee2019power}. We note that HSL ma57 is slower
+than HSL ma27 on this particular benchmark, as the OPF instances are super-sparse:
+hence, the block elimitation algorithm implemented in HSL ma57 is not beneficial there
+\footnote{Personal communication with Ian Duff.}. In addition, we observe that
+the AD is not the bottleneck in that benchmark, as it contributes to less than 10\% of
+the running time on the CPU, and it parallelizes effectively on the GPU when we use ExaModels.
+
+The equality relaxation strategy gives good results overall, and is faster than
+the Golub \& Greif strategy on small and medium instances: indeed, the algorithm
+does not have to run a CG algorithm at each IPM iteration, limiting the number
+of backsolves to one. However, the method solves only a relaxation of the original
+problem, and suffers from the limited accuracy of the equality relaxation strategy:
+the algorithm converges in 811 iterations for {\tt 30000\_goc}, leading to a slower
+solution time than with HSL ma27.
+
+Regarding HyKKT, we manage to solve all the instances for $\gamma = 10^7$, limiting
+the need to tune the parameter $\gamma$ on that particular benchmark. The algorithm
+is significantly faster than HSL ma27, but it remains in average slightly slower
+than the equality relaxation strategy: the algorithm's weakness is the multiple
+backsolves computed at each IPM iteration. For example, compared
+to the other instances, the solution of {\tt 8387\_pegase} is impaired
+by a larger total number of CG iterations leading to a 4x slowdown compared
+to the equality relaxation strategy.
+Nevertheless, the performance of HyKKT are better on the largest instances,
+with almost a 8x speed-up compared to the reference HSL ma27.
 
 \begin{table}[!ht]
   \centering
@@ -309,11 +337,46 @@ The results are displayed in Table~\ref{tab:opf:benchmark}.
 			\hline
 		\end{tabular}
   }
-  \caption{OPF benchmark \label{tab:opf:benchmark}, solved with a tolerance {\tt tol=1e-4} (A30 GPU)}
+  \caption{OPF benchmark \label{tab:opf:benchmark}, solved with a tolerance {\tt tol=1e-4}. (A30 GPU)}
 \end{table}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=.6\textwidth]{../figures/pprof.pdf}
+  \caption{Performance profile for the PGLIB OPF benchmark, solved
+    with a tolerance {\tt tol=1e-4}.
+  \label{fig:opf:pprof}}
+\end{figure}
 
 
 \subsection{Benchmark on COPS instances}
+We have observed in the previous section that both the equality relaxation
+and the HyKKT algorithm give significant speed-up compared to HSL ma27.
+However, the OPF instances are specific nonlinear problems, known to be
+super-sparse. For that reason, we have analyzed the performance of
+the equality relaxation and the HyKKT strategies on the COPS benchmark,
+which gathers generic nonlinear programs.
+We look at the performance we get on the particular COPS instances used in
+the Mittelmann benchmark, widely used to benchmark nonlinear optimization
+solvers~\cite{mittelmann2002benchmark}.
+To illustrate the heterogeneity of the COPS instances compared to the
+previous OPF problems, we display in Figure~\ref{fig:cops:nnz} the sparsity pattern of the
+condensed matrix $K_\gamma$ for one OPF instance and for multiple
+COPS instances. We observe that some instances have a sparsity pattern
+similar to the OPF instance ({\tt bearing}) whereas some are fully dense ({\tt elec}).
+at the opposite, the optimal control instances ({\tt marine}, {\tt pinene}) are
+highly sparse and have highly structured Cholesky lower triangular factors.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=.9\textwidth]{../figures/sparsity_pattern.png}
+  \caption{Sparsity patterns for one OPF instance and for various
+    COPS problems. The first row displays the sparsity pattern
+    of $K_\gamma$, after AMD reordering. The second row displays
+    the sparsity pattern of the triangular factor computed by CHOLMOD.
+    \label{fig:cops:nnz}
+  }
+\end{figure}
 
 
 \begin{table}[!ht]

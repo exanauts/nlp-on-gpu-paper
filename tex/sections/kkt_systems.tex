@@ -144,6 +144,7 @@ direct-iterative method. The method solves the linear system
   \item Solve the Schur complement of \eqref{eq:kkt:hykkt} using a conjugate gradient (CG)
     algorithm to recover the dual descent direction:
     \begin{equation}
+      \label{eq:kkt:schurcomplhykkt}
       (G K_\gamma^{-1} G^\top) d_y = G K_\gamma^{-1} (\hat{r}_1 + \gamma G^\top \hat{r}_2) - \hat{r}_2 \; .
     \end{equation}
   \item Solve the system $K_\gamma d_x = \hat{r}_1 + \gamma G^\top \hat{r}_2 - G^\top d_y$
