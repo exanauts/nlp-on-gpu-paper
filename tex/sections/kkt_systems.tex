@@ -8,101 +8,10 @@ pivoting, sparse factorization algorithms are notoriously hard to implement
 on a GPU for that exact reason. In particular, previous works have
 shown that GPU-based linear solvers lag far behind their equivalent
 on the CPU to factorize the system~\eqref{eq:kkt:augmented}
-\cite{tasseff2019exploring,swirydowicz2021linear}. Two strategies
-have emerged to overcome this challenge: densify the solution
-of the KKT system~\cite{pacaud2022condensed} or use a sparse factorization that
-does not require numerical pivoting~\cite{regev2023hykkt,shin2023accelerating}.
-Interestingly, all methods are using the condensed KKT system~\eqref{eq:kkt:condensed}.
-
-\subsection{Null-space strategy}
-\label{sec:kkt:nullspace}
-The first strategy to solve the condensed KKT system~\eqref{eq:kkt:condensed}
-is to reduce it to a dense matrix. This
-method is known as a \emph{reduced Hessian method} in the
-terminology of the optimization community \cite{biegler1995reduced}
-and as a \emph{null-space strategy} in the linear algebra
-community~\cite[Section 6]{benzi2005numerical}.
-
-We suppose $G$ is full-rank.
-Then there exists a permutation matrix $P \in \mathbb{R}^{n \times n}$
-such that we can reorder the Jacobian of the equality constraint
-$G \in \mathbb{R}^{m_e \times n}$ as $GP = \begin{bmatrix}
-  G_d & G_u
-\end{bmatrix}$, where $G_d$ is a $m_e \times m_e$ nonsingular matrix.
-The matrix
-\begin{equation}
-  \label{eq:nullspace}
-  Z = P \begin{bmatrix}
-    - G_d^{-1} G_u \\ I
-  \end{bmatrix} \; ,
-\end{equation}
-is a basis for the null-space of the Jacobian $G$, as $GZ = 0$.
-In practice, the matrix $Z$ is never assembled explicitly.
-If a LU decomposition of $G_d$ is available, then we can
-implement $Z$ as a linear operator encoding the multiplications
-$Z x$ and $Z^\top y$.
-
-Interestingly, the null-space basis can be used to reduce the condensed
-KKT system~\eqref{eq:kkt:condensed}.
-
-\begin{proposition}[Reduced KKT system]
-  Let $Z$ be the null-space basis defined in \eqref{eq:nullspace}.
-  Let $\hat{p}_x$ be a particular solution satisfying $G \hat{p}_x = \hat{r}_2$.
-  Let $(p_x, p_y)$ be
-  solution of the condensed KKT system~\eqref{eq:kkt:condensed}.
-  Then $p_x= \hat{p}_x + Z p_u$, with $p_u$ solution of the \emph{reduced KKT system}
-  \begin{equation}
-    \label{eq:kkt:reduced}
-    \tag{$K_0$}
-    Z^\top K Z p_u =
-    Z^\top [\hat{r}_1 - K \hat{p}_x ] \; ,
-  \end{equation}
-  and $p_y$ is solution of the normal equation $G G^\top p_y = G (\hat{r}_1 - K p_x)$.
-\end{proposition}
-\begin{proof}
-  A solution $(p_x, p_y)$ of \eqref{eq:kkt:condensed} satisfies
-  \begin{equation}
-    \label{eq:proof:reduced1}
-    K p_x + G^\top p_y = \hat{r}_1 \; , \quad
-    G p_x = \hat{r}_1  \; .
-  \end{equation}
-  Using the particular solution $\hat{p}_x$, we define
-  $p_x = \hat{p}_x + Z p_u$. Replacing in \eqref{eq:proof:reduced1},
-  we get $K (\hat{p}_x + Z p_u) = \hat{r}_1 - G^\top p_y$.
-  Multiplying on the left by $Z^\top$ and using $Z^\top G^\top = 0$,
-  we recover the expression in \eqref{eq:kkt:reduced}.
-  The dual solution $p_y$ is solution of the overdetermined
-  system of equations $G^\top p_y = \hat{r}_1 - K p_x$.
-  Multiplying on the left by $G$, we get $G G^\top p_y =
-  G (\hat{r}_1 - K p_x)$.
-\end{proof}
-
-The reduced matrix $Z^\top K Z$ appearing in the reduced KKT system
-\eqref{eq:kkt:reduced} is usually dense, with dimension $(n-m_e) \times
-(n - m_e)$. For that reason, the null-space strategy is effective
-when the number of degrees of freedom $n - m_e$ is small.
-The matrix $Z^\top K Z$ has a higher conditioning than the original
-condensed matrix $K$, prohibiting a solution of \eqref{eq:kkt:reduced}
-with iterative method~\cite{gould2001solution}. For that reason
-it is recommended to assemble $Z^\top K Z$ explicitly. Our previous
-investigations have shown that if a LU factorization of $G_d$ is
-available, we can assemble $Z^\top K Z$ efficiently on the GPU
-using batched linear solves~\cite{pacaud2022condensed}.
-
-A limitation of the null-space strategy is that
-there exists no obvious permutation $P$ to build the null-space
-matrix~\eqref{eq:nullspace} for generic nonlinear programs. However, for certain applications the
-permutation is directly given by the structure of the problem
-(coordinate decomposition).
-Such problems usually arise in engineering, where one can split
-the variable $x$ into two sets consisting resp. of \emph{state variables} (dependent)
-and \emph{control variables} (independent). Classical applications
-are optimal control problems, optimal power flow (OPF) or PDE-constrained optimization.
-An alternative is to compute an orthonormal decomposition using a QR factorization
-to build the matrix $Z$, but such strategy is not effective in the
-large-scale regime.
-
-
+\cite{tasseff2019exploring,swirydowicz2021linear}. One strategy
+has emerged to overcome this challenge:
+use a sparse factorization that does not require numerical pivoting~\cite{regev2023hykkt,shin2023accelerating}.
+Interestingly, the two methods are leveraging the condensed KKT system~\eqref{eq:kkt:condensed}.
 
 \subsection{Golub \& Greif strategy}
 \label{sec:kkt:golubgreif}
@@ -167,24 +76,19 @@ $\gamma$ (\cite[Theorem 4]{regev2023hykkt}). The larger the $\gamma$, the less i
 TODO
 
 \subsection{Discussion}
-We have introduced three different algorithms to solve
-the KKT system on the GPU. On the contrary to classical CPU algorithm,
-the three methods do not require computing a sparse LBL factorization of the KKT
+We have introduced two algorithms to solve
+the KKT system on the GPU. On the contrary to classical CPU algorithms,
+the two methods do not require computing a sparse LBL factorization of the KKT
 system by using alternate reformulation based on the condensed KKT
 system~\eqref{eq:kkt:condensed}.
-The three methods have their advantages and their downsides.
 
-The first method is based on a null-space
-strategy and reduced the KKT system down to a dense matrix $Z^\top K Z$, easy
-to factorize on the GPU. The downside is that assembling the reduced
-matrix $Z^\top K Z$ can be challenging if the number of degrees of freedom
-is too high. The second strategy uses an augmented Lagrangian formulation
+The first strategy uses an augmented Lagrangian formulation
 of the KKT system. It requires a sparse Cholesky factorization (stable without numerical
 pivoting, hence favorable for the GPU) and uses it to solve the Schur-complement system
 using a CG algorithm. The performance of the method depends on a parameter $\gamma$, that
 has to be tuned independently. The larger the $\gamma$, the faster is the convergence
 in the CG algorithm, but the worst is the accuracy of the linear solve. Hence, a trade-off
-has to be found. Eventually the third method uses an equality relaxation strategy to
+has to be found. The second method uses an equality relaxation strategy to
 solve the condensed KKT system~\eqref{eq:kkt:condensed} directly. It just requires
 a sparse Cholesky solver to factorize~\eqref{eq:kkt:condensed}. However, the method
 solves a relaxation of the original problem~\eqref{eq:problem}, limiting the accuracy
