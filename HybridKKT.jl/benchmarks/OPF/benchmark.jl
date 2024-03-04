@@ -32,14 +32,16 @@ N_COLUMNS = Dict{Symbol, Int}(
 
 FULL_BENCHMARK = [
     "pglib_opf_case10000_goc.m",
+    "pglib_opf_case10192_epigrids.m",
     "pglib_opf_case10480_goc.m",
     "pglib_opf_case1354_pegase.m",
     "pglib_opf_case13659_pegase.m",
     "pglib_opf_case179_goc.m",
     "pglib_opf_case19402_goc.m",
     "pglib_opf_case2000_goc.m",
+    "pglib_opf_case20758_epigrids.m",
     "pglib_opf_case2312_goc.m",
-    # "pglib_opf_case24464_goc.m",
+    "pglib_opf_case24464_goc.m",
     "pglib_opf_case2742_goc.m",
     "pglib_opf_case2869_pegase.m",
     "pglib_opf_case30000_goc.m",
@@ -51,6 +53,9 @@ FULL_BENCHMARK = [
     "pglib_opf_case4837_goc.m",
     "pglib_opf_case4917_goc.m",
     "pglib_opf_case500_goc.m",
+    "pglib_opf_case5658_epigrids.m",
+    "pglib_opf_case7336_epigrids.m",
+    "pglib_opf_case78484_epigrids.m",
     "pglib_opf_case793_goc.m",
     "pglib_opf_case8387_pegase.m",
     "pglib_opf_case89_pegase.m",
@@ -103,6 +108,7 @@ function benchmark_sparse_condensed(nlp, ntrials; options...)
     solver = MadNLP.MadNLPSolver(
         nlp;
         kkt_system=MadNLP.SparseCondensedKKTSystem,
+        dual_initialized=true,
         equality_treatment=MadNLP.RelaxEquality,
         fixed_variable_treatment=MadNLP.RelaxBound,
         max_iter=1,
@@ -118,6 +124,7 @@ function benchmark_sparse_condensed(nlp, ntrials; options...)
         solver = MadNLP.MadNLPSolver(
             nlp;
             kkt_system=MadNLP.SparseCondensedKKTSystem,
+            dual_initialized=true,
             equality_treatment=MadNLP.RelaxEquality,
             fixed_variable_treatment=MadNLP.RelaxBound,
             options...,

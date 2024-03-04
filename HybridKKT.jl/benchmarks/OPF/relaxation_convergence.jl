@@ -53,6 +53,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
     solver = MadNLP.MadNLPSolver(
         nlp;
         kkt_system=MadNLP.SparseCondensedKKTSystem,
+        dual_initialized=true,
         equality_treatment=MadNLP.RelaxEquality,
         fixed_variable_treatment=MadNLP.RelaxBound,
         linear_solver=HybridKKT.CHOLMODSolver,
@@ -66,6 +67,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
         solver = MadNLP.MadNLPSolver(
             nlp;
             kkt_system=MadNLP.SparseCondensedKKTSystem,
+            dual_initialized=true,
             equality_treatment=MadNLP.RelaxEquality,
             fixed_variable_treatment=MadNLP.RelaxBound,
             linear_solver=HybridKKT.CHOLMODSolver,
@@ -94,6 +96,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
     solver = MadNLP.MadNLPSolver(
         nlp_gpu;
         kkt_system=MadNLP.SparseCondensedKKTSystem,
+        dual_initialized=true,
         equality_treatment=MadNLP.RelaxEquality,
         fixed_variable_treatment=MadNLP.RelaxBound,
         linear_solver=MadNLPGPU.CUDSSSolver,
@@ -107,6 +110,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
         solver = MadNLP.MadNLPSolver(
             nlp_gpu;
             kkt_system=MadNLP.SparseCondensedKKTSystem,
+            dual_initialized=true,
             equality_treatment=MadNLP.RelaxEquality,
             fixed_variable_treatment=MadNLP.RelaxBound,
             linear_solver=MadNLPGPU.CUDSSSolver,

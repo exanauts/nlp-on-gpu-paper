@@ -36,6 +36,7 @@ function build_sckkt_solver(nlp; options...)
         kkt_system=MadNLP.SparseCondensedKKTSystem,
         equality_treatment=MadNLP.RelaxEquality,
         fixed_variable_treatment=MadNLP.RelaxBound,
+        dual_initialized=true,
         options...,
     )
 end
