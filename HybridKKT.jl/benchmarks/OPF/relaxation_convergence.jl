@@ -29,6 +29,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
         mkpath(RESULTS_DIR)
     end
     datafile = joinpath(PGLIB_PATH, case)
+    tols = [1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8]
     nlp = ac_power_model(datafile)
 
     # Solve problem with HSL with good accuracy
@@ -49,7 +50,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
     #=
         CPU
     =#
-    results = zeros(4, 8)
+    results = zeros(length(tols), 8)
     solver = MadNLP.MadNLPSolver(
         nlp;
         kkt_system=MadNLP.SparseCondensedKKTSystem,
@@ -96,6 +97,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
     solver = MadNLP.MadNLPSolver(
         nlp_gpu;
         kkt_system=MadNLP.SparseCondensedKKTSystem,
+        tol=1e-5,
         dual_initialized=true,
         equality_treatment=MadNLP.RelaxEquality,
         fixed_variable_treatment=MadNLP.RelaxBound,
@@ -106,7 +108,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
         max_iter=1,
     )
     MadNLP.solve!(solver)
-    for (k, tol) in enumerate([1e-2, 1e-3, 1e-4, 1e-5])
+    for (k, tol) in enumerate(tols)
         solver = MadNLP.MadNLPSolver(
             nlp_gpu;
             kkt_system=MadNLP.SparseCondensedKKTSystem,
