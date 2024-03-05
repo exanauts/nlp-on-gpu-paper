@@ -306,34 +306,40 @@ with almost a 8x speed-up compared to the reference HSL ma27.
 			\hline
 			Case & it & AD & lin & total & it & AD & lin & total & it & AD & lin & total \\
 			\hline
-			89\_pegase & 30 & 0.00 & 0.02 & 0.03 & 34 & 0.02 & 0.05 & 0.16 & 30 & 0.03 & 0.06 & 0.18 \\
-			179\_goc & 43 & 0.01 & 0.04 & 0.06 & 46 & 0.03 & 0.05 & 0.18 & 43 & 0.03 & 0.06 & 0.21 \\
-			500\_goc & 35 & 0.01 & 0.09 & 0.14 & 36 & 0.03 & 0.04 & 0.18 & 35 & 0.03 & 0.06 & 0.21 \\
-			793\_goc & 31 & 0.02 & 0.11 & 0.17 & 40 & 0.03 & 0.06 & 0.21 & 31 & 0.03 & 0.09 & 0.24 \\
-			1354\_pegase & 45 & 0.06 & 0.33 & 0.54 & 58 & 0.04 & 0.09 & 0.35 & 42 & 0.04 & 0.14 & 0.41 \\
+89\_pegase & 30 & 0.00 & 0.02 & 0.03 & 28 & 0.02 & 0.03 & 0.13 & 30 & 0.03 & 0.06 & 0.17 \\
+179\_goc & 43 & 0.00 & 0.03 & 0.05 & 30 & 0.02 & 0.04 & 0.14 & 43 & 0.03 & 0.06 & 0.20 \\
+500\_goc & 35 & 0.01 & 0.08 & 0.12 & 36 & 0.02 & 0.04 & 0.19 & 35 & 0.03 & 0.06 & 0.20 \\
+793\_goc & 31 & 0.01 & 0.10 & 0.15 & 33 & 0.02 & 0.05 & 0.20 & 31 & 0.03 & 0.08 & 0.23 \\
+1354\_pegase & 42 & 0.03 & 0.29 & 0.42 & 44 & 0.04 & 0.08 & 0.32 & 42 & 0.04 & 0.14 & 0.39 \\
 			\hline
-			2000\_goc & 38 & 0.11 & 0.61 & 0.93 & 42 & 0.03 & 0.08 & 0.36 & 38 & 0.04 & 0.13 & 0.43 \\
-			2312\_goc & 40 & 0.08 & 0.56 & 0.83 & 47 & 0.03 & 0.11 & 0.38 & 38 & 0.04 & 0.18 & 0.47 \\
-			2742\_goc & 122 & 0.42 & 3.68 & 7.30 & 153 & 0.18 & 0.57 & 11.06 & - & - & - & - \\
-			2869\_pegase & 52 & 0.38 & 1.03 & 1.75 & 70 & 0.06 & 0.19 & 0.63 & 51 & 0.05 & 0.26 & 0.67 \\
-			3022\_goc & 49 & 0.16 & 0.87 & 1.30 & 50 & 0.04 & 0.15 & 0.49 & 47 & 0.04 & 0.20 & 0.56 \\
+2000\_goc & 38 & 0.05 & 0.57 & 0.79 & 36 & 0.03 & 0.07 & 0.31 & 38 & 0.03 & 0.13 & 0.42 \\
+2312\_goc & 38 & 0.05 & 0.50 & 0.69 & 38 & 0.03 & 0.10 & 0.35 & 38 & 0.03 & 0.18 & 0.46 \\
+2742\_goc & 121 & 0.27 & 3.52 & 5.22 & - & - & - & - & - & - & - & - \\
+2869\_pegase & 51 & 0.10 & 0.97 & 1.34 & 52 & 0.04 & 0.14 & 0.50 & 51 & 0.05 & 0.26 & 0.65 \\
+3022\_goc & 47 & 0.08 & 0.80 & 1.11 & 43 & 0.03 & 0.12 & 0.44 & 47 & 0.04 & 0.19 & 0.54 \\
 			\hline
-			3970\_goc & 45 & 0.41 & 1.84 & 2.67 & 46 & 0.04 & 0.15 & 0.60 & 44 & 0.05 & 0.23 & 0.72 \\
-			4020\_goc & 59 & 0.67 & 3.79 & 5.01 & 74 & 0.06 & 0.38 & 1.03 & 57 & 0.06 & 0.42 & 1.05 \\
-			4601\_goc & 66 & 0.80 & 2.86 & 4.24 & 70 & 0.06 & 0.25 & 0.83 & 66 & 0.07 & 0.39 & 1.04 \\
-			4619\_goc & 46 & 0.68 & 3.05 & 4.26 & 61 & 0.05 & 0.23 & 0.85 & 46 & 0.05 & 0.32 & 0.92 \\
-			4837\_goc & 56 & 0.75 & 2.41 & 3.76 & 57 & 0.05 & 0.30 & 0.81 & 55 & 0.06 & 0.38 & 0.95 \\
+3970\_goc & 44 & 0.12 & 1.71 & 2.35 & 44 & 0.04 & 0.14 & 0.57 & 44 & 0.04 & 0.23 & 0.70 \\
+4020\_goc & 57 & 0.17 & 3.62 & 4.41 & 68 & 0.06 & 0.36 & 1.00 & 57 & 0.06 & 0.41 & 1.02 \\
+4601\_goc & 66 & 0.20 & 2.79 & 3.70 & 71 & 0.06 & 0.22 & 0.82 & 66 & 0.06 & 0.38 & 1.01 \\
+4619\_goc & 46 & 0.16 & 2.90 & 3.67 & 54 & 0.04 & 0.20 & 0.77 & 46 & 0.05 & 0.32 & 0.89 \\
+4837\_goc & 55 & 0.18 & 2.26 & 3.12 & 57 & 0.05 & 0.33 & 0.89 & 55 & 0.05 & 0.37 & 0.93 \\
 			\hline
-			4917\_goc & 57 & 0.52 & 1.79 & 3.01 & 59 & 0.05 & 0.24 & 0.73 & 55 & 0.05 & 0.31 & 0.83 \\
-			8387\_pegase & 70 & 0.84 & 5.28 & 7.91 & 83 & 0.09 & 0.98 & 2.15 & 70 & 0.10 & 6.91 & 8.08 \\
-			9241\_pegase & 63 & 1.04 & 5.73 & 8.38 & 86 & 0.09 & 0.66 & 1.90 & 62 & 0.07 & 1.16 & 2.33 \\
-			9591\_goc & 65 & 1.11 & 11.09 & 13.84 & 70 & 0.07 & 0.54 & 1.65 & 64 & 0.08 & 0.87 & 2.06 \\
-			10000\_goc & 77 & 1.01 & 5.66 & 8.32 & 76 & 0.08 & 0.41 & 1.34 & 75 & 0.10 & 0.86 & 1.88 \\
+4917\_goc & 55 & 0.16 & 1.67 & 2.45 & 48 & 0.04 & 0.19 & 0.64 & 55 & 0.05 & 0.30 & 0.80 \\
+5658\_epigrids & 46 & 0.18 & 2.45 & 3.35 & 50 & 0.05 & 0.28 & 0.86 & 46 & 0.05 & 0.35 & 0.94 \\
+7336\_epigrids & 45 & 0.22 & 3.13 & 4.18 & 46 & 0.05 & 0.30 & 1.00 & 45 & 0.05 & 0.38 & 1.07 \\
+8387\_pegase & 70 & 0.44 & 4.99 & 7.07 & 67 & 0.08 & 0.82 & 1.93 & 70 & 0.08 & 6.86 & 7.97 \\
+9241\_pegase & 62 & 0.44 & 5.22 & 7.23 & 63 & 0.08 & 0.73 & 1.86 & 62 & 0.07 & 1.14 & 2.27 \\
 			\hline
-			10480\_goc & 66 & 1.04 & 11.47 & 14.59 & 73 & 0.09 & 0.84 & 2.25 & 65 & 0.08 & 1.21 & 2.61 \\
-			13659\_pegase & 58 & 1.04 & 7.00 & 10.17 & 93 & 0.12 & 1.45 & 3.13 & 57 & 0.07 & 1.16 & 2.65 \\
-			19402\_goc & 70 & 2.45 & 34.16 & 40.27 & 110 & 0.21 & 4.62 & 8.10 & 70 & 0.12 & 2.40 & 4.89 \\
-			30000\_goc & 136 & 5.04 & 44.28 & 56.39 & 811 & 1.40 & 54.66 & 72.38 & 128 & 0.25 & 4.02 & 7.22 \\
+9591\_goc & 64 & 0.45 & 10.40 & 12.31 & 69 & 0.07 & 0.60 & 1.78 & 64 & 0.08 & 0.87 & 2.03 \\
+10000\_goc & 75 & 0.44 & 5.26 & 7.31 & 56 & 0.08 & 0.30 & 1.10 & 75 & 0.09 & 0.86 & 1.88 \\
+10192\_epigrids & 50 & 0.42 & 6.94 & 8.80 & 52 & 0.08 & 0.46 & 1.55 & 50 & 0.08 & 0.79 & 1.87 \\
+10480\_goc & 65 & 0.54 & 10.71 & 13.15 & 71 & 0.09 & 0.93 & 2.37 & 65 & 0.08 & 1.21 & 2.57 \\
+13659\_pegase & 57 & 0.55 & 6.28 & 8.77 & 65 & 0.09 & 1.70 & 3.17 & 57 & 0.07 & 1.16 & 2.64 \\
+			\hline
+19402\_goc & 70 & 1.20 & 31.11 & 35.93 & 108 & 0.18 & 4.95 & 8.37 & 70 & 0.12 & 2.38 & 4.84 \\
+20758\_epigrids & 46 & 0.80 & 12.36 & 15.83 & 2838 & 4.63 & 325.55 & 407.69 & 46 & 0.08 & 1.83 & 3.65 \\
+30000\_goc & 130 & 2.66 & 37.02 & 45.88 & 158 & 0.34 & 5.56 & 9.19 & 130 & 0.24 & 4.05 & 7.23 \\
+78484\_epigrids & 96 & 7.17 & 166.35 & 192.70 & 128 & 0.48 & 15.97 & 27.49 & 96 & 0.41 & 9.75 & 19.58 \\
 			\hline
 		\end{tabular}
   }
@@ -351,21 +357,32 @@ with almost a 8x speed-up compared to the reference HSL ma27.
 
 \subsection{Benchmark on COPS instances}
 We have observed in the previous section that both the equality relaxation
-and the HyKKT algorithm give significant speed-up compared to HSL ma27.
-However, the OPF instances are specific nonlinear problems, known to be
-super-sparse. For that reason, we have analyzed the performance of
+and the HyKKT algorithm give significant speed-up for large-scale
+OPF instances, compared to HSL ma27.
+However, the OPF instances are specific nonlinear problems.
+For that reason, we have analyzed further the performance of
 the equality relaxation and the HyKKT strategies on the COPS benchmark,
-which gathers generic nonlinear programs.
-We look at the performance we get on the particular COPS instances used in
+which gathers generic nonlinear programs~\cite{dolan2004benchmarking}.
+In this section, we look at the performance we get on the particular COPS instances used in
 the Mittelmann benchmark, widely used to benchmark nonlinear optimization
 solvers~\cite{mittelmann2002benchmark}.
 To illustrate the heterogeneity of the COPS instances compared to the
 previous OPF problems, we display in Figure~\ref{fig:cops:nnz} the sparsity pattern of the
-condensed matrix $K_\gamma$ for one OPF instance and for multiple
-COPS instances. We observe that some instances have a sparsity pattern
-similar to the OPF instance ({\tt bearing}) whereas some are fully dense ({\tt elec}).
-at the opposite, the optimal control instances ({\tt marine}, {\tt pinene}) are
+condensed matrices $K_\gamma$ \eqref{eq:kkt:hykkt} for one OPF instance and for multiple
+COPS instances. We observe that some instances ({\tt bearing}) have a sparsity pattern
+similar to the OPF instance on the left, whereas some are fully dense ({\tt elec}).
+At the opposite, the optimal control instances ({\tt marine}, {\tt pinene}) are
 highly sparse and have highly structured Cholesky lower triangular factors.
+The results of the COPS benchmark are displayed in Table~\ref{tab:cops:benchmark}.
+
+As expected, the results are different than on the previous OPF benchmark.
+We observe that HyKKT+cuDSS and SCKKT+cuDSS outperform HSL ma27 on the dense instance {\tt elec}
+(25x speed-up) and {\tt bearing} (6x speed-up) --- an instance whose sparsity pattern
+is closed to the OPF. On the other instances, both HyKKT+cuDSS and SCKKT+cuDSS are
+on par with HSL ma27 and sometimes even slightly slower ({\tt steering}).
+In addition, the two solvers HyKKT+cholmod and SCKKT+cholmod offer approximatively
+the same performance as resp. HyKKT+cuDSS and SCKKT+cuDSS, indicating that these
+particular instances are less amenable for GPU acceleration.
 
 \begin{figure}[!ht]
   \centering
