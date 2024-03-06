@@ -1,0 +1,427 @@
+\section{Conditioning of the condensed KKT system}
+The condensed matrix $K$ is known to be ill-conditioned
+close to local optimum solution. That behavior is amplified
+for the matrix $K_\gamma$ as the parameter $\gamma$ can be large.
+Let's look at a generic system $Mx = b$. Without
+further assumption the relative error after a perturbation
+$\Delta b$ on the right-hand-side is bounded by
+\begin{subequations}
+  \label{eq:cond:defaultbond}
+\begin{equation}
+  \| \Delta x \| \leq \| M^{-1} \| \| \Delta b \| \;, \quad
+  \frac{\| \Delta x \| }{\| x \|} \leq \cond(M) \, \frac{\| \Delta b \|}{\|b \|} \;.
+\end{equation}
+When the matrix is perturbed by $\Delta M$, the perturbed solution
+$\tilde{x}$ satisfies $\Delta x = \tilde{x}- x =  - (M + \Delta M)^{-1} \Delta M \tilde{x}$.
+If $\cond(M) \approx \cond(M + \Delta M)$, the error $\Delta x$ satisfies
+$M \Delta x \approx -\Delta M x$ (neglecting second-order terms), giving the bounds
+\begin{equation}
+  \| \Delta x \| \leq \|M^{-1}\| \|\Delta M \| \|x \| \; , \quad
+  \frac{\| \Delta x \|}{\|x\|} \leq \cond(M)\frac{\|\Delta M \|}{\|M\|} \; .
+\end{equation}
+\end{subequations}
+Hence, it is legitimate to investigate the impact of the ill-conditioning
+when solving the condensed system~\eqref{eq:kkt:condensed} using
+either the equality-relaxation strategy or the HyKKT strategy.
+We will see that the we can found tighter bounds than \eqref{eq:cond:defaultbond}
+for the relative error, using the structured ill-conditioning of the condensed matrix $K$.
+We base our following analysis on \cite{wright1998ill}, where
+the author has put a particular emphasis on the condensed KKT
+system~\eqref{eq:kkt:condensed} we are interested in. We generalize her results to the
+matrix $K_\gamma$, which incorporates both equality and inequality
+constraints.
+
+To clarify the notations, we suppose that the primal variable
+$x$ is unconstrained, leaving only the slack $s$ with bounded values.
+This is equivalent to redefine the inequality constraints
+in \eqref{eq:problem} so as to include
+the bounds on the variable $x$: $\bar{h}(x) \leq 0$ with $\bar{h}(x) = (h(x), -x)$.
+
+\subsection{Centrality conditions}
+We start this paragraph by recalling important results from
+\cite{wright2001effects}.
+Let $p = (x, s, y, z)$ the current primal-dual iterate,
+and $p^\star$ a solution of the KKT conditions~\eqref{eq:kktconditions}.
+We note $\delta(p, v) = \| (p, v) - (p^\star, v^\star) \|$ the Euclidean distance to the
+primal-dual stationary point $p^\star$.
+From \cite[Theorem 2.2]{wright2001effects}, we have the following bounds
+if $p^\star$ satisfies the Assumptions~\ref{hyp:ipm} and $v > 0$:
+\begin{equation}
+  \delta(p, v) = \Theta\left( \left\Vert \begin{bmatrix}
+      \nabla_p L(p, v) \\ \min(v, s)
+  \end{bmatrix}
+  \right\Vert \right) \; .
+\end{equation}
+For $(s, v) > 0$, we define the \emph{duality measure} $\Xi(s, v)$ as the mapping
+\begin{equation}
+  \Xi(s, v) = s^\top v / m_i \; .
+\end{equation}
+We suppose the iterates $(p, v)$ satisfies the \emph{centrality conditions}
+\begin{subequations}
+  \label{eq:centralitycond}
+  \begin{align}
+    & \| \nabla_p \mathcal{L}(p, v) \| \leq C \; \Xi(s, v) \;,  \\
+    \label{eq:centralitycond:complement}
+    & (s, v) > 0 \;,\quad s_i v_i \geq \alpha \, \Xi(s, v) \quad \forall i =1, \cdots, m_i \; ,
+  \end{align}
+\end{subequations}
+for some constant $C > 0$ and $\alpha \in (0, 1)$.
+Conditions~\eqref{eq:centralitycond:complement} ensures that the products
+$s_i v_i$ are not too disparate in the diagonal term $D_s$.
+We note that this condition is satisfied in Ipopt (see \cite[Equation (16)]{wachter2006implementation}).
+
+\begin{proposition}[\cite{wright2001effects}, Lemma 3.2]
+  \label{prop:cond:boundslack}
+  Suppose $p^\star$ satisfies the assumptions~\ref{hyp:ipm},
+  and the current primal-dual iterate $(p, v)$ satisfies the centrality
+  conditions~\eqref{eq:centralitycond}. Then, we have that
+  \begin{subequations}
+    \begin{align}
+      i \in \mathcal{B} \implies s_i = \Theta(\Xi) \, , \quad v_i = \Theta(1) \;, \\
+      i \in \mathcal{N} \implies s_i = \Theta(1) \, , \quad v_i = \Theta(\Xi) \; .
+    \end{align}
+  \end{subequations}
+\end{proposition}
+Using the centrality conditions \eqref{eq:centralitycond}, we can bound
+the distance to the solution $\delta(p, v)$ with the duality measure $\Xi$.
+\begin{theorem}[\cite{wright2001effects}, Theorem 3.3]
+  Suppose $p^\star$ satisfies the assumptions~\ref{hyp:ipm},
+  and the current primal-dual iterate $(p, v)$ satisfies the centrality
+  conditions~\eqref{eq:centralitycond}. Then, we have that
+  \begin{equation}
+    \delta(p, v) = O(\Xi) \; .
+  \end{equation}
+\end{theorem}
+
+\subsection{Structured ill-conditioning of the condensed matrix $K_\gamma$}
+We show that if the iterates $(p, v)$ satisfy
+the centrality conditions~\eqref{eq:centralitycond}, then the
+condensed matrix $K_\gamma$ exhibits a particular structure that limits
+the effect of the ill-conditionning.
+
+\subsubsection{Invariant subspaces in $K_\gamma$}
+We follow the analysis presented in \cite{wright1998ill},
+and show that the condensed matrix $K_\gamma$ can be decomposed as
+\begin{equation}
+  \label{eq:cond:svd}
+  K_\gamma = \begin{bmatrix} U_L & U_S \end{bmatrix}
+  \begin{bmatrix}
+    \Sigma_L & 0 \\ 0 & \Sigma_S
+  \end{bmatrix}
+  \begin{bmatrix}
+    U_L^\top \\ U_S^\top
+  \end{bmatrix}
+  \; ,
+\end{equation}
+with $U$ orthogonal matrix and $\Sigma$ diagonal, where
+the two diagonal matrices $\Sigma_L$ and $\Sigma_S$ are much better conditioned than $K_\gamma$.
+The result is a consequence of the SVD decomposition,
+provided that the singular values satisfy $\frac{\sigma_1}{\sigma_{p}} \leq \frac{\sigma_1}{\sigma_n}$
+and $\frac{\sigma_{p+1}}{\sigma_{n}} \leq \frac{\sigma_1}{\sigma_n}$.
+
+We recall that $K_\gamma = W + H^\top D_s H + \gamma G^\top G$, with
+the diagonal matrix $\Sigma_s = S^{-1} V$.
+We note $\cactive = \cactive(x^\star)$ the active-set at the optimal solution $x^\star$,
+and $\cinactive = \cinactive(x^\star)$ the inactive set.
+In addition, we note $m_a$ the current number of
+active constraints, and $p := m_a + m_e$. We denote by
+$H_{\cactive}$ the Jacobian of active inequality constraints, $H_{\cinactive}$ the
+Jacobian of inactive inequality constraints and
+$A := \begin{bmatrix} G^\top & H_{\cactive}^\top \end{bmatrix}^\top$.
+We define the minimum and maximum active slack values as
+\begin{equation}
+  s_{min} = \min_{i \in \cactive} s_i \; , \quad
+  s_{max} = \max_{i \in \cactive} s_i \; .
+\end{equation}
+
+To prove $K_\gamma$ decomposes as in \eqref{eq:cond:svd},
+we adapt \cite[Theorem 3.2]{wright1998ill} to the
+condensed matrix $K_\gamma$, with the additional term
+$\gamma G^\top G$ coming from the equality constraints.
+\begin{theorem}[Properties of $K_\gamma$]
+  \label{thm:cond}
+  Let $\lambda_1, \cdots, \lambda_n$ be the $n$ eigenvalues of
+  $K_\gamma$, ordered as $|\lambda_1| \geq  \cdots \geq |\lambda_n|$.
+  Let $\begin{bmatrix} Y & Z \end{bmatrix}$ be an orthogonal
+  matrix, where the columns of $Z$ span the null-space of
+  $A$. Let $\underline{\sigma} =\min\{\frac{1}{\Xi}, \gamma\}$
+  and $\overline{\sigma} = \max\{\frac{1}{s_{min}}, \gamma\}$.
+  Then,
+  \begin{enumerate}
+    \item[(i)] The $p$ largest-magnitude eigenvalues of $K_\gamma$ are positive,
+      with $\lambda_1 = \Theta(\overline{\sigma})$ and $\lambda_p = \Omega(\underline{\sigma})$.
+    \item[(ii)] The $n-p$ smallest-magnitude eigenvalues of $K_\gamma$
+      are $\Theta(1)$.
+    \item[(iii)] If $0 < p < n$, then $\cond(K_\gamma) = \Theta(\overline{\sigma})$.
+    \item[(iv)] There are orthonormal matrices $\widetilde{Y}$ and $\widetilde{Z}$ for
+      simple invariant subspaces of $K_\gamma$, such that $Y - \widetilde{Y} = O(\underline{\sigma}^{-1})$
+      and $Z - \widetilde{Z} = O(\underline{\sigma}^{-1})$.
+  \end{enumerate}
+\end{theorem}
+\begin{proof}
+  We start the proof by setting apart the inactive constraints from the active constraints in $K_\gamma$:
+  \begin{equation}
+    K_\gamma = W + H_{\cinactive}^\top S_{\cinactive}^{-1} V_{\cinactive} H_{\cinactive}
+    + A^\top D_\gamma A \, ,
+    \quad
+    \text{with} \quad D_\gamma = \begin{bmatrix} S_{\cactive}^{-1} V_{\cactive} & 0 \\ 0 & \gamma I \end{bmatrix} \; .
+  \end{equation}
+  Using Assumption~\ref{hyp:ipm}, the Hessian and the inactive Jacobian
+  are bounded by Lipschitz continuity: $W = O(1)$, $H_{\cinactive} = O(1)$.
+  Proposition~\ref{prop:cond:boundslack} implies that
+  $s_{\cinactive} = \Theta(1)$ and $v_{\cinactive} = \Theta(\Xi)$. We deduce:
+  \begin{equation}
+    \label{eq:cond:inactiveblock}
+    H_{\cinactive}^\top S_{\cinactive}^{-1} V_{\cinactive} H_{\cinactive} = O(\Xi) \; .
+  \end{equation}
+  Hence, for small enough $\Xi$,
+  the condensed matrix $K_\gamma$ is dominated by the block of active constraints:
+  \begin{equation}
+    K_\gamma = A^\top D_\gamma A + O(1) \; .
+  \end{equation}
+  Sufficiently close to the optimum, the constraints qualification
+  in Assumption~\ref{hyp:ipm} implies that $A = O(1)$ and has rank $p$.
+  The eigenvalues $\{\eta_i\}_{i =1,\cdots,n}$ of $A^\top D_\gamma A$
+  satisfy $\eta_i > 0$ for $i = 1,\cdots,p$ and $\eta_i = 0$ for $i = p+1, \cdots, n$.
+  As $s_{\cactive} = \Theta(\Xi)$ and $v_{\cactive} = \Theta(1)$
+  (Proposition~\ref{prop:cond:boundslack}), the smallest diagonal
+  element in $D_\gamma$ is $\Omega(\min\{\frac{1}{\Xi}, \gamma\})$
+  and the largest diagonal element is $\Theta(\max\{\frac{1}{s_{min}}, \gamma\})$.
+  Hence,
+  \begin{equation}
+    \eta_1 = \Theta(\overline{\sigma}) \; , \quad
+    \eta_p = \Omega(\underline{\sigma}) \; .
+  \end{equation}
+  Using \cite[Lemma 3.1]{wright1998ill}, we get $\lambda_1 = \Theta(\overline{\sigma})$
+  and $\lambda_p = \Omega(\underline{\sigma})$, proving the first result (i).
+
+  Let $L_\gamma = A^\top D_\gamma A$.
+  We have that
+  \begin{equation}
+    \begin{bmatrix}
+      Z^\top \\ Y^\top
+    \end{bmatrix}
+    L_\gamma \begin{bmatrix}Z & Y \end{bmatrix}
+    = \begin{bmatrix}
+      L_1 & 0 \\
+      0 & L_2
+    \end{bmatrix} \; ,
+  \end{equation}
+  with $L_1 = 0$ and $L_2 = Y^\top L_\gamma Y$.
+  The smallest eigenvalue of $L_2$ is $\Omega(\underline{\sigma})$
+  and the matrix $E := K_\gamma - L_\gamma$ is $O(1)$.
+  By applying \cite[Theorem 3.1, (ii)]{wright1998ill},
+  the $n - p$ smallest eigenvalues in $K_\gamma$ differ by
+  $\Omega(\underline{\sigma}^{-1})$ from those of the reduced Hessian $Z^\top K_\gamma Z$.
+  In addition, \eqref{eq:cond:inactiveblock} implies
+  that $Z^\top K_\gamma Z - Z^\top W Z = O(\Xi)$. Using SOSC,
+  $Z^\top W Z$ is positive definite for small enough $\Xi$, implying
+  all its eigenvalues are $\Theta(1)$. Using again \cite[Lemma 3.1]{wright1998ill},
+  we get that the $n-p$ smallest eigenvalues in $K_\gamma$ are $\Theta(1)$,
+  proving (ii). The third point (iii) is proved by combining
+  (i) and (ii) (provided $0 < p < n$).
+
+  Eventually, point (iv) is proven by using \cite[Theorem 3.1, (i)]{wright1998ill}.
+\end{proof}
+
+\begin{corollary}
+  The condensed matrix $K_\gamma$ can be decomposed as
+  \eqref{eq:cond:svd}, with $\Sigma_L \in \mathbb{R}^{p \times p}$ and $\Sigma_S \in \mathbb{R}^{(n-p) \times (n-p)}$.
+  In addition, for suitably chosen $Y$ and $Z$,
+  \begin{equation}
+    \label{eq:cond:invariantsubpsace}
+    U_L - Y = O(\underline{\sigma}^{-1}) \; , \quad
+    U_S - Z = O(\underline{\sigma}^{-1}) \; .
+  \end{equation}
+\end{corollary}
+\begin{proof}
+  According to Theorem~\ref{thm:cond}, the $p$ first eigenvalues are large
+  and well separated from the $n - p$ small eigenvalues. Using
+  the spectral theorem, we obtain the decomposition as \eqref{eq:cond:svd}.
+  Using Theorem \ref{thm:cond}, part (iv), we obtain the result
+  in \eqref{eq:cond:invariantsubpsace}.
+\end{proof}
+Theorem~\ref{thm:cond} gives us a deeper insight on the structure
+of the condensed matrix $K_\gamma$.
+Using equation~\eqref{eq:cond:invariantsubpsace}, we observe
+we can assimilate the large-space of $K_\gamma$ with the range space of the
+active Jacobian $A^\top$
+and the small space with the null space of $A$.
+The decomposition~\eqref{eq:cond:svd} leads to the following relations
+\begin{equation}
+  \label{eq:cond:boundinvariantsubspace}
+  \begin{aligned}
+    & \| K_\gamma \| = \| \Sigma_L \| = \Theta(\overline{\sigma}) \; , &
+    \Sigma_L^{-1} = O(\underline{\sigma}^{-1})  \;, \\
+    & \| K_\gamma^{-1} \| = \| \Sigma_S^{-1} \| = \Theta(1) \, , &
+  \Sigma_S = \Theta(1) \, .
+  \end{aligned}
+\end{equation}
+The condition of $\Sigma_L$ depends on $\cond(A)$, $\cond(V)$
+and the ratio $\frac{s_{max}}{s_{min}} = O(\Xi \overline{\sigma})$.
+The condition of $\Sigma_S$ reflects the condition of the reduced Hessian $Z^\top W Z$.
+
+Theorem~\ref{thm:cond} (iii) tells us that $\cond(K_\gamma) = \Theta(\overline{\sigma})$,
+meaning that if $\gamma$ is large-enough so that $\gamma \geq \frac{1}{s_{min}}$, then
+the conditioning $\cond(K_\gamma)$ increases linearly with $\gamma$. In
+other words, the value $\frac{1}{s_{min}}$ gives us a lower-bound for $\gamma_{max}$
+in Proposition~\ref{prop:kkt:hykkt:cond}.
+
+\subsubsection{Numerical accuracy of the condensed matrix $K_\gamma$}
+We are now interested in bounding the error made in
+the computation of the condensed matrix $K_\gamma$ in floating
+point arithmetic.
+
+In direct contrast with \cite[Section 4.1]{wright1998ill}, the slack variable
+$s$ appearing in the diagonal matrix $S^{-1} V$ is not subject to cancellation:
+the interior-point algorithm is passing exactly the value of the slack
+variables to the linear solver (this would not be the case if the slack
+$s_i$ was replaced by the nonlinear function $h_i(x)$). Hence,
+the error arising from the multiplication by $S^{-1}$ is only $O(\epstol)$,
+which is significantly better than the error in $O(\epstol / s_{min})$ we would obtain
+in the cancellation case.
+
+In floating point arithmetic, the condensed matrix $K_\gamma$ is evaluated as
+\begin{multline*}
+  \widehat{K}_\gamma = W + E + (A + \Delta A)^\top (D_\gamma + \Delta D_\gamma) (A + \Delta A) \\
+  + (H_{\cinactive} + \Delta H_{\cinactive})^\top S_{\cinactive}^{-1} V_{\cinactive} (H_{\cinactive} + \Delta H_{\cinactive}) \; ,
+\end{multline*}
+with $\| \Delta H \| = O(\epstol \| H\|)$, $\| \Delta G \| = O(\epstol \| G\|)$
+and $E$ symmetric with $\|E \| = O(\epstol / s_{min})$.
+We have
+\begin{equation}
+A^\top D_\gamma A = \Theta(\overline{\sigma}) \; , \quad
+A^\top \Delta D_\gamma A = O(\epstol \overline{\sigma}) \; .
+\end{equation}
+We deduce the following result.
+\begin{proposition}
+  \label{prop:cond:boundcondensedmatrix}
+  In floating point arithmetic, the perturbation
+  of the condensed matrix $\Delta K_\gamma$ is bounded by
+  $\Delta K_\gamma := \widehat{K_\gamma} - K_\gamma  = O(\epstol \overline{\sigma})$.
+\end{proposition}
+
+\subsubsection{Numerical solution of the condensed system}
+
+We note $x$ the solution of the linear system $K_\gamma x = b$
+in exact arithmetic, and $\widehat{x}$ the solution of
+the perturbed system $\widehat{K}_\gamma \widehat{x} = \widehat{b}$
+in floating point arithmetic. We are interested in bounding
+the error $\Delta x = \widehat{x} - x$. We express
+the exact solution $x$ as
+\begin{equation}
+  x = U_L x_L + U_S x_S = Y x_Y + Z x_Z \; .
+\end{equation}
+We note $\bar{x}$ the exact solution of the system
+$K_\gamma \bar{x} = b + \Delta b$. Using \eqref{eq:cond:defaultbond},
+we can bound the error with
+\begin{equation}
+  \| \bar{x} - x\| \leq \| K_\gamma^{-1} \| \|\Delta b \| \; .
+\end{equation}
+As $\| K_\gamma^{-1}\| = \Theta(1)$, we have that
+$\| \bar{x} - x \| = O(\|\Delta b \|)$. However, we can
+refine the bound if $\Delta b$ belongs to the range-space
+of the active Jacobian $A^\top$.
+
+\begin{proposition}[Right-hand-side perturbation]
+  \label{prop:cond:rhsperturb}
+  Suppose $\Delta b \in \rangespace(A^\top)$. Then the
+  error satisfies
+  $\bar{x} - x = O(\epstol \underline{\sigma}^{-1})$.
+\end{proposition}
+\begin{proof}
+  As $\Delta b \in \rangespace(A^\top)$, we have $\Delta b_z = 0$
+  and $\|\Delta b_Y \| = \|\Delta b \|$. We deduce
+  \begin{equation}
+    \bar{x} - x = K_\gamma^{-1} \Delta b =
+    U_L \Sigma_L^{-1} \Delta b_L  +
+    U_S \Sigma_S^{-1} \Delta b_S  \; .
+  \end{equation}
+  In addition, $\| U_L^\top \Delta b \| = \| \Delta b_L \| = O(\epstol)$
+and $\| U_S^\top \Delta b \| = \| \Delta b_S \| = O(\epstol \underline{\sigma}^{-1})$.
+  Using \eqref{eq:cond:boundinvariantsubspace}, we deduce
+  \begin{equation}
+    \begin{aligned}
+    & \| \bar{x}_L - x_L \| \leq \|\Sigma_L^{-1} \|\|\Delta b_L \| = O(\epstol \underline{\sigma}^{-1}) \;, \\
+    & \| \bar{x}_S - x_S \| \leq \|\Sigma_S^{-1} \|\|\Delta b_S \| = O(\epstol \underline{\sigma}^{-1}) \;,
+    \end{aligned}
+  \end{equation}
+  concluding the proof.
+\end{proof}
+We now look at the impact of a perturbed matrix.
+We note $\widehat{x}$ the solution of $\widehat{K}_\gamma \widehat{x} = \widehat{b}$.
+Using \eqref{eq:cond:defaultbond} and Proposition~\ref{prop:cond:boundcondensedmatrix}, we get
+\begin{equation}
+  \| \widehat{x} - \bar{x} \| \leq \|K_\gamma^{-1} \| \|\Delta K_\gamma \| \bar{x} \|
+  = \| \bar{x} \| O(\epstol \overline{\sigma}) \; .
+\end{equation}
+Exploiting the structure of $K_\gamma$ explicited in \eqref{eq:cond:svd},
+we can refine the bound further and show that only the small-space
+part of $\widehat{x}$ is impacted by the ill-conditioning of $K_\gamma$.
+\begin{proposition}[Matrix perturbation]
+  \label{prop:cond:matrixperturb}
+  The bound in the large-space components $\|\widehat{x}_L - \bar{x}_L \|$
+  is smaller by a factor of $\underline{\sigma}$ than the bound
+  on the small-space components
+   $\|\widehat{x}_S - \bar{x}_S \|$:
+  \begin{equation}
+    \begin{aligned}
+    & \| \widehat{x}_L - \bar{x}_L  \| \leq \|\Sigma_L^{-1} \|\|\Delta K_\gamma \|\|\bar{x} \| = \| \bar{x} \| O(\epstol \overline{\sigma} \underline{\sigma}^{-1}) \;, \\
+    & \| \widehat{x}_S - \bar{x}_S  \| \leq \|\Sigma_S^{-1} \|\|\Delta K_\gamma \|\|\bar{x} \| = \| \bar{x} \| O(\epstol \overline{\sigma}) \;.
+    \end{aligned}
+  \end{equation}
+
+\end{proposition}
+\begin{proof}
+  This is a direct application of TODO, using $\begin{bmatrix} B_L \\ B_S
+  \end{bmatrix} = U^\top \Delta K_\gamma U$.
+\end{proof}
+
+Combining together Proposition~\ref{prop:cond:rhsperturb}
+with Proposition~\ref{prop:cond:matrixperturb}, we deduce that
+if $\Delta b \in \rangespace{A^\top}$, then
+\begin{equation}
+  \begin{aligned}
+    \| \widehat{x}_L - x_L  \| & \leq \|\widehat{x}_L - \bar{x}_L \|  + \|\bar{x}_L - x_L \|
+    & \leq& \| \bar{x} \| O(\epstol\overline{\sigma} \underline{\sigma}^{-1}) + O(\epstol \underline{\sigma}^{-1}) \\
+    \| \widehat{x}_S - x_S  \| & \leq \|\widehat{x}_S - \bar{x}_S \|  + \|\bar{x}_S - x_S \|
+    & \leq& \| \bar{x} \| O(\epstol\overline{\sigma}) + O(\epstol \underline{\sigma}^{-1}) \\
+    \| \widehat{x} - x  \| & \leq \|\widehat{x} - \bar{x} \|  + \|\bar{x}- x \|
+        & \leq& \| \bar{x} \| O(\epstol\overline{\sigma}) + O(\epstol \underline{\sigma}^{-1})
+  \end{aligned}
+\end{equation}
+
+
+
+
+
+\subsection{Accuracy of the Schur-complement $G K_\gamma^{-1} G^\top$}
+HyKKT solves the linear system \eqref{eq:kkt:schurcomplhykkt}
+using a Krylov iterative algorithm. We suppose the CG algorithm converges
+down to a relative tolerance $\varepsilon_{cg}$. We look at the backward
+error made when solving \eqref{eq:kkt:schurcomplhykkt} using a Krylov method.
+
+\subsubsection{Error in the backsolve}
+Each CG iteration
+involves a multiplication with the Schur-complement $S_\gamma = G K^{-1}_\gamma G^\top$.
+At iteration $k$, the CG algorithm evaluates the matrix product $\widehat{S}_\gamma \widehat{p}_k$,
+where $\widehat{p}_k$ is the current descent direction evaluated in
+floating point arithmetic. We look at how the error $\Delta p_k$ propagates
+from one CG iteration to the other.
+
+As $G$ is full row-rank, the Jacobian is bounded: $\|G \| = \Theta(1)$.
+Hence $\widehat{G}^\top \widehat{p}_k = G^\top (p_k + \Delta p_k + O(\epstol)$.
+The multiplication $\widehat{S}_\gamma \widehat{p}_k$ involves the
+solution of the linear system:
+\begin{equation}
+  \widehat{K}_\gamma \widehat{r}_k = G^\top (p_k + \Delta p_k + O(\epstol)) \; .
+\end{equation}
+We bound the error made on $\widehat{r}_k$.
+
+\subsubsection{Error in the right-hand-side}
+
+
+\subsubsection{Total error in the CG algorithm}
+
+
+\subsection{Accuracy of the condensed KKT system \eqref{eq:kkt:condensed}}

@@ -75,6 +75,29 @@ The KKT conditions of \eqref{eq:slack_problem} are:
 The notation $x \perp u$ is a shorthand for the complementarity
 condition $x_i u_i = 0$ for all $i=1\cdots, n$.
 
+The set of active constraints at a point $x$ is denoted by
+\begin{equation}
+  \mathcal{B}(x) := \{ i = 1, \cdots, m_i \; | \; h_i(x) = 0 \} \; .
+\end{equation}
+The inactive set is defined as the complement $\mathcal{N}(x) := \{1, \cdots, m_i \} \setminus \mathcal{B}(x)$.
+We note $m_a$ the number of active constraints.
+The active Jacobian is defined as $A(x) := \begin{bmatrix} \nabla g(x) \\ \nabla h_{\mathcal{B}}(x) \end{bmatrix} \in \mathbb{R}^{(m_e + m_a) \times n}$.
+
+\begin{assumption}
+  \label{hyp:ipm}
+  Let $w^\star = (x^\star, s^\star, y^\star, z^\star, u^\star, v^\star)$ be a primal-dual solution
+  satisfying the KKT conditions~\eqref{eq:kktconditions}. Let the following hold:
+  \begin{itemize}
+    \item Regularity: The Hessian $\nabla^2_{x x} L(\cdot)$ is Lipschitz continuous
+      near $w^\star$;
+    \item LICQ: the active Jacobian $A(x^\star)$ is full row-rank;
+    \item SCS: for every $i \in \mathcal{B}(x^\star)$, $z_i^\star > 0$.
+    \item SOSC: for every $v \in \nullspace\big(A(x^\star)\big)$,
+      $v^\top \nabla_{x x}^2 L(w^\star) v > 0$.
+  \end{itemize}
+\end{assumption}
+
+
 \subsection{Solving the KKT conditions with the interior-point method}
 \label{sec:ipm:kkt}
 The interior-point method aims at finding a stationary point
@@ -169,8 +192,8 @@ symmetric $4 \times 4$ system, called the \emph{augmented KKT system}:
   \label{eq:kkt:augmented}
   \tag{$K_2$}
   \begin{bmatrix}
-    W + \Sigma_x & 0 & G^\top & H^\top \\
-    0 & \Sigma_s & 0& I \\
+    W + D_x & 0 & G^\top & H^\top \\
+    0 & D_s & 0& I \\
     G & 0 & 0 & 0 \\
     H & I & 0 & 0
   \end{bmatrix}
@@ -188,7 +211,7 @@ symmetric $4 \times 4$ system, called the \emph{augmented KKT system}:
        % h(x_k) + s_k
   \end{bmatrix} \; ,
 \end{equation}
-with the diagonal matrices $\Sigma_x = X^{-1} U$ and $\Sigma_s = S^{-1} V$.
+with the diagonal matrices $D_x = X^{-1} U$ and $D_s = S^{-1} V$.
 The right-hand-sides are given respectively by
 $r_1 = \nabla f(x_k) + \nabla g(x_k)^\top y_k + \nabla h(x_k)^\top z_k + \mu X^{-1} e$,
 $r_2 = z_k + \mu S^{-1} e$,
@@ -202,7 +225,7 @@ $d_v = - S^{-1}(V d_s + S v_k - \mu e)$.
 The system \eqref{eq:kkt:augmented} is usually factorized using
 an inertia-revealing LBL factorization.
 Unfortunately, the block diagonal term
-$\Sigma_x$ and $\Sigma_s$ are usually poorly conditioned, preventing
+$D_x$ and $D_s$ are usually poorly conditioned, preventing
 a solution with a Krylov iterative method.
 
 \paragraph{Condensed KKT system.}
@@ -223,7 +246,7 @@ The resulting system is called the \emph{condensed KKT system}:
   =
   -
   \begin{bmatrix}
-    r_1 + H^\top(\Sigma_s r_4 - r_2) \\ r_3
+    r_1 + H^\top(D_s r_4 - r_2) \\ r_3
   \end{bmatrix}
   =:
   \begin{bmatrix}
@@ -231,10 +254,10 @@ The resulting system is called the \emph{condensed KKT system}:
   \end{bmatrix}
    \; ,
 \end{equation}
-where we have introduced the \emph{condensed matrix} $K := W + \Sigma_x + H^\top \Sigma_s H$.
+where we have introduced the \emph{condensed matrix} $K := W + D_x + H^\top D_s H$.
 Using the solution of the system~\eqref{eq:kkt:condensed},
 we recover the updates on the slacks and inequality multipliers with
-$d_s = -r_4 - Hd_x$ and $d_z = -r_2 - \Sigma_s d_s$.
+$d_s = -r_4 - Hd_x$ and $d_z = -r_2 - D_s d_s$.
 
 \paragraph{Iterative refinement.} TODO
 

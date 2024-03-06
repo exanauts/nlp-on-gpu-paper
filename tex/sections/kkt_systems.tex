@@ -37,17 +37,25 @@ The trick is to reformulate the condensed KKT system \eqref{eq:kkt:condensed} in
   \end{bmatrix}
 \end{equation}
 where we have introduced the regularized matrix $K_\gamma := K + \gamma G^\top G$.
-For a large-enough parameter $\gamma$, the matrix $K_\gamma$ is positive definite.
+If SOSC holds, the matrix $K_\gamma$ is positive definite for a large-enough parameter $\gamma$.
 \begin{proposition}[\cite{regev2023hykkt}, Theorem 1, p.7]
+  \label{prop:kkt:hykkt:pd}
   We suppose $G$ is full row rank. Then there exists $\gamma_{min}$
   such that, for all $\gamma > \gamma_{min}$, $K_\gamma$ is positive definite
-  if and only if $Z^\top K Z$ is positive definite.
+  if and only if the reduced Hessian $Z^\top K Z$ is positive definite.
+\end{proposition}
+If $\gamma$ is getting too large, we can prove that the conditioning
+of $K_\gamma$ increases linearly with $\gamma$ past a certain threshold.
+\begin{proposition}[\cite{regev2023hykkt}, Theorem 2, p.7]
+  \label{prop:kkt:hykkt:cond}
+  We suppose $G$ is full row rank. Then there exists $\gamma_{max}
+  \geq \gamma_{min}$ such that for all $\gamma \geq \gamma_{max}$,
+  $\cond(K_\gamma)$ increases linearly with $\gamma$.
 \end{proposition}
 
 The linear solver HyKKT~\cite{regev2023hykkt}
-exploits that property to solve \eqref{eq:kkt:hykkt} using a hybrid
-direct-iterative method. The method solves the linear system
-\eqref{eq:kkt:hykkt} using the following steps:
+leverages the positive definiteness of $K_\gamma$ and solves
+\eqref{eq:kkt:hykkt} using a hybrid direct-iterative method:
 \begin{enumerate}
   \item Assemble $K_\gamma$ and factorize it using sparse Cholesky ;
   \item Solve the Schur complement of \eqref{eq:kkt:hykkt} using a conjugate gradient (CG)

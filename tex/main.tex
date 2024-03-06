@@ -12,6 +12,7 @@
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{assumption}[theorem]{Assumption}
 \newtheorem{proposition}[theorem]{Proposition}
 \theoremstyle{definition}
 \newtheorem{definition}[theorem]{Definition}
@@ -21,6 +22,12 @@
 
 \DeclareMathOperator{\diag}{diag}
 \DeclareMathOperator{\argmin}{arg\,min}
+\DeclareMathOperator{\nullspace}{null}
+\DeclareMathOperator{\rangespace}{range}
+\newcommand{\cond}{\kappa_2}
+\newcommand{\epstol}{\mathbf{u}}
+\newcommand{\cactive}{\mathcal{B}}
+\newcommand{\cinactive}{\mathcal{N}}
 
 \title{Nonlinear programming on GPU: current state-of-the-art}
 \author{TBD}
@@ -59,6 +66,7 @@
 \input{sections/introduction.tex}
 \input{sections/ipm.tex}
 \input{sections/kkt_systems.tex}
+\input{sections/conditioning.tex}
 \input{sections/numerics.tex}
 
 
