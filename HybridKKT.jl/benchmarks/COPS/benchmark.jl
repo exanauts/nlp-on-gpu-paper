@@ -34,7 +34,8 @@ const COPS_INSTANCES_MITTELMANN = [
     (COPSBenchmark.marine_model, (1600,), 1e6),
     (COPSBenchmark.pinene_model, (3200,), 1e5),
     (COPSBenchmark.robot_model, (1600,), 1e9),
-    (COPSBenchmark.steering_model, (12800,), 1e7),
+    (COPSBenchmark.rocket_model, (1600,), 1e9),
+    (COPSBenchmark.steering_model, (12800,), 1e10),
 ]
 
 include(joinpath(@__DIR__, "..", "common.jl"))
