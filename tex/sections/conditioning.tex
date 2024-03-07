@@ -140,6 +140,9 @@ condensed matrix $K_\gamma$, with the additional term
 $\gamma G^\top G$ coming from the equality constraints.
 \begin{theorem}[Properties of $K_\gamma$]
   \label{thm:cond}
+  Suppose the condensed matrix is evaluated at a primal-dual
+  point $(p, \nu)$ satisfying~\eqref{eq:centralitycond},
+  for sufficiently small $\Xi$.
   Let $\lambda_1, \cdots, \lambda_n$ be the $n$ eigenvalues of
   $K_\gamma$, ordered as $|\lambda_1| \geq  \cdots \geq |\lambda_n|$.
   Let $\begin{bmatrix} Y & Z \end{bmatrix}$ be an orthogonal
@@ -287,21 +290,92 @@ In floating point arithmetic, the condensed matrix $K_\gamma$ is evaluated as
   + (H_{\cinactive} + \Delta H_{\cinactive})^\top S_{\cinactive}^{-1} V_{\cinactive} (H_{\cinactive} + \Delta H_{\cinactive}) \; ,
 \end{multline*}
 with $\| \Delta H \| = O(\epstol \| H\|)$, $\| \Delta G \| = O(\epstol \| G\|)$
-and $E$ symmetric with $\|E \| = O(\epstol / s_{min})$.
+and $E$ symmetric with $\|E \| = O(\epstol \overline{\sigma})$.
 We have
 \begin{equation}
 A^\top D_\gamma A = \Theta(\overline{\sigma}) \; , \quad
 A^\top \Delta D_\gamma A = O(\epstol \overline{\sigma}) \; .
 \end{equation}
-We deduce the following result.
+We deduce that the perturbation $\Delta K_\gamma$ are bounded
+by multiple of $\| K_\gamma \|$.
 \begin{proposition}
   \label{prop:cond:boundcondensedmatrix}
   In floating point arithmetic, the perturbation
   of the condensed matrix $\Delta K_\gamma$ is bounded by
   $\Delta K_\gamma := \widehat{K_\gamma} - K_\gamma  = O(\epstol \overline{\sigma})$.
 \end{proposition}
+The perturbed matrix $\Delta K_\gamma$ has no specific structure
+in our case. Hence, we should determine under which
+conditions the perturbed matrix $\widehat{K}_\gamma$
+keeps the structure highlighted in \eqref{eq:cond:svd}.
+We know that the smallest eigenvalue of $A^\top D_\gamma A$
+is $\Omega(\underline{\sigma})$. As mentioned in
+\cite[Section 3.4.2]{wright1998ill}, the perturbed matrix
+$\widehat{K}_\gamma$ continues to have $p$ large eigenvalues
+bounded below by $\underline{\sigma}$ if the perturbation
+is much smaller than the eigenvalue $\eta_p$:
+\begin{equation}
+  \label{eq:cond:perturbationbound}
+  \| \Delta K_\gamma \| \ll \eta_p  \; .
+\end{equation}
+If the perturbation satisfies~\eqref{eq:cond:perturbationbound}, then
+the conditions of Theorem~\ref{thm:cond} apply. However,
+the bound in Proposition~\ref{prop:cond:boundcondensedmatrix} is too loose
+to apply \eqref{eq:cond:perturbationbound} without any further assumption.
+As $\eta_p = \Omega(\underline{\sigma})$, we have that $\frac{\|K_\gamma \|}{\eta_p}
+= O(\overline{\sigma}\underline{\sigma}^{-1})$. In other words,
+if $\overline{\sigma}\underline{\sigma}^{-1}$ is not too large,
+$\|\Delta K_\gamma\| \ll \| K_\gamma \|$ implies \eqref{eq:cond:perturbationbound},
+allowing to keep the structured ill-conditioning in the perturbed
+matrix $\widehat{K}_\gamma$.
 
 \subsubsection{Numerical solution of the condensed system}
+We are now interested in estimating the relative error
+made when solving the system $K_\gamma x = b$ in floating
+point arithmetic. We suppose $K_\gamma$ is factorized using
+a backward-stable Cholesky decomposition. The computed
+solution $\widehat{x}$ is solution of a perturbed system
+$\widetilde{K}_\gamma \widehat{x} = b$, with $\widetilde{K}_\gamma
+= K_\gamma + \Delta_s K_\gamma$ and $\Delta_s K_\gamma$
+a symmetric matrix satisfying
+\begin{equation}
+  \label{eq:cond:backwardstable}
+\|\Delta_s K_\gamma\| \leq \epstol \varepsilon_n \|K_\gamma\| \; ,
+\end{equation}
+and $\epsilon_n$ a small constant depending on the dimension $n$.
+
+We have to make the following additional assumptions to
+ensure (i) the Cholesky factorization runs to completion
+and (ii) we can incorporate the backward-stable perturbation $\Delta_s K_\gamma$
+in the generic perturbation $\Delta K_\gamma$ introduced in
+Proposition~\ref{prop:cond:boundcondensedmatrix}.
+\begin{assumption} Let $(p, v)$ be the current primal-dual iterate
+  , such that:
+  \begin{itemize}
+    \item[(a)] $(p, v)$ satisfies the centrality conditions~\eqref{eq:centralitycond}.
+    \item[(c)] The parameter $\gamma$ satisfies $\gamma = \Theta(\Xi^{-1})$.
+    \item[(c)] The duality measure is large enough relative to $\epstol$: $\epstol \ll \Xi$.
+    \item[(d)] The primal step $\widehat{x}$ is computed using a backward
+      stable method satisfying \eqref{eq:cond:backwardstable} for a small constant
+      $\varepsilon_n$.
+  \end{itemize}
+  \label{hyp:cond:wellcond}
+\end{assumption}
+Condition (a) implies that
+$s_{min} = \Theta(\Xi)$ and $s_{max} = \Theta(\Xi)$ (Proposition \ref{prop:cond:boundslack}).
+Condition (b) supposes in addition $\gamma = \Theta(\Xi^{-1})$, implying
+the matrix $\Sigma_L$ is well-conditioned and
+the ratio $\overline{\sigma}/\underline{\sigma}$ is not too large.
+In particular, we obtain $\underline{\sigma} = \Theta(\Xi^{-1})$,
+$\overline{\sigma} = \Theta(\Xi^{-1})$ and $\overline{\sigma}/\underline{\sigma} = \Theta(1)$.
+Condition (c) ensures that the conditioning of $\cond(K_\gamma)$
+\eqref{eq:cond:boundinvariantsubspace} satisfies $\cond(K_\gamma) \epstol \ll 1$,
+making sure the Cholesky factorization runs to completion.
+Condition (d) tells us that the perturbation caused by the Cholesky
+factorization is $\Delta_s K_\gamma = O(\epstol \| K_\gamma\|)$. The
+conditions \eqref{eq:cond:boundinvariantsubspace} imply $\|K_\gamma \| = \Theta(\Xi^{-1})$,
+meaning that we can incorporate $\Delta_s K_\gamma$ in the perturbation
+$\Delta K_\gamma$ given in Proposition~\ref{prop:cond:boundcondensedmatrix}.
 
 We note $x$ the solution of the linear system $K_\gamma x = b$
 in exact arithmetic, and $\widehat{x}$ the solution of
@@ -318,16 +392,18 @@ we can bound the error with
 \begin{equation}
   \| \bar{x} - x\| \leq \| K_\gamma^{-1} \| \|\Delta b \| \; .
 \end{equation}
-As $\| K_\gamma^{-1}\| = \Theta(1)$, we have that
-$\| \bar{x} - x \| = O(\|\Delta b \|)$. However, we can
+As $\| K_\gamma^{-1}\| = \Theta(1)$, if $\Delta b = O(\epstol)$ we have that
+$\| \bar{x} - x \| = O(\epstol)$. However, we can
 refine the bound if $\Delta b$ belongs to the range-space
 of the active Jacobian $A^\top$.
 
 \begin{proposition}[Right-hand-side perturbation]
   \label{prop:cond:rhsperturb}
-  Suppose $\Delta b \in \rangespace(A^\top)$. Then the
+  Suppose Assumptions~\ref{hyp:cond:wellcond} holds at
+  the current the primal-dual iterate $(p, v)$, and
+  $\Delta b \in \rangespace(A^\top)$. Then the
   error satisfies
-  $\bar{x} - x = O(\epstol \underline{\sigma}^{-1})$.
+  $\bar{x} - x = O(\Xi \epstol)$.
 \end{proposition}
 \begin{proof}
   As $\Delta b \in \rangespace(A^\top)$, we have $\Delta b_z = 0$
@@ -338,36 +414,38 @@ of the active Jacobian $A^\top$.
     U_S \Sigma_S^{-1} \Delta b_S  \; .
   \end{equation}
   In addition, $\| U_L^\top \Delta b \| = \| \Delta b_L \| = O(\epstol)$
-and $\| U_S^\top \Delta b \| = \| \Delta b_S \| = O(\epstol \underline{\sigma}^{-1})$.
+and $\| U_S^\top \Delta b \| = \| \Delta b_S \| = O(\Xi \epstol )$.
   Using \eqref{eq:cond:boundinvariantsubspace}, we deduce
   \begin{equation}
     \begin{aligned}
-    & \| \bar{x}_L - x_L \| \leq \|\Sigma_L^{-1} \|\|\Delta b_L \| = O(\epstol \underline{\sigma}^{-1}) \;, \\
-    & \| \bar{x}_S - x_S \| \leq \|\Sigma_S^{-1} \|\|\Delta b_S \| = O(\epstol \underline{\sigma}^{-1}) \;,
+    & \| \bar{x}_L - x_L \| \leq \|\Sigma_L^{-1} \|\|\Delta b_L \| = O(\Xi \epstol) \;, \\
+    & \| \bar{x}_S - x_S \| \leq \|\Sigma_S^{-1} \|\|\Delta b_S \| = O(\Xi \epstol) \;,
     \end{aligned}
   \end{equation}
   concluding the proof.
 \end{proof}
 We now look at the impact of a perturbed matrix.
 We note $\widehat{x}$ the solution of $\widehat{K}_\gamma \widehat{x} = \widehat{b}$.
-Using \eqref{eq:cond:defaultbond} and Proposition~\ref{prop:cond:boundcondensedmatrix}, we get
+Using \eqref{eq:cond:defaultbond} and Proposition~\ref{prop:cond:boundcondensedmatrix}, we observe
+that the upper-bound on the error $\|\widehat{x} - \bar{x}\|$ depends on $\Xi^{-1} \epstol$,
+which can be significant close to convergence:
 \begin{equation}
-  \| \widehat{x} - \bar{x} \| \leq \|K_\gamma^{-1} \| \|\Delta K_\gamma \| \bar{x} \|
-  = \| \bar{x} \| O(\epstol \overline{\sigma}) \; .
+  \| \widehat{x} - \bar{x} \| \leq \|K_\gamma^{-1} \| \|\Delta K_\gamma\| \| \bar{x} \|
+  = \| \bar{x} \| O(\Xi^{-1} \epstol) \; .
 \end{equation}
 Exploiting the structure of $K_\gamma$ explicited in \eqref{eq:cond:svd},
 we can refine the bound further and show that only the small-space
 part of $\widehat{x}$ is impacted by the ill-conditioning of $K_\gamma$.
 \begin{proposition}[Matrix perturbation]
   \label{prop:cond:matrixperturb}
-  The bound in the large-space components $\|\widehat{x}_L - \bar{x}_L \|$
-  is smaller by a factor of $\underline{\sigma}$ than the bound
-  on the small-space components
-   $\|\widehat{x}_S - \bar{x}_S \|$:
+  Suppose Assumptions~\ref{hyp:cond:wellcond} holds at
+  the current the primal-dual iterate $(p, v)$.
+  The respective bound in the large-space error
+  and small-space error are
   \begin{equation}
     \begin{aligned}
-    & \| \widehat{x}_L - \bar{x}_L  \| \leq \|\Sigma_L^{-1} \|\|\Delta K_\gamma \|\|\bar{x} \| = \| \bar{x} \| O(\epstol \overline{\sigma} \underline{\sigma}^{-1}) \;, \\
-    & \| \widehat{x}_S - \bar{x}_S  \| \leq \|\Sigma_S^{-1} \|\|\Delta K_\gamma \|\|\bar{x} \| = \| \bar{x} \| O(\epstol \overline{\sigma}) \;.
+    & \| \widehat{x}_L - \bar{x}_L  \| \leq \|\Sigma_L^{-1} \|\|\Delta K_\gamma \|\|\bar{x} \| = \| \bar{x} \| O(\epstol) \;, \\
+    & \| \widehat{x}_S - \bar{x}_S  \| \leq \|\Sigma_S^{-1} \|\|\Delta K_\gamma \|\|\bar{x} \| = \| \bar{x} \| O(\Xi^{-1}\epstol ) \;.
     \end{aligned}
   \end{equation}
 
@@ -383,14 +461,13 @@ if $\Delta b \in \rangespace{A^\top}$, then
 \begin{equation}
   \begin{aligned}
     \| \widehat{x}_L - x_L  \| & \leq \|\widehat{x}_L - \bar{x}_L \|  + \|\bar{x}_L - x_L \|
-    & \leq& \| \bar{x} \| O(\epstol\overline{\sigma} \underline{\sigma}^{-1}) + O(\epstol \underline{\sigma}^{-1}) \\
+    & \leq& \| \bar{x} \| O(\epstol) + O(\Xi\epstol) \;, \\
     \| \widehat{x}_S - x_S  \| & \leq \|\widehat{x}_S - \bar{x}_S \|  + \|\bar{x}_S - x_S \|
-    & \leq& \| \bar{x} \| O(\epstol\overline{\sigma}) + O(\epstol \underline{\sigma}^{-1}) \\
+        & \leq& \| \bar{x} \| O(\Xi^{-1}\epstol) + O(\Xi\epstol) \;, \\
     \| \widehat{x} - x  \| & \leq \|\widehat{x} - \bar{x} \|  + \|\bar{x}- x \|
-        & \leq& \| \bar{x} \| O(\epstol\overline{\sigma}) + O(\epstol \underline{\sigma}^{-1})
+        & \leq& \| \bar{x} \| O(\Xi^{-1}\epstol) + O(\Xi \epstol) \;.
   \end{aligned}
 \end{equation}
-
 
 
 
