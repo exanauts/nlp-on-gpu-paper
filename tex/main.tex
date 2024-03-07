@@ -30,30 +30,34 @@
 \newcommand{\cinactive}{\mathcal{N}}
 
 \title{Nonlinear programming on GPU: current state-of-the-art}
-\author{TBD}
+\author{François Pacaud \and
+Sungho Shin \and
+Alexis Montoison \and
+Michel Schanen \and
+Mihai Anitescu
+}
 \date{\today}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-  Solving generic nonlinear programs requires the
-  successive solution of large-scale indefinite symmetric matrix.
-  The sparse factorization of such matrices relies
+  Solving nonlinear programs requires the
+  successive solutions of large-scale indefinite symmetric matrices
+  Sparse factorization routines rely
   on expensive numerical pivoting operations
   which are notoriously hard to parallelize on a GPU.
-  A workaround is to reformulate the successive KKT systems
-  in a form more amenable for the GPU, either by densifying
-  it using a null-space method or by reducing it down
-  to a symmetric positive-definite system, whose factorization using
-  Cholesky run efficiently on the GPU.
-  In this paper, we test three concurrent methods for solving
-  KKT systems on the GPU using the newly released cuDSS solver,
-  which implements the three sparse factorization routines LU, LDL
-  and Cholesky, all offering uncompromising performance on NVIDIA GPU.
-  We benchmark the three methods using various large-scale nonlinear programs,
-  taken from the PGLIB and COPS benchmarks.
-  We illustrate the advantages and the downsides of the three methods.
+  A workaround is to reformulate the successive Karush-Kuhn-Tucker (KKT) systems
+  in a form more amenable for the GPU,
+  by reducing it down to a symmetric positive-definite condensed
+  system whose factorization using Cholesky runs efficiently on the GPU.
+  In this paper, we analyze the performance of two different condensed-space methods
+  when used inside an interior-point solver.
+  We prove that the condensed matrices exhibit structured ill-conditioning,
+  limiting the loss of accuracy when computing a descent direction.
+  We implement the two methods on the GPU, using the newly
+  released cUDSS solver. We illustrate their strengths and weaknesses
+  on large-scale instances taken from the PGLIB and the COPS benchmarks.
   We find that GPUs shine to compute quick and dirty results down to a medium convergence tolerance
   --- with a 10x speed-up compared to a state-of-the-art CPU routine --- but
   with a limited robustness.

@@ -1,35 +1,35 @@
 \section{Introduction}
 Graphical Processing Units (GPUs) have become a standard parallel computing platform
-for scientific computing. With their SIMD architecture,
+for scientific computing.
 GPUs offer massive parallel computing capability for applications
-that can exploit coarse grain parallelism and high-memory bandwidth.
-In addition, the library CUDA has revolutionized High Performance Computing (HPC)
+that can exploit coarse-grain parallelism and high-memory bandwidth.
+As such, the library CUDA has revolutionized High Performance Computing (HPC)
 by bringing to a general audience parallel capabilities that were previously
 exclusive to expensive supercomputers. In the post-Moore law area, GPUs
 are getting more power-efficient than CPUs to run parallel workloads, as they require
 fewer transistors to process multiple tasks in parallel.
 
-Despite their tremendous impacts in machine learning, the
+Despite their tremendous impacts in machine learning applications, the
 adoption of GPUs in the mathematical programming community has
 remained limited. Most of the optimization solvers have been developed
 in the 1990s and have been heavily optimized for CPU architectures.
-The use of GPUs has been hindered by the limited support of
-sparse matrix operations, whose factorizations are difficult to parallelize
-on SIMD architectures. However, the landscape has changed in the
-recent years thanks to a few key changes.
-(1) The performance of sparse matrix operations have been improved
-in the CUDA library, mostly due to the novel tensorcores used
+The use of GPUs has been hindered by the poor performance of
+sparse matrix factorization routines, an algorithm difficult to parallelize
+on SIMD architectures. However, the landscape has changed in
+recent years thanks to a few breakthroughs.
+(1) The performance of sparse matrix operations has been improved
+in the CUDA library, mostly due to the novel tensor-cores used
 in recent GPUs~\cite{markidis2018nvidia}.
-(2) There is a growing interest in solving optimization
+(2) There is an increased interest in solving optimization
 problems in batch, for problems sharing the same
-structures but with different parameterization~\cite{amos2017optnet,pineda2022theseus}.
+structure but with different parameters~\cite{amos2017optnet,pineda2022theseus}.
 (3) GPUs are offering unmatched performance for automatic differentiation,
 both for machine learning~\cite{jax2018github} and scientific computing applications \cite{enzyme2021}.
-In fact, most engineering problems are formulated with a limited
+Most engineering problems are formulated with a limited
 number of common patterns repeated throughout the model: once
-factorized, we can evaluate them in parallel in a SIMD formalism
+identified, we can evaluate them in parallel in a SIMD formalism
 and achieve near speed-of-light performance~\cite{shin2023accelerating}.
-(4) With the emergence of new exascale architectures in supercomputing,
+(4) With the emergence of new exascale architectures,
 GPUs have become the primary driver to achieve performance in
 supercomputing.
 
@@ -40,92 +40,115 @@ to solve optimization problems on the GPU.
 \paragraph{GPU for mathematical programming.}
 The machine learning community has been a strong advocate
 for porting mathematical optimization on the GPU. One of the most
-promising application is the embedding of mathematical programs
-inside neural network, a task that requires to batch the solution
+promising application is embedding mathematical programs
+inside neural networks, a task that requires batching the solution
 of the optimization model for the training algorithm to be efficient~\cite{amos2017optnet,pineda2022theseus}.
-This has lead to the development of prototype code solving
-thousand of (small) optimization problem in parallel on the GPU.
-However, it is not trivial to solve large-scale optimization problems,
-as the previous prototypes are reliant on dense linear solver
-to solve the Newton step inside their algorithm.
+This has led to the development of prototype code solving
+thousand of (small) optimization problems in parallel on the GPU.
+However, it is not trivial to adapt such code to solve large-scale optimization problems,
+as the previous prototypes are reliant on dense linear solvers
+to compute the descent direction.
 
-For that reason, people are mostly using first-order algorithms on the GPU
-to rely only on level-1 and level-2 BLAS operations.
-In fact, first-order algorithms depend mostly on (sparse) matrix-vector operations, that run
+For that reason, people are mostly relying on first-order algorithms on the GPU,
+to exploit only level-1 and level-2 BLAS operations.
+First-order algorithms depend mostly on (sparse) matrix-vector operations, that run
 very efficiently on modern GPUs. Hence, we can counterbalance
 the relative inaccuracy of first-order method by running more
 iterations of the algorithm.
 A recent breakthrough~\cite{lu2023cupdlp,lu2023cupdlp2} has shown that a first-order algorithm
 can beat Gurobi (a state-of-the-art LP solver) in solving large-scale linear programs:
-the first-order iterations are so efficient on the GPU that we can solve the
-LP problems down to a tolerance of $10^{-8}$, which was unseen before.
+by using an efficient code to run the first-order iterations entirely on the GPU,
+we can solve the LP problems down to a tolerance of $10^{-8}$, which was unseen before.
 
 
 \paragraph{GPU for nonlinear programming.}
 The success of first-order algorithms in classical mathematical programming
-relies on convex assumptions that are non trivial to replicate
-in nonlinear programming. In fact, most engineering problems embed complex
-physical equations that are likely to break any convex structure in  the problem.
+relies on convex assumptions that are nontrivial to replicate
+in nonlinear programming. Most engineering problems embed complex
+physical equations that are likely to break any convex structure in the problem.
 Previous experiments on the OPF problem have shown that even a simple
-algorithm as ADMM has trouble to converge as soon as we decrease the
+algorithm as ADMM has trouble converging as soon as we decrease the
 tolerance below $10^{-3}$~\cite{kim2021leveraging}.
 
-Hence, second-order methods remain competitive with regards to their first-order
-siblings. A second-order algorithm requires to solve a Newton step at each
-iteration, an operation heavily relying on non-trivial linear algebra operations.
-In the large-scale regime, computing the Newton step translates to the
-factorization of a sparse matrix.
-Unfortunately, the previous generation of GPU-accelerated sparse linear
+Hence, second-order methods remain competitive with regard to their first-order
+siblings. A second-order algorithm requires solving a Newton step at each
+iteration, an operation relying on non-trivial sparse linear algebra operations.
+The previous generation of GPU-accelerated sparse linear
 solvers were lagging behind their CPU equivalents, as illustrated in
 subsequent surveys~\cite{tasseff2019exploring,swirydowicz2021linear}.
 Fortunately, sparse solvers are getting increasingly better with the newest
 generations of GPUs. In particular, NVIDIA has released in November 2023
-a new sparse direct solver that implements a sparse LU, a sparse Cholesky
-and a sparse LDL factorizations: {\tt cuDSS}. Our
-preliminary benchmark has shown that this new solver is significantly
-faster than the previous sparse solvers interfaced in CUDA~\cite{swirydowicz2021linear}.
-As it does not require expensive numerical pivoting operations, sparse Cholesky
+a new sparse direct solver that implements different sparse factorization routines: {\tt cuDSS}. Our
+preliminary benchmark has shown {\tt cuDSS} is significantly
+faster than the previous sparse solvers interfaced in CUDA.
+In particular, as it does not require expensive numerical pivoting operations, sparse Cholesky
 is easier to port on the GPU than the more complicated LU and LBL factorizations.
 Coupled with a GPU-accelerated automatic differentiation library, a Cholesky
-solver can solved a nonlinear program ten times faster than state-of-the-art
+solver can solve Optimal Power Flow (OPF) problems 10x faster than state-of-the-art
 methods~\cite{shin2023accelerating}.
 
-An alternative thread of research is looking at iterative methods to solve the Newton steps efficiently on the GPU.
+An alternative thread of research is investigating the solution of the Newton steps
+on the GPU using iterative linear algebra methods.
 Iterative methods often require non-trivial reformulation of the Newton step to avoid
-badly conditioned matrices, which has limited their use inside interior-point
-algorithms. New results give promising outlooks for convex problems~\cite{ghannad2022linear},
-but nonconvex problems often requires an Augmented Lagrangian reformulation
+ill-conditioned matrices, which has limited their use inside interior-point
+algorithms. New results are giving promising outlooks for convex problems~\cite{ghannad2022linear},
+but nonconvex problems often requisite an Augmented Lagrangian reformulation
 to be tractable~\cite{cao2016augmented,regev2023hykkt}. In particular,
 \cite{regev2023hykkt} presents an interesting use of the Golub and Greif
 hybrid method~\cite{golub2003solving} to solve the KKT systems arising in
 the interior-point methods, with promising results on the GPU.
-
 The null-space method, also known as the reduced Hessian strategy,
 is also a good candidate for solving KKT systems on the GPU.
 The null-space method reduces the KKT system down to
 a medium-sized dense matrix, which then can be factorized efficiently on the GPU.
-Our previous researches have shown that the method plays nicely with the interior-point
+Our previous research has shown that the method plays nicely with the interior-point
 methods if the number of degrees of freedom in the problem is relatively small~\cite{pacaud2022condensed}.
 
 \subsection{Contributions}
 In this article, we assess the current capabilities of modern GPUs
 to solve large-scale nonconvex nonlinear programs to optimality.
-To this end, we use a GPU-accelerated primal-dual interior-point method
-that leverages the GPU-accelerated automatic differentiation
-backend introduced in \cite{shin2023accelerating} when coupled with
-an efficient sparse linear solver running on the GPU.
-Compared to classical CPU implementations,
-we move beyond the intrinsic limitations of the LBL factorization
-illustrated in \cite{tasseff2019exploring,swirydowicz2021linear} and
-compare three recent alternatives to solve the KKT system on the GPU:
-the null-space strategy of \cite{pacaud2022condensed}, the hybrid
-KKT solver introduced in \cite{regev2023hykkt} and the sparse
-condensed KKT system of \cite{shin2023accelerating}.
+We focus on the two condensed-space methods
+introduced respectively in~\cite{regev2023hykkt,shin2023accelerating}.
+We re-use classical results from~\cite{wright1998ill} to show
+that for both methods, the condensed matrix exhibits
+structural ill-conditioning that limits the loss of accuracy in
+the descent direction (provided the interior-point algorithm satisfies
+some standard assumptions).
+We implement both algorithms inside the GPU-accelerated solver MadNLP,
+and leverage the GPU-accelerated automatic differentiation
+backend ExaModels~\cite{shin2023accelerating}.
+The interior-point algorithm runs entirely on the GPU, from
+the evaluation of the model (using ExaModels) to the solution of
+the KKT system (using a condensed-space method running on the GPU).
 We add a wrapper to the sparse linear solver {\tt cuDSS} to solve
-the KKT systems with a cutting edge sparse linear solver.
-We assess the strength
-and weaknesses of each method, both in term of accuracy and of running time.
-We gauge the speed-up on a benchmark and compare the performance to a state-of-the-art method running
-on the CPU. We move beyond the classical OPF instances we used in our previous works,
-and include additional large-scale problems coming from the COPS
-non-linear benchmark~\cite{dolan2004benchmarking} and used in the Mittelmann benchmark.
+the condensed KKT systems with a cutting-edge sparse linear solver.
+We assess the strengths
+and weaknesses of both methods, in terms of accuracy and running time.
+We move beyond the classical OPF instances we used in our previous works
+and include large-scale problems coming from the COPS
+non-linear benchmark~\cite{dolan2004benchmarking}.
+We compare the performance we obtain on the GPU with a state-of-the-art
+method running on the CPU: our results show that the condensed-space
+methods can solve large-scale OPF instances 10x faster using the GPU,
+but the performance is more mitigated on the COPS benchmark.
+
+\subsection{Notations}
+By defaut, the norm $\|\cdot\|$ refers to the 2-norm.
+We define the conditioning of a matrix $A$ as
+$\cond(A) = \| A \| \|A^{-1} \|$.
+For any real number $x$, we note $\widehat{x}$ its floating
+point representation.
+We note $\epstol$ the smallest positive number such that
+$\widehat{x} \leq (1 + \tau) x$ for $|\tau| < \epstol$.
+In double precision, $\epstol = 1.1 \times 10^{-16}$.
+We use the following notations to proceed to our error analysis.
+For $p \in \mathbb{N}$ and a positive variable $h$:
+\begin{itemize}
+  \item We write $x = O(h^p)$ if there exists a constant $b > 0$
+    such that $\| x \| \leq b h^p$;
+  \item We write $x = \Omega(h^p)$ if there exists a constant $a > 0$
+    such that $\| x \| \geq a h^p$;
+  \item We write $x = \Theta(h^p)$ if there exists two constants $0 < a < b$
+    such that $a h^p \leq \| x \| \leq b h^p$.
+\end{itemize}
+
