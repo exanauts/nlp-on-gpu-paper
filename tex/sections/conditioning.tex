@@ -336,8 +336,7 @@ point arithmetic. We suppose $K_\gamma$ is factorized using
 a backward-stable Cholesky decomposition. The computed
 solution $\widehat{x}$ is solution of a perturbed system
 $\widetilde{K}_\gamma \widehat{x} = b$, with $\widetilde{K}_\gamma
-= K_\gamma + \Delta_s K_\gamma$ and $\Delta_s K_\gamma$
-a symmetric matrix satisfying
+= K_\gamma + \Delta_s K_\gamma$ and $\Delta_s K_\gamma$ a symmetric matrix satisfying
 \begin{equation}
   \label{eq:cond:backwardstable}
 \|\Delta_s K_\gamma\| \leq \epstol \varepsilon_n \|K_\gamma\| \; ,
@@ -381,8 +380,7 @@ We note $x$ the solution of the linear system $K_\gamma x = b$
 in exact arithmetic, and $\widehat{x}$ the solution of
 the perturbed system $\widehat{K}_\gamma \widehat{x} = \widehat{b}$
 in floating point arithmetic. We are interested in bounding
-the error $\Delta x = \widehat{x} - x$. We express
-the exact solution $x$ as
+the error $\Delta x = \widehat{x} - x$. We express the exact solution $x$ as
 \begin{equation}
   x = U_L x_L + U_S x_S = Y x_Y + Z x_Z \; .
 \end{equation}
@@ -459,6 +457,7 @@ Combining together Proposition~\ref{prop:cond:rhsperturb}
 with Proposition~\ref{prop:cond:matrixperturb}, we deduce that
 if $\Delta b \in \rangespace{A^\top}$, then
 \begin{equation}
+  \label{eq:cond:boundbacksolve}
   \begin{aligned}
     \| \widehat{x}_L - x_L  \| & \leq \|\widehat{x}_L - \bar{x}_L \|  + \|\bar{x}_L - x_L \|
     & \leq& \| \bar{x} \| O(\epstol) + O(\Xi\epstol) \;, \\
@@ -470,35 +469,98 @@ if $\Delta b \in \rangespace{A^\top}$, then
 \end{equation}
 
 
+\subsection{Solution of the condensed KKT system}
+Now that we have bounded the errors made in the the linear system
+$K_\gamma x = b$, we have all the elements to bound the accuracy
+of the solution of the condensed KKT system~\eqref{eq:kkt:condensed}
+in floating point arithmetic. In all this section, we assume that
+the primal-dual iterate $(p,v)$ satisfies the assumptions~\ref{hyp:cond:wellcond}.
 
-
-\subsection{Accuracy of the Schur-complement $G K_\gamma^{-1} G^\top$}
-HyKKT solves the linear system \eqref{eq:kkt:schurcomplhykkt}
-using a Krylov iterative algorithm. We suppose the CG algorithm converges
-down to a relative tolerance $\varepsilon_{cg}$. We look at the backward
-error made when solving \eqref{eq:kkt:schurcomplhykkt} using a Krylov method.
-
-\subsubsection{Error in the backsolve}
-Each CG iteration
-involves a multiplication with the Schur-complement $S_\gamma = G K^{-1}_\gamma G^\top$.
-At iteration $k$, the CG algorithm evaluates the matrix product $\widehat{S}_\gamma \widehat{p}_k$,
-where $\widehat{p}_k$ is the current descent direction evaluated in
-floating point arithmetic. We look at how the error $\Delta p_k$ propagates
-from one CG iteration to the other.
-
-As $G$ is full row-rank, the Jacobian is bounded: $\|G \| = \Theta(1)$.
-Hence $\widehat{G}^\top \widehat{p}_k = G^\top (p_k + \Delta p_k + O(\epstol)$.
-The multiplication $\widehat{S}_\gamma \widehat{p}_k$ involves the
-solution of the linear system:
+In \eqref{eq:kkt:condensed}, the RHS $\bar{r}_1$ and $\bar{r}_2$
+evaluate in floating point arithmetic as
 \begin{equation}
-  \widehat{K}_\gamma \widehat{r}_k = G^\top (p_k + \Delta p_k + O(\epstol)) \; .
+  \label{eq:cond:condensedrhs}
+  \left\{
+  \begin{aligned}
+    \bar{r}_1 &= - \widehat{r}_1 + \widehat{H}^\top\big(\widehat{D}_{s} \widehat{r}_{4} - \widehat{r}_{2} \big) \;, \\
+     \bar{r}_2 &= -\widehat{r}_3 \; .
+  \end{aligned}
+  \right.
 \end{equation}
-We bound the error made on $\widehat{r}_k$.
+Using basic floating point arithmetic, we get for $i=1,3,4$, $\widehat{r}_i = r_i + O(\epstol)$.
+The error in the RHS $r_2$ is impacted by the badly conditioned term $\mu S^{-1}e$:
+under Assumption~\ref{hyp:cond:wellcond}, it impacts differently
+the the active and inactive components:
+$\widehat{r}_{2,\cactive}= r_{2,\cactive} + O(\epstol)$ and
+$\widehat{r}_{2,\cinactive}= r_{2,\cinactive} + O(\Xi \epstol)$.
 
-\subsubsection{Error in the right-hand-side}
+\subsubsection{Solution with HyKKT}
+We suppose we solve the condensed system~\eqref{eq:kkt:condensed} using HyKKT
+and show that even for large values of $\gamma$ the error remains reasonable.
+First, we can factor the matrix $K_\gamma$ using Cholesky if $q_n \cond(K_\gamma) \epstol < 1$
+with $q_n$ a constant depending on the dimension $n$. As $\cond(K_\gamma) = \Theta(\Xi^{-1})$,
+the condition holds if Assumption~\ref{hyp:cond:wellcond} is satisfied.
+
+In floating point arithmetic, the initial RHS in \eqref{eq:kkt:schurcomplhykkt}
+is evaluated as
+$\widehat{r}_\gamma :=\widehat{G} \widehat{K}_\gamma^{-1} (\bar{r}_1 + \gamma \widehat{G}^\top \bar{r}_2) - \bar{r}_2$. Using \eqref{eq:cond:condensedrhs}, we have
+\begin{equation}
+  \label{eq:cond:boundderivationhykkt}
+  \begin{aligned}
+  \bar{r}_1 + \gamma \widehat{G}^\top \bar{r}_2 &=
+- \widehat{r}_1 + \gamma \widehat{G}^\top \widehat{r}_3+ \widehat{H}^\top\big(\widehat{D}_{s} \widehat{r}_{4} - \widehat{r}_{2} \big) \\
+&=  -
+\underbrace{\widehat{r}_1}_{O(\epstol)} +
+\underbrace{
+\widehat{H}_{\cinactive}^\top\big(\widehat{D}_{s,\cinactive} \widehat{r}_{4,\cinactive} - \widehat{r}_{2,\cinactive} \big)}_{O(\Xi \epstol)}
++ \underbrace{\widehat{A}^\top \begin{bmatrix}
+  \widehat{D}_{s,\cactive} \widehat{r}_{4,\cactive} - \widehat{r}_{2,\cactive}  \\
+  \gamma \widehat{r}_3
+\end{bmatrix}}_{O(\Xi^{-1}\epstol)} \; .
+  \end{aligned}
+\end{equation}
+The terms in the underbrace show the bound on the errors. We observe the third terms
+has an error increasing as $O(\Xi^{-1} \epstol)$
+lying entirely in the range space of $\widehat{A}^\top$.
+Hence, using Proposition~\ref{prop:cond:matrixperturb} and the bounds derived in \eqref{eq:cond:boundbacksolve}, we deduce
+that the error made in the backsolve $\widehat{K}_\gamma^{-1}(\bar{r}_1 + \gamma \widehat{G}^\top \bar{r}_2)$
+is bounded by $\|\bar{x}\|O(\epstol)$ in the large-space and $\|\bar{x}\|O(\Xi^{-1}\epstol)$
+in the small-space. As the small space can be assimilated to the null-space of $A$ close
+to convergence (see \eqref{eq:cond:invariantsubpsace} and we are multiplying the solution
+of the backsolve by $G$ to assemble $r_\gamma$, we deduce that
+\begin{equation}
+  \widehat{r}_\gamma = r_\gamma + O(\| r_\gamma \| \epstol) \; .
+\end{equation}
+
+We are now interested into the accuracy of the matrix product
+$y = S_\gamma x = (G K_{\gamma}^{-1} G^\top) x$, which implicitly determines
+the accuracy we can achieve within the CG algorithm. Using a similar reasoning than with $\widehat{r}_\gamma$, we can
+show that in floating point arithmetic, the output of the matrix-product
+$\widehat{y} = \widehat{S}_\gamma x$ exhibits an error $\widehat{y} = y + O(\|x\| \epstol)$:
+similarly, the large errors made in the backsolve $\widehat{K}_\gamma^{-1}$
+are in small-space of $K_\gamma$ and cancel
+when we multiply the solution by $\widehat{G}$ afterwards.
+If
+
+Eventually, HyKKT recovers the primal descent direction as $\widehat{K}_\gamma \widehat{d}_x = \widehat{r}_\gamma - \widehat{G}^\top \widehat{d}_y$. Using again Proposition~\ref{prop:cond:matrixperturb}, we get
+\begin{equation}
+  \widehat{d}_x = d_x + O() \; .
+\end{equation}
 
 
-\subsubsection{Total error in the CG algorithm}
+\subsubsection{Solution with sparse-condensed KKT system}
+The sparse-condensed KKT system has removed the equality
+constraints from the optimization problems, simplifying
+the solution of the condensed KKT system to
+\begin{equation}
+  K d_x = -r_1 + H^\top (D_s r_4 - r_2) \; .
+\end{equation}
+Hence, the active Jacobian $A$ reduces to the active inequalities $A = H_{\cactive}$.
+Using a similar analysis than in \eqref{eq:cond:boundderivationhykkt},
+the error in the right-hand-side is $O(\Xi^{-1} \epstol)$ and is in the
+range space of the active Jacobian $A$. Using again Proposition~\ref{prop:cond:matrixperturb},
+we can show that the error on $\widehat{d}_x$ is bounded by $O(\|\bar{r}_1\| \epstol)$.
+
+\subsubsection{Summary}
 
 
-\subsection{Accuracy of the condensed KKT system \eqref{eq:kkt:condensed}}

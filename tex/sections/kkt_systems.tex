@@ -1,5 +1,5 @@
 \section{Solving KKT systems on the GPU}
-The GPU has emerged as one of the new prominent landscape
+The GPU has emerged as the new prominent landscape
 for numerical computing. GPUs are using a SIMD formalism
 that yields excellent throughput for parallelizing small-scale
 operations, but their use remains limited as soon as the computational
@@ -10,8 +10,8 @@ shown that GPU-based linear solvers lag far behind their equivalent
 on the CPU to factorize the system~\eqref{eq:kkt:augmented}
 \cite{tasseff2019exploring,swirydowicz2021linear}. One strategy
 has emerged to overcome this challenge:
-use a sparse factorization that does not require numerical pivoting~\cite{regev2023hykkt,shin2023accelerating}.
-Interestingly, the two methods are leveraging the condensed KKT system~\eqref{eq:kkt:condensed}.
+use a sparse factorization that does not require numerical pivoting~\cite{regev2023hykkt,shin2023accelerating}
+by leveraging the structure of the condensed KKT system~\eqref{eq:kkt:condensed}.
 
 \subsection{Golub \& Greif strategy}
 \label{sec:kkt:golubgreif}
@@ -32,8 +32,8 @@ The trick is to reformulate the condensed KKT system \eqref{eq:kkt:condensed} in
   \end{bmatrix}
   =
   \begin{bmatrix}
-    \hat{r}_1 + \gamma G^\top \hat{r}_2 \\
-    \hat{r}_2
+    \bar{r}_1 + \gamma G^\top \bar{r}_2 \\
+    \bar{r}_2
   \end{bmatrix}
 \end{equation}
 where we have introduced the regularized matrix $K_\gamma := K + \gamma G^\top G$.
@@ -44,8 +44,8 @@ If SOSC holds, the matrix $K_\gamma$ is positive definite for a large-enough par
   such that, for all $\gamma > \gamma_{min}$, $K_\gamma$ is positive definite
   if and only if the reduced Hessian $Z^\top K Z$ is positive definite.
 \end{proposition}
-If $\gamma$ is getting too large, we can prove that the conditioning
-of $K_\gamma$ increases linearly with $\gamma$ past a certain threshold.
+If $\gamma$ is large enough, we can prove that the conditioning
+of $K_\gamma$ increases linearly with $\gamma$.
 \begin{proposition}[\cite{regev2023hykkt}, Theorem 2, p.7]
   \label{prop:kkt:hykkt:cond}
   We suppose $G$ is full row rank. Then there exists $\gamma_{max}
@@ -55,27 +55,30 @@ of $K_\gamma$ increases linearly with $\gamma$ past a certain threshold.
 
 The linear solver HyKKT~\cite{regev2023hykkt}
 leverages the positive definiteness of $K_\gamma$ and solves
-\eqref{eq:kkt:hykkt} using a hybrid direct-iterative method:
+\eqref{eq:kkt:hykkt} using a hybrid direct-iterative method
+that uses the following steps:
 \begin{enumerate}
   \item Assemble $K_\gamma$ and factorize it using sparse Cholesky ;
   \item Solve the Schur complement of \eqref{eq:kkt:hykkt} using a conjugate gradient (CG)
     algorithm to recover the dual descent direction:
     \begin{equation}
       \label{eq:kkt:schurcomplhykkt}
-      (G K_\gamma^{-1} G^\top) d_y = G K_\gamma^{-1} (\hat{r}_1 + \gamma G^\top \hat{r}_2) - \hat{r}_2 \; .
+      (G K_\gamma^{-1} G^\top) d_y = G K_\gamma^{-1} (\bar{r}_1 + \gamma G^\top \bar{r}_2) - \bar{r}_2 \; .
     \end{equation}
-  \item Solve the system $K_\gamma d_x = \hat{r}_1 + \gamma G^\top \hat{r}_2 - G^\top d_y$
-    to get the primal descent direction.
+  \item Solve the system $K_\gamma d_x = \bar{r}_1 + \gamma G^\top \bar{r}_2 - G^\top d_y$
+    to recover the primal descent direction.
 \end{enumerate}
-The method uses a sparse Cholesky factorization used in conjunction with a CG algorithm.
+The method uses a sparse Cholesky factorization in conjunction with a CG algorithm.
 The sparse Cholesky factorization has the advantage of being stable without
 numerical pivoting, rendering the algorithm tractable on a GPU.
 Each CG iteration requires the application of a backsolve with the
-factors of $K_\gamma$, an operation that can be numerically demanding. For that reason, the
-hybrid method HyKKT requires a small number of iterations to be numerically efficient.
-Fortunately, the eigenvalues of the Schur-complement $G K_\gamma^{-1} G^\top$
-converge to a single value as we increase the regularization parameter
-$\gamma$ (\cite[Theorem 4]{regev2023hykkt}). The larger the $\gamma$, the less iterations is required in the CG algorithm.
+factors of $K_\gamma$, an operation that can be numerically demanding. For that reason,
+HyKKT is efficient only if the CG solver converges in a small number of iterations.
+Fortunately, the eigenvalues of the Schur-complement $S_\gamma := G K_\gamma^{-1} G^\top$
+all converge to $\frac{1}{\gamma}$ as we increase the regularization parameter
+$\gamma$ (\cite[Theorem 4]{regev2023hykkt}), meaning that $\lim_{\gamma \to \infty} \cond(S_\gamma) = 1$.
+Stating it differently,
+the larger the $\gamma$, the less iterations is required in the CG algorithm.
 
 
 \subsection{A novel equality relaxation strategy (SS)}
