@@ -1,6 +1,6 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.1"
+julia_version = "1.10.2"
 manifest_format = "2.0"
 project_hash = "9b51f6a5d9720d979fe8f9e8ae156436f5d4eb87"
 
@@ -97,7 +97,9 @@ version = "0.4.2"
 
 [[deps.COPSBenchmark]]
 deps = ["JuMP", "Random"]
-path = "../../COPSBenchmark.jl"
+git-tree-sha1 = "8b9f3d8de7385752ed177f21bca33346ef4e7b3b"
+repo-rev = "main"
+repo-url = "https://github.com/MadNLP/COPSBenchmark.jl"
 uuid = "3c263af4-7bba-497b-afe4-00c59a0a48a5"
 version = "0.1.0"
 
@@ -308,7 +310,7 @@ version = "1.6.0"
 
 [[deps.ExaModels]]
 deps = ["NLPModels", "Printf", "SolverCore"]
-path = "../../ExaModels.jl"
+git-tree-sha1 = "606d0f6c1bcdda9ec7841a4892337b00814e2334"
 uuid = "1037b233-b668-4ce9-9b63-f9f681f55dd2"
 version = "0.5.0"
 
@@ -640,7 +642,7 @@ version = "0.6.0"
 [[deps.MadNLPHSL]]
 deps = ["HSL", "LinearAlgebra", "MadNLP"]
 git-tree-sha1 = "3b6055e7df5068bb9463575e25365fab0c84a0d3"
-repo-rev = "master"
+repo-rev = "fp/hybrid"
 repo-subdir = "lib/MadNLPHSL"
 repo-url = "https://github.com/MadNLP/MadNLP.jl.git"
 uuid = "7fb6135f-58fe-4112-84ca-653cf5be0c77"

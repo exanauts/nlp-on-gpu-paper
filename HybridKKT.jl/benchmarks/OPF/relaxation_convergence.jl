@@ -64,7 +64,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
     )
     MadNLP.solve!(solver)
     # Warmup
-    for (k, tol) in enumerate([1e-2, 1e-3, 1e-4, 1e-5])
+    for (k, tol) in enumerate(tols)
         solver = MadNLP.MadNLPSolver(
             nlp;
             kkt_system=MadNLP.SparseCondensedKKTSystem,

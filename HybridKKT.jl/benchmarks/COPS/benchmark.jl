@@ -47,7 +47,7 @@ function parse_name(cops_instance)
     return "$(id)_$(k)"
 end
 
-function benchmark_solver(bench_solver, nlp, ntrials; gamma=1e7, options...)
+function benchmark_solver(bench_solver, nlp, ntrials; gamma=1e7, maxit=1000, options...)
     ## Warm-up
     solver = bench_solver(nlp; max_iter=1, options...)
     MadNLP.solve!(solver)
@@ -57,7 +57,7 @@ function benchmark_solver(bench_solver, nlp, ntrials; gamma=1e7, options...)
     status = 0
     ## Benchmark
     for _ in 1:ntrials
-        solver = bench_solver(nlp; gamma=gamma, options...)
+        solver = bench_solver(nlp; gamma=gamma, max_iter=maxit, options...)
         results = MadNLP.solve!(solver)
 
         status += Int(results.status)
@@ -101,7 +101,8 @@ end
     verbose::Bool=false,
     quick::Bool=false,
     tol::Float64=1e-4,
-    ntrials::Int=3,
+    ntrials::Int=1,
+    max_iter::Int=500,
 )
     if !isdir(RESULTS_DIR)
         mkpath(RESULTS_DIR)
@@ -123,14 +124,28 @@ end
 
     if solver == "all" || solver == "ma27"
         @info "[CPU] Benchmark SparseKKTSystem+ma27"
-        results = run_benchmark(build_ma27_solver, instances, ntrials; tol=tol, print_level=print_level)
+        results = run_benchmark(
+            build_ma27_solver,
+            instances,
+            ntrials;
+            maxit=max_iter,
+            tol=tol,
+            print_level=print_level,
+        )
         output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-hsl-ma27.csv")
         writedlm(output_file, [index results])
     end
 
     if solver == "all" || solver == "ma57"
         @info "[CPU] Benchmark SparseKKTSystem+ma57"
-        results = run_benchmark(build_ma57_solver, instances, ntrials; tol=tol, print_level=print_level)
+        results = run_benchmark(
+            build_ma57_solver,
+            instances,
+            ntrials;
+            maxit=max_iter,
+            tol=tol,
+            print_level=print_level,
+        )
         output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-hsl-ma57.csv")
         writedlm(output_file, [index results])
     end
@@ -141,6 +156,7 @@ end
             build_sckkt_solver,
             instances,
             ntrials;
+            maxit=max_iter,
             tol=tol,
             linear_solver=HybridKKT.CHOLMODSolver,
             print_level=print_level,
@@ -155,6 +171,7 @@ end
             build_hckkt_solver,
             instances,
             ntrials;
+            maxit=max_iter,
             tol=tol,
             linear_solver=HybridKKT.CHOLMODSolver,
             print_level=print_level,
@@ -169,6 +186,7 @@ end
             build_sckkt_solver,
             instances,
             ntrials;
+            maxit=max_iter,
             use_gpu=true,
             tol=tol,
             linear_solver=MadNLPGPU.CUDSSSolver,
@@ -185,6 +203,7 @@ end
             build_hckkt_solver,
             instances,
             ntrials;
+            maxit=max_iter,
             use_gpu=true,
             tol=tol,
             linear_solver=MadNLPGPU.CUDSSSolver,

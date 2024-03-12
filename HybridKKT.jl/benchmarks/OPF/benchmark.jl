@@ -41,7 +41,7 @@ FULL_BENCHMARK = [
     "pglib_opf_case2000_goc.m",
     "pglib_opf_case20758_epigrids.m",
     "pglib_opf_case2312_goc.m",
-    "pglib_opf_case24464_goc.m",
+    # "pglib_opf_case24464_goc.m",
     "pglib_opf_case2742_goc.m",
     "pglib_opf_case2869_pegase.m",
     "pglib_opf_case30000_goc.m",
@@ -230,7 +230,7 @@ end
     quick::Bool=false,
     tol::Float64=1e-4,
     gamma::Float64=1e7,
-    ntrials::Int=3,
+    ntrials::Int=1,
 )
     if !isdir(RESULTS_DIR)
         mkpath(RESULTS_DIR)
