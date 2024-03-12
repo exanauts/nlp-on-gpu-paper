@@ -14,8 +14,9 @@ using ExaModels
 
 import SuiteSparse: CHOLMOD
 
-CUDA.allowscalar(false)
-CUDA.device!(1)
+if CUDA.has_cuda()
+    CUDA.allowscalar(false)
+end
 
 function refresh_memory()
     GC.gc(true)

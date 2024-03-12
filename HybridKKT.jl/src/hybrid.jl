@@ -132,7 +132,7 @@ function MadNLP.create_kkt_system(
 
     jt_csc, jt_csc_map = MadNLP.coo_to_csc(jt_coo)
     hess_com, hess_csc_map = MadNLP.coo_to_csc(hess_raw)
-    init_condensation = CUDA.@elapsed begin
+    init_condensation = @elapsed begin
         aug_com, dptr, hptr, jptr = MadNLP.build_condensed_aug_symbolic(
             hess_com,
             jt_csc
@@ -154,7 +154,7 @@ function MadNLP.create_kkt_system(
 
     gamma = Ref{T}(1000)
 
-    init_linear_solver = CUDA.@elapsed begin
+    init_linear_solver = @elapsed begin
         linear_solver = linear_solver(aug_com; opt = opt_linear_solver)
     end
 
@@ -280,7 +280,7 @@ function MadNLP.build_kkt!(kkt::HybridCondensedKKTSystem)
     # Regularization for equality
     fixed!(kkt.diag_buffer, kkt.ind_eq, kkt.gamma[])
     # Condensation
-    kkt.etc[:time_condensation] += CUDA.@elapsed begin
+    kkt.etc[:time_condensation] += @elapsed begin
         MadNLP.build_condensed_aug_coord!(kkt)
     end
     return
@@ -319,20 +319,20 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
     r1 .= wx
     mul!(r1, G', wy, kkt.gamma[], one(T))    # r1 = wx + γ Gᵀ wy
     wx .= r1                               # (save for later)
-    kkt.etc[:time_backsolve] += CUDA.@elapsed begin
+    kkt.etc[:time_backsolve] += @elapsed begin
         MadNLP.solve!(kkt.linear_solver, r1)   # r1 = (Kγ)⁻¹ [wx + γ Gᵀ wy]
     end
     mul!(wy, G, r1, one(T), -one(T))       # -wy + G (Kγ)⁻¹ [wx + γ Gᵀ wy]
 
     # Solve Schur-complement system with a Krylov iterative method.
-    kkt.etc[:time_cg] += CUDA.@elapsed begin
+    kkt.etc[:time_cg] += @elapsed begin
         Krylov.solve!(kkt.iterative_linear_solver, kkt.S, wy; atol=1e-12, rtol=0.0, verbose=0)
     end
     copyto!(wy, kkt.iterative_linear_solver.x)
 
     # Extract solution of Golub & Greif
     mul!(wx, G', wy, -one(T), one(T))
-    kkt.etc[:time_backsolve] += CUDA.@elapsed begin
+    kkt.etc[:time_backsolve] += @elapsed begin
         MadNLP.solve!(kkt.linear_solver, wx)
     end
 
