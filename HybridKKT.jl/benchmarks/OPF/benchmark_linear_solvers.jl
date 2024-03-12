@@ -1,16 +1,18 @@
 
-using DelimitedFiles
 using Comonicon
-using CUDSS
-using LinearAlgebra
-using SparseArrays
-import SuiteSparse: CHOLMOD
 
-include(joinpath(@__DIR__, "common.jl"))
-include(joinpath(@__DIR__, "..", "scripts", "opf", "model.jl"))
+include(joinpath(@__DIR__, "..", "common.jl"))
+include(joinpath(@__DIR__, "model.jl"))
+
+if haskey(ENV, "PGLIB_PATH")
+    const PGLIB_PATH = ENV["PGLIB_PATH"]
+else
+    error("Unable to find path to PGLIB benchmark.\n"*
+        "Please set environment variable `PGLIB_PATH` to run benchmark with PowerModels.jl")
+end
 
 # Setup #
-const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "kkt")
+const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "kkt")
 
 function benchmark_cudss(K, ntrials; structure="SPD")
     n = size(K, 1)
@@ -102,7 +104,7 @@ end
     datafile = joinpath(PGLIB_PATH, case)
     nlp = ac_power_model(datafile)
 
-    solver = build_hckkt_solver(nlp, gamma; linear_solver=HybridKKT.CHOLMODSolver, max_iter=1, print_level=MadNLP.ERROR)
+    solver = build_hckkt_solver(nlp; gamma=gamma, max_iter=1, print_level=MadNLP.ERROR)
     MadNLP.solve!(solver)
 
     # Take condensed KKT system at iteration 1

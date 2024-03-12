@@ -1,15 +1,9 @@
 
-using DelimitedFiles
 
 using Comonicon
 
-using CUDA
-
-using MadNLP
-using MadNLPHSL
-using MadNLPGPU
-
-using HybridKKT
+include(joinpath(@__DIR__, "..", "common.jl"))
+include(joinpath(@__DIR__, "model.jl"))
 
 if haskey(ENV, "PGLIB_PATH")
     const PGLIB_PATH = ENV["PGLIB_PATH"]
@@ -19,8 +13,6 @@ else
 end
 
 const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "opf")
-
-include(joinpath(@__DIR__, "model.jl"))
 
 CUDA.allowscalar(false)
 
@@ -63,12 +55,6 @@ FULL_BENCHMARK = [
     "pglib_opf_case9591_goc.m",
 ]
 
-
-function refresh_memory()
-    GC.gc(true)
-    CUDA.has_cuda() && CUDA.reclaim()
-    return
-end
 
 function benchmark_hsl(nlp, ntrials; options...)
     ## Warm-up

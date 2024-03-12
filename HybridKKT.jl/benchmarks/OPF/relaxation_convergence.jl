@@ -1,19 +1,8 @@
 
-using DelimitedFiles
-using LinearAlgebra
 using Comonicon
 
-using MadNLP
-using MadNLPHSL
-using MadNLPGPU
-
-using CUDA
-
-using HybridKKT
-
-if !@isdefined ac_power_model
-    include(joinpath(@__DIR__, "model.jl"))
-end
+include(joinpath(@__DIR__, "..", "common.jl"))
+include(joinpath(@__DIR__, "model.jl"))
 
 if haskey(ENV, "PGLIB_PATH")
     const PGLIB_PATH = ENV["PGLIB_PATH"]
@@ -22,13 +11,15 @@ else
         "Please set environment variable `PGLIB_PATH` to run benchmark with PowerModels.jl")
 end
 
-const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
+const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "condensed")
 
-@main function main(; case="pglib_opf_case9241_pegase.m")
+@main function main(; verbose::Bool=false, case="pglib_opf_case2000_goc.m")
     if !isdir(RESULTS_DIR)
         mkpath(RESULTS_DIR)
     end
     datafile = joinpath(PGLIB_PATH, case)
+
+    print_level = verbose ? MadNLP.INFO : MadNLP.ERROR
     tols = [1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8]
     nlp = ac_power_model(datafile)
 
@@ -59,7 +50,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
         fixed_variable_treatment=MadNLP.RelaxBound,
         linear_solver=HybridKKT.CHOLMODSolver,
         richardson_tol=1e-12,
-        print_level=MadNLP.INFO,
+        print_level=print_level,
         max_iter=1,
     )
     MadNLP.solve!(solver)
@@ -73,7 +64,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
             fixed_variable_treatment=MadNLP.RelaxBound,
             linear_solver=HybridKKT.CHOLMODSolver,
             richardson_tol=1e-12,
-            print_level=MadNLP.INFO,
+            print_level=print_level,
             max_iter=200,
             tol=tol,
         )
@@ -104,7 +95,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
         linear_solver=MadNLPGPU.CUDSSSolver,
         cudss_algorithm=MadNLP.CHOLESKY,
         richardson_tol=1e-12,
-        print_level=MadNLP.INFO,
+        print_level=print_level,
         max_iter=1,
     )
     MadNLP.solve!(solver)
@@ -118,7 +109,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "results", "condensed")
             linear_solver=MadNLPGPU.CUDSSSolver,
             cudss_algorithm=MadNLP.CHOLESKY,
             richardson_tol=1e-12,
-            print_level=MadNLP.INFO,
+            print_level=print_level,
             max_iter=200,
             tol=tol,
         )

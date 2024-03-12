@@ -1,9 +1,15 @@
 
-using DelimitedFiles
 using Comonicon
 
 include(joinpath(@__DIR__, "..", "common.jl"))
 include(joinpath(@__DIR__, "model.jl"))
+
+if haskey(ENV, "PGLIB_PATH")
+    const PGLIB_PATH = ENV["PGLIB_PATH"]
+else
+    error("Unable to find path to PGLIB benchmark.\n"*
+        "Please set environment variable `PGLIB_PATH` to run benchmark with PowerModels.jl")
+end
 
 # Setup #
 const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "kkt")
@@ -66,18 +72,18 @@ end
     results[2, :] .= benchmark_kkt(solver, ntrials)
 
     @info "Benchmark KKT with HybridCondensedKKTSystem+CHOLMOD"
-    solver = build_hckkt_solver(nlp, gamma; max_iter=1, print_level=MadNLP.ERROR, linear_solver=HybridKKT.CHOLMODSolver)
+    solver = build_hckkt_solver(nlp; gamma=gamma, max_iter=1, print_level=MadNLP.ERROR, linear_solver=HybridKKT.CHOLMODSolver)
     results[3, :] .= benchmark_kkt(solver, ntrials)
 
 
     nlp_gpu = ac_power_model(datafile; backend=CUDABackend())
 
     @info "Benchmark KKT with SparseCondensedKKTSystem+cuDSS"
-    solver = build_sckkt_solver(nlp_gpu; max_iter=1, print_level=MadNLP.ERROR, linear_solver=MadNLPGPU.CUDSSSolver, cudss_algorithm=MadNLP.CHOLESKY)
+    solver = build_sckkt_solver(nlp_gpu; max_iter=1, print_level=MadNLP.ERROR, linear_solver=MadNLPGPU.CUDSSSolver, cudss_algorithm=MadNLP.CHOLESKY, tol=1e-4)
     results[4, :] .= benchmark_kkt(solver, ntrials)
 
     @info "Benchmark KKT with HybridCondensedKKTSystem+cuDSS"
-    solver = build_hckkt_solver(nlp_gpu, gamma; max_iter=1, print_level=MadNLP.ERROR, linear_solver=MadNLPGPU.CUDSSSolver, cudss_algorithm=MadNLP.CHOLESKY)
+    solver = build_hckkt_solver(nlp_gpu; gamma=gamma, max_iter=1, print_level=MadNLP.ERROR, linear_solver=MadNLPGPU.CUDSSSolver, cudss_algorithm=MadNLP.CHOLESKY, tol=1e-4)
     results[5, :] .= benchmark_kkt(solver, ntrials)
 
     output_file = joinpath(RESULTS_DIR, "benchmark_kkt.txt")

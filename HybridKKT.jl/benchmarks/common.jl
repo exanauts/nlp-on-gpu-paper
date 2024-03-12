@@ -1,12 +1,21 @@
 
+using DelimitedFiles
 using LinearAlgebra
+using SparseArrays
+
 using CUDA
+using CUDSS
+
 using MadNLP
 using MadNLPHSL
 using MadNLPGPU
 using HybridKKT
+using ExaModels
+
+import SuiteSparse: CHOLMOD
 
 CUDA.allowscalar(false)
+CUDA.device!(1)
 
 function refresh_memory()
     GC.gc(true)

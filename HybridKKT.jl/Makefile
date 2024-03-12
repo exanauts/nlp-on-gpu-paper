@@ -7,12 +7,15 @@ install:
 clean: 
 	rm -rf results/
 
+build:
+	zip -r resuls.zip results/
+
 update:
 	$(JULIAEXEC) --project -e "using Pkg; Pkg.update()"  
 	
-test:
-	$(JULIAEXEC) --project benchmarks/OPF/benchmark.jl --quick 
+tests:
 	$(JULIAEXEC) --project benchmarks/COPS/benchmark.jl --quick  
+	$(JULIAEXEC) --project benchmarks/OPF/benchmark.jl --quick 
 
 table1: 
 	$(JULIAEXEC) --project benchmarks/OPF/benchmark_linear_solvers.jl 
@@ -32,9 +35,9 @@ opf_benchmark:
 cops_benchmark:
 	$(JULIAEXEC) --project benchmarks/COPS/benchmark.jl 
 
-benchmark: opf_benchmark cops_benchmark
+benchmarks: opf_benchmark cops_benchmark
 
 article: table1 table2 figure1 figure2 
 
-all: benchmark article
+all: benchmarks article
 

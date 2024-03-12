@@ -1,14 +1,8 @@
 
-using DelimitedFiles
 using Comonicon
 
-using MadNLP
-using MadNLPHSL
-using MadNLPGPU
-
-using CUDA
-
-using HybridKKT
+include(joinpath(@__DIR__, "..", "common.jl"))
+include(joinpath(@__DIR__, "model.jl"))
 
 if haskey(ENV, "PGLIB_PATH")
     const PGLIB_PATH = ENV["PGLIB_PATH"]
@@ -18,8 +12,6 @@ else
 end
 
 const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "hybrid")
-
-include(joinpath(@__DIR__, "model.jl"))
 
 function solve_hybrid(nlp, gamma; options...)
     solver = MadNLP.MadNLPSolver(
