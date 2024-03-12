@@ -4,14 +4,8 @@ using Comonicon
 include(joinpath(@__DIR__, "..", "common.jl"))
 include(joinpath(@__DIR__, "model.jl"))
 
-if haskey(ENV, "PGLIB_PATH")
-    const PGLIB_PATH = ENV["PGLIB_PATH"]
-else
-    error("Unable to find path to PGLIB benchmark.\n"*
-        "Please set environment variable `PGLIB_PATH` to run benchmark with PowerModels.jl")
-end
-
 # Setup #
+const PGLIB_PATH = joinpath(artifact"PGLib_opf", "pglib-opf-23.07")
 const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "kkt")
 
 function benchmark_cudss(K, ntrials; structure="SPD")

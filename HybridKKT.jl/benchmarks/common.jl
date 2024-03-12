@@ -2,6 +2,7 @@
 using DelimitedFiles
 using LinearAlgebra
 using SparseArrays
+using Pkg.Artifacts
 
 using CUDA
 using CUDSS
