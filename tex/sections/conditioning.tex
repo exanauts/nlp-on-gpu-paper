@@ -1,6 +1,6 @@
 \section{Conditioning of the condensed KKT system}
 The condensed matrix $K$ appearing in \eqref{eq:kkt:condensed} is known to be ill-conditioned
-close to local optimum solution. That behavior is amplified
+close to a local optimum solution. That behavior is amplified
 for the matrix $K_\gamma$ as we increase the parameter $\gamma$.
 For a generic linear system $Mx = b$, the relative error after a perturbation
 $\Delta b$ on the right-hand-side is bounded by
@@ -24,8 +24,8 @@ meaning that without further assumptions the condensed matrix $K$ amplify
 the errors made throughout the algorithm.
 Hence, it is legitimate to investigate the impact of the ill-conditioning
 when solving the condensed system~\eqref{eq:kkt:condensed} in
-both the equality-relaxation strategy or the HyKKT strategy.
-We will see that the we can tighten the bounds in \eqref{eq:cond:defaultbond}
+both the equality-relaxation strategy and the HyKKT strategy.
+We will see that we can tighten the bounds in \eqref{eq:cond:defaultbond}
 by exploiting the structured ill-conditioning of the condensed matrix $K$.
 We base our analysis on \cite{wright1998ill}, where
 the author has put a particular emphasis on the condensed KKT
@@ -35,7 +35,7 @@ constraints.
 
 To alleviate the notations, we suppose that the primal variable
 $x$ is unconstrained, leaving only the slack $s$ with bounded values in \eqref{eq:slack_problem}.
-This is equivalent to include the the bounds on the variable $x$ in the inequality constraints,
+This is equivalent including the bounds on the variable $x$ in the inequality constraints,
 as $\bar{h}(x) \leq 0$ with $\bar{h}(x) := (h(x), -x)$.
 
 \subsection{Centrality conditions}
@@ -243,7 +243,7 @@ the additional term $\gamma G^\top G$ coming from the equality constraints.
   Using Theorem \ref{thm:cond}, part (iv), we obtain the result
   in \eqref{eq:cond:invariantsubpsace}.
 \end{proof}
-Theorem~\ref{thm:cond} gives us a deeper insight on the structure
+Theorem~\ref{thm:cond} gives us a deeper insight into the structure
 of the condensed matrix $K_\gamma$.
 Using equation~\eqref{eq:cond:invariantsubpsace}, we observe
 we can assimilate the large-space of $K_\gamma$ with $\rangespace(A^\top)$
@@ -284,7 +284,7 @@ the error arising from the multiplication by $S^{-1}$ is only $O(\epstol)$,
 which is significantly better than the error in $O(\epstol / s_{min})$ we would obtain
 in the cancellation case.
 
-In floating point arithmetic, the condensed matrix $K_\gamma$ is evaluated as
+In floating-point arithmetic, the condensed matrix $K_\gamma$ is evaluated as
 \begin{multline*}
   \widehat{K}_\gamma = W + E + (A + \Delta A)^\top (D_\gamma + \Delta D_\gamma) (A + \Delta A) \\
   + (H_{\cinactive} + \Delta H_{\cinactive})^\top S_{\cinactive}^{-1} V_{\cinactive} (H_{\cinactive} + \Delta H_{\cinactive}) \; ,
@@ -296,11 +296,11 @@ We have
 A^\top D_\gamma A = \Theta(\overline{\sigma}) \; , \quad
 A^\top \Delta D_\gamma A = O(\epstol \overline{\sigma}) \; .
 \end{equation}
-We deduce that the perturbation $\Delta K_\gamma$ are bounded
+We deduce that the perturbation $\Delta K_\gamma$ is bounded
 by multiple of $\| K_\gamma \|$.
 \begin{proposition}
   \label{prop:cond:boundcondensedmatrix}
-  In floating point arithmetic, the perturbation
+  In floating-point arithmetic, the perturbation
   of the condensed matrix $\Delta K_\gamma$ satisfies
   $\Delta K_\gamma := \widehat{K_\gamma} - K_\gamma  = O(\epstol \overline{\sigma})$.
 \end{proposition}
@@ -374,7 +374,7 @@ $\Delta K_\gamma$ given in Proposition~\ref{prop:cond:boundcondensedmatrix}.
 We note $x$ the solution of the linear system $K_\gamma x = b$
 in exact arithmetic, and $\widehat{x}$ the solution of
 the perturbed system $\widehat{K}_\gamma \widehat{x} = \widehat{b}$
-in floating point arithmetic. We are interested in bounding
+in floating-point arithmetic. We are interested in bounding
 the error $\Delta x = \widehat{x} - x$. We
 recall that every vector $x \in \mathbb{R}^n$ decomposes as
 \begin{equation}
@@ -413,6 +413,7 @@ and using the structure \eqref{eq:cond:inversecondensed} we get
 \end{equation}
 which in turn implies the following bounds:
 \begin{equation}
+  \label{eq:cond:rhserror}
   \begin{aligned}
     & \| \Delta x_L \| \leq \| \Sigma_L^{-1} \| \| \Delta b_L \| \; ,\\
     & \| \Delta x_S \| \leq \| \Sigma_S^{-1} \| \| \Delta b_S \| \; .
@@ -425,6 +426,7 @@ of $\Xi$ than the error $\Delta x_S$.
 \paragraph{Impact of matrix perturbation.}
 As $\|\Delta K_\gamma\| \ll \|K_\gamma\|$, we have that
 \begin{equation}
+  \label{eq:cond:invperturbed}
   \begin{aligned}
     (K_\gamma + \Delta K_\gamma)^{-1} &= (I + K_\gamma^{-1} \Delta K_\gamma)^{-1} K_\gamma^{-1} \\
                                       &= K_\gamma^{-1} - K_\gamma^{-1}\Delta K_\gamma K_\gamma^{-1} + O(\|\Delta K_\gamma\|^2) \; .
@@ -434,26 +436,27 @@ Using \eqref{eq:cond:inversecondensed} and noting $\Delta K_\gamma = \begin{bmat
   \Delta_L \\ \Delta _S
 \end{bmatrix}$, the first-order error is given by
 \begin{equation}
+  \label{eq:cond:inversecondensederror}
   K_\gamma^{-1}\Delta K_\gamma K_\gamma^{-1}  =
 U_L \Sigma_L^{-1} \Delta_L \Sigma_L^{-1}U_L^\top  +
   U_S \Sigma_S^{-1} \Delta_S \Sigma_S^{-1}U_S^\top  \;.
 \end{equation}
-Using \eqref{eq:cond:perturbationbound} and $\Delta_L, \Delta_S = O(\epstol \Xi^{-1})$,
-we deduce that the error made in the large-space is $O(\epstol \Xi)$ whereas
-the error in the small-space is $O(\epstol \Xi^{-1})$.
+Using \eqref{eq:cond:perturbationbound} and $(\Delta_L, \Delta_S)= O( \Xi^{-1}\epstol)$,
+we deduce that the error made in the large-space is $O(\Xi\epstol)$ whereas
+the error in the small-space is $O(\Xi^{-1}\epstol )$.
 
 \subsection{Solution of the condensed KKT system}
-Now that we have bounded the errors made in the the linear system
-$K_\gamma x = b$, we have all the elements to bound the accuracy
-of the solution of the condensed KKT system~\eqref{eq:kkt:condensed}
-in floating point arithmetic. In all this section, we assume that
-the primal-dual iterate $(p,v)$ satisfies the assumptions~\ref{hyp:cond:wellcond}.
+We use the relations~\eqref{eq:cond:rhserror} and \eqref{eq:cond:inversecondensederror}
+to bound the error made when solving the original condensed KKT~\eqref{eq:kkt:condensed}
+in floating-point arithmetic.
+In all this section, we assume that
+the primal-dual iterate $(p,v)$ satisfies Assumption~\ref{hyp:cond:wellcond}.
 Using \cite[Corollary 3.3]{wright2001effects}, the solution $(d_x, d_y)$ of the
 condensed KKT system \eqref{eq:kkt:condensed} in exact arithmetic satisfies
 $(d_x, d_y) = O(\Xi)$.
 
 In \eqref{eq:kkt:condensed}, the RHS $\bar{r}_1$ and $\bar{r}_2$
-evaluate in floating point arithmetic as
+evaluate in floating-point arithmetic as
 \begin{equation}
   \label{eq:cond:condensedrhs}
   \left\{
@@ -463,24 +466,26 @@ evaluate in floating point arithmetic as
   \end{aligned}
   \right.
 \end{equation}
-Using basic floating point arithmetic, we get for $i=1,3,4$, $\widehat{r}_i = r_i + O(\epstol)$.
-The error in the RHS $r_2$ is impacted by the badly conditioned term $\mu S^{-1}e$:
+Using basic floating-point arithmetic, we get
+$\widehat{r}_1 = r_1 + O(\epstol)$,
+$\widehat{r}_3 = r_3 + O(\epstol)$,
+$\widehat{r}_4 = r_4 + O(\epstol)$.
+The error in the right-hand-side $r_2$ is impacted by the term $\mu S^{-1}e$:
 under Assumption~\ref{hyp:cond:wellcond}, it impacts differently
-the the active and inactive components:
+the active and inactive components:
 $\widehat{r}_{2,\cactive}= r_{2,\cactive} + O(\epstol)$ and
 $\widehat{r}_{2,\cinactive}= r_{2,\cinactive} + O(\Xi \epstol)$.
-Similarly, the diagonal $\widehat{D}_s$ remains full accuracy only
-w.r.t. the inactive components: $\widehat{D}_{s,\cactive} = D_{s,\cactive} + O(\Xi \epstol)$
-and $\widehat{D}_{s,\cinactive} = D_{s,\cinactive} + O(\Xi^{-1} \epstol)$.
+Similarly, the diagonal matrix $\widehat{D}_s$ retains full accuracy only
+w.r.t. the inactive components: $\widehat{D}_{s,\cactive} = D_{s,\cactive} + O(\Xi^{-1} \epstol)$
+and $\widehat{D}_{s,\cinactive} = D_{s,\cinactive} + O(\Xi \epstol)$.
 
 \subsubsection{Solution with HyKKT}
-We suppose we solve the condensed system~\eqref{eq:kkt:condensed} using HyKKT
-and show that even for large values of $\gamma$ the error remains reasonable.
-First, we can factor the matrix $K_\gamma$ using Cholesky if $q_n \cond(K_\gamma) \epstol < 1$
-with $q_n$ a constant depending on the dimension $n$. As $\cond(K_\gamma) = \Theta(\Xi^{-1})$,
-the condition holds if Assumption~\ref{hyp:cond:wellcond} is satisfied.
+We analyze the accuracy achieved when we solve the condensed system~\eqref{eq:kkt:condensed}
+using HyKKT,
+and show that the error remains reasonable even for large values of $\gamma$.
 
-In floating point arithmetic, the initial RHS in \eqref{eq:kkt:schurcomplhykkt}
+\paragraph{Initial right-hand-side.}
+In floating-point arithmetic, the initial RHS in \eqref{eq:kkt:schurcomplhykkt}
 is evaluated as
 $\widehat{r}_\gamma :=\widehat{G} \widehat{K}_\gamma^{-1} (\bar{r}_1 + \gamma \widehat{G}^\top \bar{r}_2) - \bar{r}_2$. Using \eqref{eq:cond:condensedrhs}, we have
 \begin{equation}
@@ -498,33 +503,119 @@ $\widehat{r}_\gamma :=\widehat{G} \widehat{K}_\gamma^{-1} (\bar{r}_1 + \gamma \w
 \end{bmatrix}}_{O(\Xi^{-1}\epstol)} \; .
   \end{aligned}
 \end{equation}
-The terms in the underbrace show the bound on the errors. We observe the third terms
-has an error increasing as $O(\Xi^{-1} \epstol)$
-lying entirely in the range space of $\widehat{A}^\top$.
-Hence, using Proposition~\ref{prop:cond:matrixperturb} and the bounds derived in \eqref{eq:cond:boundbacksolve}, we deduce
-that the error made in the backsolve $\widehat{K}_\gamma^{-1}(\bar{r}_1 + \gamma \widehat{G}^\top \bar{r}_2)$
-is bounded by $\|\bar{x}\|O(\epstol)$ in the large-space and $\|\bar{x}\|O(\Xi^{-1}\epstol)$
-in the small-space. As the small space can be assimilated to the null-space of $A$ close
-to convergence (see \eqref{eq:cond:invariantsubpsace} and we are multiplying the solution
-of the backsolve by $G$ to assemble $r_\gamma$, we deduce that
+We note $\widehat{s}_\gamma = \bar{r}_1 + \gamma \widehat{G}^\top \bar{r}_2 =
+Y \widehat{s}_Y + Z \widehat{s}_Z$. Using \eqref{eq:cond:boundderivationhykkt},
+we have $\Delta s_Y = O(\Xi^{-1} \epstol)$ and $\Delta s_Z = O(\epstol)$.
+Using \eqref{eq:cond:invariantsubpsace}, we deduce
+$\Delta s_L := U_L^\top \Delta s_\gamma = O(\Xi^{-1} \epstol)$ and
+$\Delta s_S := U_S^\top \Delta s_\gamma = O(\epstol)$.
+We obtain using \eqref{eq:cond:boundinvariantsubspace} and \eqref{eq:cond:inversecondensed}
+that the error in the large space $\Delta s_L$ annihilates in the backsolve:
 \begin{equation}
-  \widehat{r}_\gamma = r_\gamma + O(\| r_\gamma \| \epstol) \; .
+  \label{eq:cond:boundhykkt1}
+  K_\gamma^{-1} \Delta s_\gamma = U_L \Sigma_L^{-1} \Delta s_L + U_S \Sigma_S^{-1} \Delta s_S  = O(\epstol)
+  \; .
 \end{equation}
+Using \eqref{eq:cond:invperturbed}, we get
+\begin{equation}
+  \widehat{G} \widehat{K}_\gamma^{-1} \Delta s_\gamma \approx
+  \widehat{G} (I - K_\gamma^{-1}\Delta K_\gamma) K_\gamma^{-1} \Delta s_\gamma \; .
+\end{equation}
+Using \eqref{eq:cond:boundhykkt1}, the first term is $\widehat{G} K_\gamma^{-1} \Delta s_\gamma = O(\epstol)$.
+The second writes as
+\begin{equation}
+  K_\gamma^{-1}\Delta K_\gamma (K_\gamma^{-1} \Delta s_\gamma)  =
+  \big[ G U_L \Sigma_L^{-1} \Delta_L + G U_S \Sigma_S^{-1} \Delta_S \big] (K_\gamma^{-1} \Delta s_\gamma) \; .
+\end{equation}
+Using \eqref{eq:cond:invariantsubpsace} again, we have
+$G U_L = G Y + O(\Xi)$ and $G U_S = GZ + O(\Xi) = O(\Xi)$. Hence
+$G U_L \Sigma_L^{-1} \Delta_L = O(1)$ and $G U_S \Sigma_S^{-1} \Delta_S = O(1)$.
+All in all, the error in the right-hand-side $\Delta \widehat{r}_\gamma$ satisfies:
+\begin{equation}
+  \label{eq:cond:errorrgamma}
+  \Delta \widehat{r}_\gamma = -\Delta \bar{r}_2 + \widehat{G} \widehat{K}_\gamma^{-1} \Delta s_\gamma = O(\epstol) \;.
+\end{equation}
+The result is remarkable: despite an expression involving the inverse
+of the ill-conditioned condensed matrix $K_\gamma$, the error made in $r_\gamma$
+is bounded only by the machine precision $\epstol$.
 
-We are now interested into the accuracy of the matrix product
-$y = S_\gamma x = (G K_{\gamma}^{-1} G^\top) x$, which implicitly determines
-the accuracy we can achieve within the CG algorithm. Using a similar reasoning than with $\widehat{r}_\gamma$, we can
-show that in floating point arithmetic, the output of the matrix-product
-$\widehat{y} = \widehat{S}_\gamma x$ exhibits an error $\widehat{y} = y + O(\|x\| \epstol)$:
-similarly, the large errors made in the backsolve $\widehat{K}_\gamma^{-1}$
-are in small-space of $K_\gamma$ and cancel
-when we multiply the solution by $\widehat{G}$ afterwards.
+\paragraph{Schur-complement operator.}
+The solution of the system~\eqref{eq:kkt:schurcomplhykkt}
+involves the Schur complement $S_\gamma = G K_\gamma^{-1} G^\top$.
+Similar as in the right-hand-side, the Schur-complement
+has a specific structure that limits the loss of accuracy
+in the conjugate gradient algorithm.
 
-% Eventually, HyKKT recovers the primal descent direction as $\widehat{K}_\gamma \widehat{d}_x = \widehat{r}_\gamma - \widehat{G}^\top \widehat{d}_y$. Using again Proposition~\ref{prop:cond:matrixperturb}, we get
-% \begin{equation}
-%   \widehat{d}_x = d_x + O() \; .
-% \end{equation}
-
+\begin{proposition}
+  Suppose the current primal-dual iterate $(p, v)$ satisfies Assumption~\ref{hyp:cond:wellcond}.
+  In exact arithmetic
+  \begin{equation}
+    S_\gamma = GY \, \Sigma_L^{-1} \, Y^\top G^\top + O(\Xi^2) \; .
+  \end{equation}
+\end{proposition}
+\begin{proof}
+  Using \eqref{eq:cond:inversecondensed}, we have
+  \begin{equation}
+    G K_\gamma^{-1} G^\top =
+    G U_L \Sigma_L^{-1} U_L^\top G^\top + G U_S \Sigma_S^{-1} U_S^\top G^\top \;.
+  \end{equation}
+  Using \eqref{eq:cond:invariantsubpsace}, we have $G U_L = GY + O(\Xi)$,
+  implying
+  \begin{equation}
+    G U_L \Sigma_L^{-1} U_L^\top G^\top = G Y  \Sigma_L^{-1} Y^\top G^\top + O(\Xi^2) \; .
+  \end{equation}
+  Using again \eqref{eq:cond:invariantsubpsace}, we have $G U_S = GZ + O(\Xi) = O(\Xi)$.
+  Hence, $G U_S \Sigma_S^{-1} U_S^\top G^\top = O(\Xi^2)$,
+  concluding the proof.
+\end{proof}
+We adapt the previous proposition to bound the error made when evaluating
+$\widehat{S}_\gamma$ in floating-point arithmetic.
+\begin{proposition}
+  Suppose the current primal-dual iterate $(p, v)$ satisfies Assumption~\ref{hyp:cond:wellcond}.
+  In floating-point arithmetic,
+  \begin{equation}
+    \label{eq:cond:errorSgamma}
+    \widehat{S}_\gamma = S_\gamma + O(\epstol) \; .
+  \end{equation}
+\end{proposition}
+\begin{proof}
+  We note $\widehat{G} = G + \Delta G$ (with $G = O(\epstol)$). Then
+  \begin{equation}
+    \begin{aligned}
+      \widehat{S}_\gamma &= \widehat{G} \widehat{K}_\gamma^{-1} \widehat{G}^\top \; , \\
+                         &= (G + \Delta G)\big(K_\gamma^{-1} - K_\gamma^{-1}\Delta K_\gamma K_\gamma^{-1}\big)(G + \Delta G)^\top \;, \\
+                    &\approx S_\gamma - G \big(K_\gamma^{-1}\Delta K_\gamma K_\gamma^{-1} \big)G^\top
+                    + K_\gamma^{-1} \Delta G^\top + \Delta G K_\gamma^{-1} \; .
+    \end{aligned}
+  \end{equation}
+  The second line is given by \eqref{eq:cond:invperturbed},
+  the third by neglecting the second-order errors.
+  Using \eqref{eq:cond:rhserror}, we get $K_\gamma^{-1} \Delta G^\top = O(\epstol)$
+  and $\Delta G K_\gamma^{-1} = O(\epstol)$.
+  Using \eqref{eq:cond:inversecondensederror}, we have
+  \begin{equation*}
+    G \big(K_\gamma^{-1}\Delta K_\gamma K_\gamma^{-1} \big)G^\top =
+G U_L \Sigma_L^{-1} \Delta_L \Sigma_L^{-1}U_L^\top G^\top  +
+G U_S \Sigma_S^{-1} \Delta_S \Sigma_S^{-1}U_S^\top  G^\top \;.
+  \end{equation*}
+  Using \eqref{eq:cond:invariantsubpsace}, we have $G U_S = O(\Xi)$,
+  and as $\Sigma_S^{-1} = \Theta(1)$ and $\Delta_S = O(\Xi^{-1} \epstol)$, we
+  get
+  $G U_S \Sigma_S^{-1} \Delta_S \Sigma_S^{-1}U_S^\top  G^\top = O(\Xi \epstol)$.
+  Finally, as $\Sigma_L^{-1} = \Theta(\Xi)$ and $G U_L = GY + O(\Xi)$,
+  we have
+  \begin{equation}
+    G U_L \Sigma_L^{-1} \Delta_L \Sigma_L^{-1}U_L^\top G^\top =
+    G Y \Sigma_L^{-1} \Delta_L \Sigma_L^{-1}Y^\top G^\top + O(\Xi^2 \epstol) \; .
+  \end{equation}
+  We conclude the proof by observing that
+  $G Y \Sigma_L^{-1} \Delta_L \Sigma_L^{-1}Y^\top G^\top = O(\Xi \epstol)$.
+\end{proof}
+The two error bounds \eqref{eq:cond:errorrgamma} and
+\eqref{eq:cond:errorSgamma} ensure that we can solve
+\eqref{eq:kkt:schurcomplhykkt} using a conjugate gradient
+algorithm, as the errors remain limited in floating-point
+arithmetic.
 
 \subsubsection{Solution with sparse-condensed KKT system}
 The sparse-condensed KKT system has removed the equality
@@ -537,23 +628,19 @@ the solution of the condensed KKT system to
 Hence, the active Jacobian $A$ reduces to the active inequalities $A = H_{\cactive}$.
 Using a similar analysis than in \eqref{eq:cond:boundderivationhykkt},
 the error in the right-hand-side is $O(\Xi^{-1} \epstol)$ and is in the
-range space of the active Jacobian $A$. Using again Proposition~\ref{prop:cond:matrixperturb},
+range space of the active Jacobian $A$. Using \eqref{eq:cond:inversecondensed},
 we can show that the absolute error on $\widehat{d}_x$ is bounded by $O(\|d_x\| \epstol)
 = O(\Xi \epstol)$. That implies the descent direction $\widehat{d}_x$ retains
-full relative precision close to optimality, thank to the
-structured ill-conditioning in the condensed matrix $K$. In other words,
-we can refine the solution returned by the Cholesky solver accurately using
+full relative precision close to optimality.
+In other words, we can refine the solution returned by the Cholesky solver accurately using
 iterative refinement.
 
 \subsubsection{Summary}
 Numerically, the primal-dual step $(\widehat{d}_x, \widehat{d}_y)$
 is computed only with an (absolute) precision $\varepsilon_{K}$,
-greater than the machine precision $\epstol$: for HyKKT, $\varepsilon_K$
+greater than the machine precision $\epstol$ (for HyKKT, $\varepsilon_K$
 is the absolute tolerance of the CG algorithm, for SCKKT the
-absolute tolerance of the iterative refinement algorithm $\varepsilon_{K}$,
-greater than the machine precision $\epstol$: for HyKKT, $\varepsilon_K$
-is the absolute tolerance of the CG algorithm, for SCKKT the
-absolute tolerance of the iterative refinement algorithm.
+absolute tolerance of the iterative refinement algorithm $\varepsilon_{K}$).
 
 The errors $\widehat{d}_x - d_x = O(\varepsilon_K)$ and
 $\widehat{d}_y - d_y = O(\varepsilon_K)$ propagate further in $(\widehat{d}_s, \widehat{d}_z)$.
@@ -563,7 +650,7 @@ By continuity, $\widehat{H} = H + O(\epstol)$ and $\widehat{r}_4 = r_4 + O(\epst
   \widehat{d}_s = d_s + O(\varepsilon_K) \; .
 \end{equation}
 Eventually, we obtain $\widehat{d}_z = - \widehat{r}_2 - \widehat{D}_s \widehat{d}_s$,
-giving the following bounds for the errors in the inactive and actice components:
+giving the following bounds for the errors in the inactive and active components:
 \begin{equation}
   \begin{aligned}
     & \widehat{d}_{z,\cactive} &= -\widehat{r}_{2,\cactive} - \widehat{D}_{s,\cactive} \widehat{d}_{s,\cactive}
@@ -572,17 +659,11 @@ giving the following bounds for the errors in the inactive and actice components
                                &= d_{z,\cinactive} + O(\varepsilon_K \Xi)
   \end{aligned}
 \end{equation}
-Hence, the error arises mostly in the active components $\widehat{d}_{z,\cactive}$.
+The error arises mostly in the active components $\widehat{d}_{z,\cactive}$.
 We want to set $\varepsilon_K \ll \Xi$ to limit the loss of accuracy, but doing
-so is getting not trivial as we are approaching the optimum. As example,
+so is not trivial as we are approaching the optimum. For example,
 solving the condensed system with a very good tolerance $\varepsilon_K = 10^{-12}$
 would only ensure that the absolute error is bounded by $10^{-4}$ if $\Xi = 10^{-8}$
 (as it is typical in primal-dual IPM). The impact remains limited if we
-have only few inequality constraints.
-
-
-
-
-
-
+have only a few inequality constraints.
 
