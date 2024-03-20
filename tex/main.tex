@@ -74,21 +74,30 @@ Mihai Anitescu
 \input{sections/conditioning.tex}
 \input{sections/numerics.tex}
 
-
 \section{Conclusion}
-Future extensions:
-\begin{itemize}
-  \item Interplay with first-order method (PDHG for LP)
-  \item Solving LP and QP problems on the GPU with IPM
-  \item From Cholesky to LDL (regularization can
-    ensure the KKT matrix is SQD, c.f. Orban, Saunders).
-\end{itemize}
+This article moves one step further in the solution of generic nonlinear
+programs on GPU architectures. We have compared two approaches
+to solve the KKT systems arising at each interior-point iteration, both
+based on a condensation procedure. Despite the forming of a ill-conditioned
+matrix, our theoretical analysis show that the loss of accuracy is benign
+in floating point arithmetic, thanks to the specific properties of IPM.
+Our numerical results show that both methods are competitive to solve large-scale
+nonlinear programs. Compared to the state-of-the-art linear solvers in HSL, we obtain 10x speed-up on large-scale OPF instances
+and quasi-dense instances ({\tt elec}). The results are more mitigated
+on the various instances of the COPS benchmark, but the performance remains
+always competitive with HSL.
+
+In the future, we are planning to robustify the performance of
+the two condensed KKT methods, in particular to stabilize the convergence
+for small tolerance (below $10^{-8}$). Notably, the sparse Cholesky solver
+can be adapted further to the specific needs of the IPM~\cite{wright1999modified}.
+Improving the two methods on the GPU would allow to solve large-scale
+problems intractable on the classical CPU architecture --- such as the multiperiod
+and security-constrained OPF problems --- especially when used in conjunction
+with a Schur-complement approach.
+
 
 \bibliographystyle{siam}
 \bibliography{biblio.bib}
-
-
-% \appendix
-% \input{sections/argos.tex}
 
 \end{document}

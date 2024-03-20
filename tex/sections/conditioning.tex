@@ -421,7 +421,14 @@ which in turn implies the following bounds:
 \end{equation}
 As $\Sigma_L^{-1} = O(\Xi)$ and $\Sigma_S^{-1} = \Theta(1)$,
 we deduce that the error $\Delta x_L$ is smaller by a factor
-of $\Xi$ than the error $\Delta x_S$.
+of $\Xi$ than the error $\Delta x_S$. The total error
+$\Delta x = U_L \Delta x_L + U_S \Delta x_S$ is bounded by
+\begin{equation}
+  \label{eq:cond:rhserrorfull}
+  \| \Delta x \|
+  \leq  \| \Sigma_L^{-1} \| \| \Delta b_L \| + \| \Sigma_S^{-1} \| \| \Delta b_S \| =
+  O(\|\Delta b \|) \; .
+\end{equation}
 
 \paragraph{Impact of matrix perturbation.}
 As $\|\Delta K_\gamma\| \ll \|K_\gamma\|$, we have that
@@ -433,15 +440,15 @@ As $\|\Delta K_\gamma\| \ll \|K_\gamma\|$, we have that
   \end{aligned}
 \end{equation}
 Using \eqref{eq:cond:inversecondensed} and noting $\Delta K_\gamma = \begin{bmatrix}
-  \Delta_L \\ \Delta _S
+  \Gamma_L \\ \Gamma _S
 \end{bmatrix}$, the first-order error is given by
 \begin{equation}
   \label{eq:cond:inversecondensederror}
   K_\gamma^{-1}\Delta K_\gamma K_\gamma^{-1}  =
-U_L \Sigma_L^{-1} \Delta_L \Sigma_L^{-1}U_L^\top  +
-  U_S \Sigma_S^{-1} \Delta_S \Sigma_S^{-1}U_S^\top  \;.
+U_L \Sigma_L^{-1} \Gamma_L \Sigma_L^{-1}U_L^\top  +
+  U_S \Sigma_S^{-1} \Gamma_S \Sigma_S^{-1}U_S^\top  \;.
 \end{equation}
-Using \eqref{eq:cond:perturbationbound} and $(\Delta_L, \Delta_S)= O( \Xi^{-1}\epstol)$,
+Using \eqref{eq:cond:perturbationbound} and $(\Gamma_L, \Gamma_S)= O( \Xi^{-1}\epstol)$,
 we deduce that the error made in the large-space is $O(\Xi\epstol)$ whereas
 the error in the small-space is $O(\Xi^{-1}\epstol )$.
 
@@ -482,7 +489,8 @@ and $\widehat{D}_{s,\cinactive} = D_{s,\cinactive} + O(\Xi \epstol)$.
 \subsubsection{Solution with HyKKT}
 We analyze the accuracy achieved when we solve the condensed system~\eqref{eq:kkt:condensed}
 using HyKKT,
-and show that the error remains reasonable even for large values of $\gamma$.
+and show that the error remains reasonable even for large values of
+the regularization parameter $\gamma$.
 
 \paragraph{Initial right-hand-side.}
 In floating-point arithmetic, the initial RHS in \eqref{eq:kkt:schurcomplhykkt}
@@ -504,11 +512,14 @@ $\widehat{r}_\gamma :=\widehat{G} \widehat{K}_\gamma^{-1} (\bar{r}_1 + \gamma \w
   \end{aligned}
 \end{equation}
 We note $\widehat{s}_\gamma = \bar{r}_1 + \gamma \widehat{G}^\top \bar{r}_2 =
-Y \widehat{s}_Y + Z \widehat{s}_Z$. Using \eqref{eq:cond:boundderivationhykkt},
+Y \widehat{s}_Y + Z \widehat{s}_Z$.
+The error decomposes as $\Delta s_\gamma = Y \Delta s_Y Y + Z \Delta s_Z
+= U_L \Delta s_L + U_S \Delta s_S$.
+Using \eqref{eq:cond:boundderivationhykkt},
 we have $\Delta s_Y = O(\Xi^{-1} \epstol)$ and $\Delta s_Z = O(\epstol)$.
 Using \eqref{eq:cond:invariantsubpsace}, we deduce
-$\Delta s_L := U_L^\top \Delta s_\gamma = O(\Xi^{-1} \epstol)$ and
-$\Delta s_S := U_S^\top \Delta s_\gamma = O(\epstol)$.
+$\Delta s_L = U_L^\top \Delta s_\gamma = O(\Xi^{-1} \epstol)$ and
+$\Delta s_S = U_S^\top \Delta s_\gamma = O(\epstol)$.
 We obtain using \eqref{eq:cond:boundinvariantsubspace} and \eqref{eq:cond:inversecondensed}
 that the error in the large space $\Delta s_L$ annihilates in the backsolve:
 \begin{equation}
@@ -522,14 +533,17 @@ Using \eqref{eq:cond:invperturbed}, we get
   \widehat{G} (I - K_\gamma^{-1}\Delta K_\gamma) K_\gamma^{-1} \Delta s_\gamma \; .
 \end{equation}
 Using \eqref{eq:cond:boundhykkt1}, the first term is $\widehat{G} K_\gamma^{-1} \Delta s_\gamma = O(\epstol)$.
-The second writes as
+We have in addition
 \begin{equation}
-  K_\gamma^{-1}\Delta K_\gamma (K_\gamma^{-1} \Delta s_\gamma)  =
-  \big[ G U_L \Sigma_L^{-1} \Delta_L + G U_S \Sigma_S^{-1} \Delta_S \big] (K_\gamma^{-1} \Delta s_\gamma) \; .
+  G K_\gamma^{-1}\Delta K_\gamma (K_\gamma^{-1} \Delta s_\gamma)  =
+  \big[ G U_L \Sigma_L^{-1} \Gamma_L + G U_S \Sigma_S^{-1} \Gamma_S \big] (K_\gamma^{-1} \Delta s_\gamma) \; .
 \end{equation}
-Using \eqref{eq:cond:invariantsubpsace} again, we have
+Using again \eqref{eq:cond:invariantsubpsace}:
 $G U_L = G Y + O(\Xi)$ and $G U_S = GZ + O(\Xi) = O(\Xi)$. Hence
-$G U_L \Sigma_L^{-1} \Delta_L = O(1)$ and $G U_S \Sigma_S^{-1} \Delta_S = O(1)$.
+$G U_L \Sigma_L^{-1} \Gamma_L = O(1)$ and $G U_S \Sigma_S^{-1} \Gamma_S = O(1)$.
+Using \eqref{eq:cond:rhserrorfull}, we have $K_\gamma^{-1} \Delta G^\top = O(\epstol)$,
+implying $\Delta G K_\gamma^{-1} \Delta K_\gamma (K_\gamma^{-1} \Delta s_\gamma) = O(\Xi^{-1} \epstol^{2})$.
+Assumption~\ref{hyp:cond:wellcond} implies that $\Xi^{-1} \epstol^2 \ll \epstol$.
 All in all, the error in the right-hand-side $\Delta \widehat{r}_\gamma$ satisfies:
 \begin{equation}
   \label{eq:cond:errorrgamma}
@@ -542,13 +556,13 @@ is bounded only by the machine precision $\epstol$.
 \paragraph{Schur-complement operator.}
 The solution of the system~\eqref{eq:kkt:schurcomplhykkt}
 involves the Schur complement $S_\gamma = G K_\gamma^{-1} G^\top$.
-Similar as in the right-hand-side, the Schur-complement
+We show that the Schur-complement
 has a specific structure that limits the loss of accuracy
 in the conjugate gradient algorithm.
 
 \begin{proposition}
   Suppose the current primal-dual iterate $(p, v)$ satisfies Assumption~\ref{hyp:cond:wellcond}.
-  In exact arithmetic
+  In exact arithmetic,
   \begin{equation}
     S_\gamma = GY \, \Sigma_L^{-1} \, Y^\top G^\top + O(\Xi^2) \; .
   \end{equation}
@@ -560,7 +574,7 @@ in the conjugate gradient algorithm.
     G U_L \Sigma_L^{-1} U_L^\top G^\top + G U_S \Sigma_S^{-1} U_S^\top G^\top \;.
   \end{equation}
   Using \eqref{eq:cond:invariantsubpsace}, we have $G U_L = GY + O(\Xi)$,
-  implying
+  and $G = O(1)$, implying
   \begin{equation}
     G U_L \Sigma_L^{-1} U_L^\top G^\top = G Y  \Sigma_L^{-1} Y^\top G^\top + O(\Xi^2) \; .
   \end{equation}
@@ -583,33 +597,33 @@ $\widehat{S}_\gamma$ in floating-point arithmetic.
   \begin{equation}
     \begin{aligned}
       \widehat{S}_\gamma &= \widehat{G} \widehat{K}_\gamma^{-1} \widehat{G}^\top \; , \\
-                         &= (G + \Delta G)\big(K_\gamma^{-1} - K_\gamma^{-1}\Delta K_\gamma K_\gamma^{-1}\big)(G + \Delta G)^\top \;, \\
+                         &\approx (G + \Delta G)\big(K_\gamma^{-1} - K_\gamma^{-1}\Delta K_\gamma K_\gamma^{-1}\big)(G + \Delta G)^\top \;, \\
                     &\approx S_\gamma - G \big(K_\gamma^{-1}\Delta K_\gamma K_\gamma^{-1} \big)G^\top
                     + K_\gamma^{-1} \Delta G^\top + \Delta G K_\gamma^{-1} \; .
     \end{aligned}
   \end{equation}
   The second line is given by \eqref{eq:cond:invperturbed},
   the third by neglecting the second-order errors.
-  Using \eqref{eq:cond:rhserror}, we get $K_\gamma^{-1} \Delta G^\top = O(\epstol)$
+  Using \eqref{eq:cond:rhserrorfull}, we get $K_\gamma^{-1} \Delta G^\top = O(\epstol)$
   and $\Delta G K_\gamma^{-1} = O(\epstol)$.
   Using \eqref{eq:cond:inversecondensederror}, we have
   \begin{equation*}
     G \big(K_\gamma^{-1}\Delta K_\gamma K_\gamma^{-1} \big)G^\top =
-G U_L \Sigma_L^{-1} \Delta_L \Sigma_L^{-1}U_L^\top G^\top  +
-G U_S \Sigma_S^{-1} \Delta_S \Sigma_S^{-1}U_S^\top  G^\top \;.
+G U_L \Sigma_L^{-1} \Gamma_L \Sigma_L^{-1}U_L^\top G^\top  +
+G U_S \Sigma_S^{-1} \Gamma_S \Sigma_S^{-1}U_S^\top  G^\top \;.
   \end{equation*}
   Using \eqref{eq:cond:invariantsubpsace}, we have $G U_S = O(\Xi)$,
-  and as $\Sigma_S^{-1} = \Theta(1)$ and $\Delta_S = O(\Xi^{-1} \epstol)$, we
+  and as $\Sigma_S^{-1} = \Theta(1)$ and $\Gamma_S = O(\Xi^{-1} \epstol)$, we
   get
-  $G U_S \Sigma_S^{-1} \Delta_S \Sigma_S^{-1}U_S^\top  G^\top = O(\Xi \epstol)$.
+  $G U_S \Sigma_S^{-1} \Gamma_S \Sigma_S^{-1}U_S^\top  G^\top = O(\Xi \epstol)$.
   Finally, as $\Sigma_L^{-1} = \Theta(\Xi)$ and $G U_L = GY + O(\Xi)$,
   we have
   \begin{equation}
-    G U_L \Sigma_L^{-1} \Delta_L \Sigma_L^{-1}U_L^\top G^\top =
-    G Y \Sigma_L^{-1} \Delta_L \Sigma_L^{-1}Y^\top G^\top + O(\Xi^2 \epstol) \; .
+    G U_L \Sigma_L^{-1} \Gamma_L \Sigma_L^{-1}U_L^\top G^\top =
+    G Y \Sigma_L^{-1} \Gamma_L \Sigma_L^{-1}Y^\top G^\top + O(\Xi^2 \epstol) \; .
   \end{equation}
-  We conclude the proof by observing that
-  $G Y \Sigma_L^{-1} \Delta_L \Sigma_L^{-1}Y^\top G^\top = O(\Xi \epstol)$.
+  We conclude the proof by using
+  $G Y \Sigma_L^{-1} \Gamma_L \Sigma_L^{-1}Y^\top G^\top = O(\Xi \epstol)$.
 \end{proof}
 The two error bounds \eqref{eq:cond:errorrgamma} and
 \eqref{eq:cond:errorSgamma} ensure that we can solve
@@ -654,9 +668,9 @@ giving the following bounds for the errors in the inactive and active components
 \begin{equation}
   \begin{aligned}
     & \widehat{d}_{z,\cactive} &= -\widehat{r}_{2,\cactive} - \widehat{D}_{s,\cactive} \widehat{d}_{s,\cactive}
-    &= d_{z,\cactive} + O(\max\{\epstol, \varepsilon_K \Xi^{-1}\}) \\
+    &= d_{z,\cactive} + O(\max\{\epstol, \varepsilon_K \Xi^{-1}\}) \;,\\
                              & \widehat{d}_{z,\cinactive} &= -\widehat{r}_{2,\cinactive} - \widehat{D}_{s,\cinactive} \widehat{d}_{s,\cinactive}
-                               &= d_{z,\cinactive} + O(\varepsilon_K \Xi)
+                               &= d_{z,\cinactive} + O(\varepsilon_K \Xi) \; .
   \end{aligned}
 \end{equation}
 The error arises mostly in the active components $\widehat{d}_{z,\cactive}$.
@@ -665,5 +679,5 @@ so is not trivial as we are approaching the optimum. For example,
 solving the condensed system with a very good tolerance $\varepsilon_K = 10^{-12}$
 would only ensure that the absolute error is bounded by $10^{-4}$ if $\Xi = 10^{-8}$
 (as it is typical in primal-dual IPM). The impact remains limited if we
-have only a few inequality constraints.
+have only few active inequality constraints.
 
