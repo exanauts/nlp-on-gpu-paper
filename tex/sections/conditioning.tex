@@ -556,7 +556,7 @@ is bounded only by the machine precision $\epstol$.
 \paragraph{Schur-complement operator.}
 The solution of the system~\eqref{eq:kkt:schurcomplhykkt}
 involves the Schur complement $S_\gamma = G K_\gamma^{-1} G^\top$.
-We show that the Schur-complement
+We show that the Schur complement
 has a specific structure that limits the loss of accuracy
 in the conjugate gradient algorithm.
 
@@ -679,5 +679,5 @@ so is not trivial as we are approaching the optimum. For example,
 solving the condensed system with a very good tolerance $\varepsilon_K = 10^{-12}$
 would only ensure that the absolute error is bounded by $10^{-4}$ if $\Xi = 10^{-8}$
 (as it is typical in primal-dual IPM). The impact remains limited if we
-have only few active inequality constraints.
+have only a few active inequality constraints.
 

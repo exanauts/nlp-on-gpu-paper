@@ -1,16 +1,16 @@
 \section{Introduction}
-Graphical Processing Units (GPUs) have become a standard parallel computing platform
-for scientific computing.
+Graphical Processing Units (GPUs) have become the most popular parallel computing architecture
+for scientific computing, driven by its success in machine learning.
 GPUs offer massive parallel computing capability for applications
 that can exploit coarse-grain parallelism and high-memory bandwidth.
 As such, the library CUDA has revolutionized High Performance Computing (HPC)
 by bringing to a general audience parallel capabilities that were previously
 exclusive to expensive supercomputers.
-In the post-Moore law area, GPUs
+In the post-Moore law era, GPUs
 are getting more power-efficient than CPUs to run parallel workloads, as they require
 fewer transistors to process multiple tasks in parallel.
 
-Despite their tremendous impacts in machine learning applications, the
+Despite their tremendous impacts on machine learning applications, the
 adoption of GPUs in the mathematical programming community has
 remained limited. Most of the optimization solvers have been developed
 in the 1990s and have been heavily optimized for CPU architectures.
@@ -102,7 +102,7 @@ on the GPU using iterative linear algebra methods.
 Iterative methods often require non-trivial reformulation of the Newton step to avoid
 ill-conditioned matrices, which has limited their use inside interior-point
 algorithms. New results are giving promising outlooks for convex problems~\cite{ghannad2022linear},
-but nonconvex problems often requisite an Augmented Lagrangian reformulation
+but nonconvex problems often require an Augmented Lagrangian reformulation
 to be tractable~\cite{cao2016augmented,regev2023hykkt}. In particular,
 \cite{regev2023hykkt} presents an interesting use of the Golub and Greif
 hybrid method~\cite{golub2003solving} to solve the KKT systems arising in
@@ -133,7 +133,7 @@ the KKT system (using a condensed-space method running on the GPU).
 We add a wrapper to the sparse linear solver {\tt cuDSS} to solve
 the condensed KKT systems with a cutting-edge sparse linear solver.
 We assess the strengths
-and weaknesses of both methods, in terms of accuracy and running time.
+and weaknesses of both methods, in terms of accuracy and runtime.
 We move beyond the classical OPF instances we used in our previous works
 and include large-scale problems coming from the COPS
 non-linear benchmark~\cite{dolan2004benchmarking}.

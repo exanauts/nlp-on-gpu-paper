@@ -29,7 +29,8 @@
 \newcommand{\cactive}{\mathcal{B}}
 \newcommand{\cinactive}{\mathcal{N}}
 
-\title{Nonlinear programming on GPU: current state-of-the-art}
+% \title{Nonlinear programming on GPU: current state-of-the-art}
+\title{Approaches to nonlinear programming on SIMD architectures}
 \author{François Pacaud \and
 Sungho Shin \and
 Alexis Montoison \and
@@ -43,25 +44,24 @@ Mihai Anitescu
 
 \begin{abstract}
   Solving nonlinear programs requires the
-  successive solutions of large-scale indefinite symmetric matrices
-  Sparse factorization routines rely
-  on expensive numerical pivoting operations
-  which are notoriously hard to parallelize on a GPU.
+  successive solutions of large-scale indefinite symmetric matrices using
+  sparse factorization routines that rely
+  on notoriously hard-to-parallelize pivoting operations.
   A workaround is to reformulate the successive Karush-Kuhn-Tucker (KKT) systems
   in a form more amenable for the GPU,
   by reducing it down to a symmetric positive-definite condensed
-  system whose factorization using Cholesky runs efficiently on the GPU.
+  system whose factorization using Cholesky does not require pivoting.
   In this paper, we analyze the performance of two different condensed-space methods
   when used inside an interior-point solver.
   We prove that the condensed matrices exhibit structured ill-conditioning,
   limiting the loss of accuracy when computing a descent direction.
-  We implement the two methods on the GPU, using the newly
-  released cuDSS solver. We illustrate their strengths and weaknesses
+  We implement the two methods on current state-of-the-art SIMD architecture, using the newly
+  released cuDSS solver on NVIDIA GPUs. We illustrate their strengths and weaknesses
   on large-scale instances taken from the PGLIB and the COPS benchmarks.
-  Our findings indicate that GPUs excel in rapidly computing results,
+  Our findings indicate that current GPUs excel in rapidly computing results,
   achieving a moderate convergence tolerance---at a rate 10 times faster
   than that of state-of-the-art CPU routines---though they exhibit
-  limited robustness.
+  limited robustness. Such results are promising for the future of large-scale nonlinear programming on upcoming SIMD architectures.
 \end{abstract}
 
 
@@ -88,7 +88,7 @@ on the various instances of the COPS benchmark, but the performance remains
 always competitive with HSL.
 
 In the future, we are planning to robustify the performance of
-the two condensed KKT methods, in particular to stabilize the convergence
+the two condensed KKT methods, in particular, to stabilize the convergence
 for small tolerance (below $10^{-8}$). Notably, the sparse Cholesky solver
 can be adapted further to the specific needs of the IPM~\cite{wright1999modified}.
 Improving the two methods on the GPU would allow to solve large-scale

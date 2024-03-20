@@ -67,7 +67,7 @@ The reduced matrix $Z^\top K Z$ appearing in the reduced KKT system
 when the number of degrees of freedom $n - m_e$ is small.
 The matrix $Z^\top K Z$ has a higher conditioning than the original
 condensed matrix $K$, prohibiting a solution of \eqref{eq:kkt:reduced}
-with iterative method~\cite{gould2001solution}. For that reason
+with iterative method~\cite{gould2001solution}. For that reason,
 it is recommended to assemble $Z^\top K Z$ explicitly. Our previous
 investigations have shown that if a LU factorization of $G_d$ is
 available, we can assemble $Z^\top K Z$ efficiently on the GPU
@@ -79,11 +79,11 @@ matrix~\eqref{eq:nullspace} for generic nonlinear programs. However, for certain
 permutation is directly given by the structure of the problem
 (coordinate decomposition).
 Such problems usually arise in engineering, where one can split
-the variable $x$ into two sets consisting resp. of \emph{state variables} (dependent)
-and \emph{control variables} (independent). Classical applications
+the variable $x$ into two sets consisting of \emph{state variables} (dependent)
+and \emph{control variables} (independent), respectively. Classical applications
 are optimal control problems, optimal power flow (OPF) or PDE-constrained optimization.
 An alternative is to compute an orthonormal decomposition using a QR factorization
-to build the matrix $Z$, but such strategy is not effective in the
+to build the matrix $Z$, but such a strategy is not effective in the
 large-scale regime.
 
 The first method is based on a null-space
