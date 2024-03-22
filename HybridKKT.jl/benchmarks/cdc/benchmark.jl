@@ -13,18 +13,20 @@ function benchmark_solver(bench_solver, nlp, ntrials; gamma=1e7, maxit=1000, opt
     MadNLP.solve!(solver)
     refresh_memory()
 
-    t_total, t_callbacks, t_linear_solver = (0.0, 0.0, 0.0)
+    t_total, t_init, t_solve = (0.0, 0.0, 0.0)
     n_it, obj = 0, 0.0
     status = 0
     ## Benchmark
     for _ in 1:ntrials
-        solver = bench_solver(nlp; gamma=gamma, max_iter=maxit, options...)
-        results = MadNLP.solve!(solver)
+        t_init += CUDA.@elapsed begin
+            solver = bench_solver(nlp; gamma=gamma, max_iter=maxit, options...)
+        end
+        t_solve += CUDA.@elapsed begin
+            results = MadNLP.solve!(solver)
+        end
 
         status += Int(results.status)
         t_total += solver.cnt.total_time
-        t_callbacks += solver.cnt.eval_function_time
-        t_linear_solver += solver.cnt.linear_solver_time
         n_it += solver.cnt.k
         obj += results.objective
         # Clean memory
@@ -36,8 +38,8 @@ function benchmark_solver(bench_solver, nlp, ntrials; gamma=1e7, maxit=1000, opt
         n_it / ntrials,
         obj / ntrials,
         t_total / ntrials,
-        t_callbacks / ntrials,
-        t_linear_solver / ntrials,
+        t_init / ntrials,
+        t_solve / ntrials,
     )
 end
 
