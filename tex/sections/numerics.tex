@@ -15,7 +15,7 @@ nonlinear programs used in our benchmark. ExaModels.jl leverages the implicit
 sparsity structure and provides custom derivative kernels for repeated
 algebraic subexpressions of the constraints and the objective kernels to compute
 the first and second-order derivatives of the GPU kernels in
-parallel~\cite{bischof1991exploiting, 10.1145/3458817.3476165}. This caters towards
+parallel~\cite{bischof1991exploiting,enzyme2021}. This caters towards
 the SIMD architecture of the GPU by assigning each expression to multiple
 threads that compute derivates for different values.
 

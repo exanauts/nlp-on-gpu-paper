@@ -7,8 +7,8 @@ system of nonlinear equations using a homotopy method~\cite{nocedal_numerical_20
 In a standard implementation, the
 resulting system is solved iteratively with a Newton method (used in conjunction
 with a line-search method for globalization). In this section, we
-give a brief description of a nonlinear program in \cref{sec:ipm:problem}
-and detail the Newton step solved at each IPM iteration in \cref{sec:ipm:kkt}.
+give a brief description of a nonlinear program in \ref{sec:ipm:problem}
+and detail the Newton step solved at each IPM iteration in \ref{sec:ipm:kkt}.
 
 \subsection{Problem's formulation and KKT conditions}
 \label{sec:ipm:problem}
@@ -284,7 +284,7 @@ appearing at each IPM iteration.
 The original formulation \eqref{eq:kkt:unreduced} is not symmetric, but
 has a better conditioning than the two alternatives \eqref{eq:kkt:augmented}
 and \eqref{eq:kkt:condensed}.
-% Is it possible to make K3 symmetric like in the LP framework? 
+% Is it possible to make K3 symmetric like in the LP framework?
 The second formulation~\eqref{eq:kkt:augmented} is
 used by default in state-of-the-art nonlinear solvers~\cite{wachter2006implementation,waltz2006interior}.
 The system~\eqref{eq:kkt:augmented} is usually factorized using a \lblt factorization: for sparse matrices, the Duff and Reid
