@@ -1,42 +1,27 @@
 \section{Introduction}
-Graphical Processing Units (GPUs) have become the most popular parallel computing architecture
-for scientific computing, driven by its success in machine learning.
+Graphical processing units (GPUs) have become the most popular parallel computing architecture
+for scientific computing, driven by their success in machine learning.
 GPUs offer massive parallel computing capability for applications
 that can exploit coarse-grain parallelism and high-memory bandwidth.
-As such, the library CUDA has revolutionized High Performance Computing (HPC)
-by bringing to a general audience parallel capabilities that were previously
-exclusive to expensive supercomputers.
-In the post-Moore law era, GPUs
-are getting more power-efficient than CPUs to run parallel workloads, as they require
-fewer transistors to process multiple tasks in parallel.
+As such, the library CUDA has revolutionized high-performance computing (HPC) by democratizing parallel capabilities previously exclusive to expensive supercomputers.
+In the post-Moore's law era, GPUs are becoming more power-efficient than CPUs for running parallel workloads, as they require fewer transistors to process multiple tasks in parallel.
+This efficiency is further enhanced by technologies like ``single instruction, multiple data'' (SIMD), which allow GPUs to perform the same operation on multiple data simultaneously, maximizing throughput and efficiency.
 
-Despite their tremendous impacts on machine learning applications, the
-adoption of GPUs in the mathematical programming community has
-remained limited. Most of the optimization solvers have been developed
-in the 1990s and have been heavily optimized for CPU architectures.
-The use of GPUs has been hindered by the poor performance of
-sparse matrix factorization routines, an algorithm difficult to parallelize
-on SIMD architectures. However, the landscape has changed in
-recent years thanks to a few breakthroughs.
-(1) The performance of sparse matrix operations has been improved
-in the CUDA library, mostly due to the novel tensor-cores used
-in recent GPUs~\cite{markidis2018nvidia}.
-(2) There is an increased interest in solving optimization
-problems in batch, for problems sharing the same
-structure but with different parameters~\cite{amos2017optnet,pineda2022theseus}.
-(3) GPUs are offering unmatched performance for automatic differentiation,
-both for machine learning~\cite{jax2018github} and scientific computing applications \cite{enzyme2021}.
-Most engineering problems are formulated with a limited
-number of common patterns repeated throughout the model: once
-identified, we can evaluate them in parallel in a SIMD formalism
-and achieve near speed-of-light performance~\cite{shin2023accelerating}.
-(4) With the emergence of new exascale architectures, 
-GPUs have become the primary driver to achieve performance in
-supercomputing.
+While GPUs have made significant strides in enhancing machine learning applications, their adoption in the mathematical programming community has been relatively limited.
+This limitation stems primarily from the fact that most optimization solvers were developed in the 1990s and are heavily optimized for CPU architectures.
+Additionally, the utilization of GPUs has been impeded by the challenges associated with sparse matrix factorization routines, which are inherently difficult to parallelize on SIMD architectures. Nevertheless, recent years have witnessed notable advancements that are reshaping this landscape.
 
-\subsection{Current state-of-the-art}
+\begin{enumerate}
+  \item \textbf{Improved sparse matrix operations}: The performance of sparse matrix operations has seen substantial improvements in the CUDA library, largely attributed to the integration of novel tensor cores in recent GPUs~\cite{markidis2018nvidia}.
+  \item \textbf{Interest in batch optimization}: There is a growing interest in solving optimization problems in batch mode, for problems sharing the same structure but with different parameters~\cite{amos2017optnet,pineda2022theseus}.
+  \item \textbf{Advancements in automatic differentiation}: GPUs offer unparalleled performance for automatic differentiation, benefiting both machine learning ~\cite{jax2018github} and scientific computing applications \cite{enzyme2021}. Engineering problems often exhibit recurring patterns throughout the model. Once these patterns are identified, they can be evaluated in parallel within a SIMD framework, enabling near speed-of-light performance~\cite{shin2023accelerating}.
+  \item \textbf{Role in exascale computing}: With the emergence of new exascale architectures, GPUs have become indispensable in achieving high-performance computing, particularly in supercomputing environments.
+\end{enumerate}
+
 For all the reasons listed before, there is an increasing interest
 to solve optimization problems on the GPU.
+
+\subsection{Current state-of-the-art on GPU}
 
 \paragraph{GPU for mathematical programming.}
 The machine learning community has been a strong advocate for porting
@@ -83,10 +68,12 @@ The previous generation of GPU-accelerated sparse linear
 solvers were lagging behind their CPU equivalents, as illustrated in
 subsequent surveys~\cite{tasseff2019exploring,swirydowicz2021linear}.
 Fortunately, sparse solvers on GPUs are getting increasingly better with the newest
-generations of GPUs. In particular, NVIDIA has released in November 2023
+generations of GPUs.
+In particular, NVIDIA has released in November 2023
 a new sparse direct solver that implements different sparse factorization routines: {\tt cuDSS}. Our
 preliminary benchmark has shown {\tt cuDSS} is significantly
-faster than the sparse solvers in the previous generations.
+faster than the previous sparse solvers using NVIDIA GPUs.
+The new NVIDIA Grace CPU architecture could also be a game changer in the future of sparse linear solvers, thanks to fast communication between the CPU and GPU.
 Furthermore, variants of interior point methods have been proposed
 that does not require the use of numerical pivoting.
 As these algorithms do not require expensive numerical pivoting
@@ -98,7 +85,7 @@ Optimal Power Flow (OPF) problems 10x faster than state-of-the-art
 methods~\cite{shin2023accelerating}.
 
 An alternative thread of research is investigating the solution of the Newton steps
-on the GPU using iterative linear algebra methods.
+on the GPU using iterative methods such as Krylov methods.
 Iterative methods often require non-trivial reformulation of the Newton step to avoid
 ill-conditioned matrices, which has limited their use inside interior-point
 algorithms. New results are giving promising outlooks for convex problems~\cite{ghannad2022linear},
@@ -130,28 +117,25 @@ backend ExaModels~\cite{shin2023accelerating}.
 The interior-point algorithm runs entirely on the GPU, from
 the evaluation of the model (using ExaModels) to the solution of
 the KKT system (using a condensed-space method running on the GPU).
-We add a wrapper to the sparse linear solver {\tt cuDSS} to solve
-the condensed KKT systems with a cutting-edge sparse linear solver.
-We assess the strengths
+We use CUDSS.jl \cite{Montoison_CUDSS}, a Julia interface to the NVIDIA library {\tt cuDSS} to solve
+the condensed KKT systems.
+We evaluate the strengths
 and weaknesses of both methods, in terms of accuracy and runtime.
-We move beyond the classical OPF instances we used in our previous works
-and include large-scale problems coming from the COPS
-non-linear benchmark~\cite{dolan2004benchmarking}.
-We compare the performance we obtain on the GPU with a state-of-the-art
-method running on the CPU: our results show that the condensed-space
-methods can solve large-scale OPF instances 10x faster using the GPU,
-but the performance is more mitigated on the COPS benchmark.
+Extending beyond the classical OPF instances previously examined in our work, we incorporate large-scale problems sourced from the COPS nonlinear benchmark~\cite{dolan2004benchmarking}.
+Our assessment involves comparing the performance achieved on the GPU with that of a state-of-the-art method executed on the CPU.
+The findings reveal that the condensed-space methods demonstrate a remarkable 10x acceleration in solving large-scale OPF instances when utilizing the GPU.
+However, performance outcomes on the COPS benchmark exhibit more variability.
 
 \subsection{Notations}
-By defaut, the norm $\|\cdot\|$ refers to the 2-norm.
+By default, the norm $\|\cdot\|$ refers to the 2-norm.
 We define the conditioning of a matrix $A$ as
 $\cond(A) = \| A \| \|A^{-1} \|$.
-For any real number $x$, we note $\widehat{x}$ its floating
+For any real number $x$, we denote $\widehat{x}$ as its floating
 point representation.
-We note $\epstol$ the smallest positive number such that
+We denote $\epstol$ as the smallest positive number such that
 $\widehat{x} \leq (1 + \tau) x$ for $|\tau| < \epstol$.
 In double precision, $\epstol = 1.1 \times 10^{-16}$.
-We use the following notations to proceed to our error analysis.
+We use the following notations to proceed with our error analysis.
 For $p \in \mathbb{N}$ and a positive variable $h$:
 \begin{itemize}
   \item We write $x = O(h^p)$ if there exists a constant $b > 0$
@@ -161,9 +145,3 @@ For $p \in \mathbb{N}$ and a positive variable $h$:
   \item We write $x = \Theta(h^p)$ if there exists two constants $0 < a < b$
     such that $a h^p \leq \| x \| \leq b h^p$.
 \end{itemize}
-
-
-%%% Local Variables:
-%%% mode: latex
-%%% TeX-master: "../main"
-%%% End:

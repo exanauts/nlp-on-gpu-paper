@@ -24,7 +24,7 @@ We factorize the KKT systems assembled inside MadNLP
 using different sparse linear solvers, depending on the KKT formulation
 and the device we are using. Namely,
 \begin{itemize}
-  \item {\tt HSL ma27}: Implement the LBL factorization
+  \item {\tt HSL ma27}: Implement the \lblt factorization
     on the CPU. Solve the augmented KKT system~\eqref{eq:kkt:augmented}.
     This solver is used as the reference running on the CPU.
   \item {\tt CHOLMOD}: Implement Cholesky factorization on the CPU
