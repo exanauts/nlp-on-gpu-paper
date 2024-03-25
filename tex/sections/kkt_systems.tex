@@ -71,10 +71,29 @@ all converge to $\frac{1}{\gamma}$ as we increase the regularization parameter
 $\gamma$ (\cite[Theorem 4]{regev2023hykkt}), meaning that $\lim_{\gamma \to \infty} \cond(S_\gamma) = 1$.
 Because the convergence of the CG method depends on the number of distinct eigenvalues of $S_{\gamma}$, when $\gamma$ increases, the eigenvalues of $S_{\gamma}$ become more clustered, resulting in fewer iterations being required to solve \eqref{eq:kkt:schurcomplhykkt}.
 
-\subsection{A novel equality relaxation strategy (SS)}
+\subsection{Lifted KKT System strategy}
 \label{sec:kkt:sckkt}
 
-TODO (Sungho)
+We observe in \eqref{eq:kkt:condensed} that if all the constraints in the problem are inequalities, the system in \eqref{eq:kkt:condensed} becomes a $n \times n$ system which is guaranteed to be positive definite if the primal regularization parameter $\delta_x$ is chosento be adequately large. Furthermore, this parameter can be chosen dynamically using the inertia information of the system in \eqref{eq:kkt:condensed}. This motivates the Lifted KKT System strategy: we approximate the equalities with lifted inequalities.
+
+In particular, we relax the equality constraints in \eqref{eq:problem} using a small relaxation parameter $\tau > 0$ (chosen based on the numerical tolerance of the optimization solver), and solve the relaxed problem
+\begin{equation}
+  \label{eq:problemrelaxation}
+  \begin{aligned}
+    \min_{x \in \mathbb{R}^n} \; & f(x) \\
+    \text{s.t.} ~ & - \tau \leq g(x) \leq \tau \;, ~ h(x) \leq 0  \; .
+  \end{aligned}
+\end{equation}
+The problem~\eqref{eq:problemrelaxation} has only inequality constraints. After introducing slack variables, the condensed KKT system
+\eqref{eq:kkt:condensed} reduces to
+\begin{equation}
+  \label{eq:liftedkkt}
+    K_k d_x = - r_1 - H_k^\top(D_s r_4 - r_2) \; .
+\end{equation}
+Using the standard inertia correction procedure, the parameter $\delta_x$ is set to a value high enough to ensure that  $K_k$ is positive definite. Therefore, $K_k$ can be factorized with Cholesky factorization, satisfying the key requirement for the implementation on the GPUs. The relaxation causes error in the final solution, but the error is in the same order of the solver tolerance, and thus, do not significantly deteriorates the solution quality.
+
+While this method can be implemented with small modification in the optimization solver, the presence of tight inequality in \eqref{eq:problemrelaxation} causes severe ill-conditioning throughout the IPM iterations. Thus, the proper choice of the solver tolerance is necessary for the reliable convergence behavior.
+
 
 \subsection{Discussion}
 We have introduced two algorithms to solve
@@ -95,3 +114,8 @@ a sparse Cholesky solver to factorize~\eqref{eq:kkt:condensed}. However, the met
 solves a relaxation of the original problem~\eqref{eq:problem}, limiting the accuracy
 of the solution.
 
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../main"
+%%% End:
