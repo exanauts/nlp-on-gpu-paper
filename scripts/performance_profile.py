@@ -1,9 +1,10 @@
 
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-RESULTS_DIR = "HybridKKT.jl/results/kkt/"
+RESULTS_DIR = sys.argv[1]
 plt.rcParams['axes.linewidth'] = 0.5
 # plt.rcParams['font.family'] = "sans-serif"
 # plt.rcParams['font.sans-serif'] = "Helvetica"
@@ -36,9 +37,10 @@ axs.set_xticks(
 
 axs.spines['right'].set_visible(False)
 axs.spines['top'].set_visible(False)
-axs.legend(fontsize="x-small", loc="upper left", fancybox=True) #, bbox_to_anchor=(0.7, 0.5))
+axs.legend(fontsize="x-small", loc="upper right", fancybox=True) #, bbox_to_anchor=(0.7, 0.5))
 axs.set_ylabel("Time (s)")
+axs.grid(ls=":", which="both", alpha=.8, axis="y", lw=.5)
 plt.tight_layout()
-plt.savefig("figures/pprof.pdf")
+plt.savefig("figures/breakdown.pdf")
 
 print(diagnostic.to_latex(float_format="%.2e"))

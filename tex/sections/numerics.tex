@@ -37,7 +37,7 @@ The Julia package Krylov.jl~\cite{montoison2023krylov} contains a collection of 
 
 \subsection{Performance analysis on a large-scale instance}
 We initially evaluate the performance of each KKT solver on a large-scale OPF instance, taken from
-the PGLIB benchmark~\cite{babaeinejadsarookolaee2019power}: {\tt case9241pegase}.
+the PGLIB benchmark~\cite{babaeinejadsarookolaee2019power}: {\tt 78484epigrids}.
 We have implemented the model in ExaModels.jl, to support
 the evaluation of the GPU: our formulation has
 a total of 85,568 variables, 82,679 equality constraints and 48,147
@@ -72,10 +72,10 @@ par with CHOLMOD, except for the \ldlt decomposition which lags behind by at lea
   \hline
   linear solver & analysis (s) & factorization (s) & backsolve (s) & accuracy \\
   \hline
-    cholmod     & 0.065 & $4.50\times 10^{-2}$& $2.23 \times 10^{-3}$& $1.84 \times 10^{-13}$ \\
-    cudss-\llt  & 0.441 & $1.93\times 10^{-2}$& $7.66 \times 10^{-3}$& $1.74 \times 10^{-13}$ \\
-    cudss-\lu   & 0.454 & $2.03\times 10^{-2}$& $6.69 \times 10^{-3}$& $1.70 \times 10^{-13}$ \\
-    cudss-\ldlt & 0.454 & $2.04\times 10^{-2}$& $6.95 \times 10^{-3}$& $3.36 \times 10^{-11}$ \\
+    cholmod     & 0.798 &$6.34\times 10^{-1}$&$5.50\times 10^{-2}$&$3.60\times 10^{-13}$\\
+    cudss-\llt  & 3.50  &$4.77\times 10^{-2}$&$2.08\times 10^{-2}$&$2.64\times 10^{-13}$\\
+    cudss-\lu   & 3.48  &$4.97\times 10^{-2}$&$1.91\times 10^{-2}$&$2.58\times 10^{-13}$\\
+    cudss-\ldlt & 3.49  &$5.80\times 10^{-2}$&$1.88\times 10^{-2}$&$5.44\times 10^{-11}$\\
   \hline
   \end{tabular}
   }
@@ -118,11 +118,11 @@ the algorithm.
   \hline
   $\gamma$ & \# it & cond. (s) & CG (s) & linsol (s) & IPM (s) & \# it & cond. (s) & CG (s) & linsol (s) & IPM (s) \\
   \hline
-  $10^4$ & 63 & 0.42 & 16.87 & 21.36 & 23.85 & 62 & 0.09 & 30.24 & 31.05 & 33.51 \\
-  $10^5$ & 63 & 0.42 & 6.13 & 10.66 & 13.42 & 62 & 0.09 & 10.44 & 11.24 & 13.64 \\
-  $10^6$ & 63 & 0.43 & 2.58 & 7.09 & 9.53 & 62 & 0.09 & 4.53 & 5.33 & 7.69 \\
-  $10^7$ & 63 & 0.43 & 1.42 & 6.11 & 8.81 & 62 & 0.09 & 2.44 & 3.24 & 5.62 \\
-  $10^8$ & 105 & 1.11 & 1.78 & 12.39 & 16.77 & 90 & 0.20 & 2.51 & 3.82 & 7.90 \\
+  $10^4$ & 96 & 8.15 & 463.86 & 536.83 & 575.06 & 96 & 0.17 & 113.27 & 114.52 & 124.00 \\
+  $10^5$ & 96 & 8.33 & 163.35 & 235.61 & 273.36 & 96 & 0.17 & 53.37 & 54.62 & 64.39 \\
+  $10^6$ & 96 & 8.22 & 68.69 & 139.86 & 177.24 & 96 & 0.17 & 14.53 & 15.78 & 25.39 \\
+  $10^7$ & 96 & 8.24 & 35.12 & 107.17 & 144.78 & 96 & 0.17 & 7.95 & 9.20 & 18.41 \\
+  $10^8$ & 96 & 7.89 & 21.68 & 93.85 & 131.33 & 96 & 0.17 & 5.36 & 6.62 & 15.90 \\
   \hline
   \end{tabular}
   }
@@ -202,7 +202,7 @@ iterations.
   \end{tabular}
   }
   \label{tab:sckkt:performance}
-  \caption{Performance of the equality-relaxation
+  \caption{TO UPDATE XXX Performance of the equality-relaxation
     strategy as we decrease the IPM tolerance $\varepsilon_{tol}$.
     The table displays the wall time on the CPU (using CHOLMOD)
     and on the GPU (using cuDSS). We display the
@@ -216,7 +216,7 @@ iterations.
 \subsubsection{Breakdown of the time spent in one IPM iteration}
 Now, we decompose the total wall running time spent at a single
 IPM iteration, for the different linear solvers we have at our disposal.
-We look at the 5th IPM iteration obtained when solving {\tt case9241pegase}.
+We look at the 5th IPM iteration obtained when solving {\tt 78484epigrids}.
 The results are displayed in Figure~\ref{fig:timebreakdown}. We observe
 that building the KKT system represents only a fraction of the computation time, compared
 to the factorization and the backsolve. The solver {\tt cuDSS} is significantly
@@ -228,22 +228,22 @@ number of iterations in the CG algorithm, e.g. by increasing the parameter $\gam
 
 \begin{figure}[!ht]
   \centering
-  \resizebox{.6\textwidth}{!}{
+  \resizebox{.7\textwidth}{!}{
     \begin{tabular}{|l|rrrr|}
       \hline
        & build (s) & factorize (s) & backsolve (s) & accuracy \\
       \hline
-      hsl & 2.86e-03 & 4.78e-02 & 1.74e-02 & 7.80e-07 \\
-      sckkt-cpu & 5.41e-03 & 5.05e-02 & 1.96e-02 & 1.36e-04 \\
-      hckkt-cpu & 5.20e-03 & 5.10e-02 & 3.02e-02 & 3.28e-03 \\
-      sckkt-cuda & 1.55e-03 & 1.81e-02 & 1.01e-02 & 8.64e-06 \\
-      hckkt-cuda & 1.40e-03 & 1.43e-02 & 5.22e-02 & 2.66e-03 \\
+      hsl        & $3.15\times 10^{-2}$&$1.22 \times 10^{-0} $&$3.58\times 10^{-1}$&$5.52\times 10^{-7}$\\
+    sckkt-cpu  & $8.71\times 10^{-2}$&$6.08\times 10^{-1}$&$2.32\times 10^{-1}$&$3.73\times 10^{-9}$\\
+    hckkt-cpu  & $7.97\times 10^{-2}$&$6.02\times 10^{-1}$&$7.30\times 10^{-1}$&$3.38\times 10^{-3}$\\
+    sckkt-cuda & $2.09\times 10^{-3}$&$4.37\times 10^{-2}$&$3.53\times 10^{-2}$&$4.86\times 10^{-9}$\\
+    hckkt-cuda & $1.86\times 10^{-3}$&$3.38\times 10^{-2}$&$1.35\times 10^{-1}$&$3.91\times 10^{-3}$\\
       \hline
     \end{tabular}
   }
   \includegraphics[width=.7\textwidth]{../figures/breakdown.pdf}
   \caption{Breakdown of the time spent in one IPM iteration
-    for different linear solvers, when solving {\tt case9241pegase} (A30 GPU)
+    for different linear solvers, when solving {\tt 78484epigrids} (A30 GPU)
   \label{fig:timebreakdown}}
 \end{figure}
 
