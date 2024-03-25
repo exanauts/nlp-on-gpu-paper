@@ -1,13 +1,10 @@
 
-# Model linear operator G K Gᵀ  (dimension me x me)
+# Model linear operator G K⁻¹ Gᵀ  (dimension me x me)
 struct SchurComplementOperator{T, VT, SMT, LS}
     K::LS      # dimension n x n
     G::SMT     # dimension me x n
     buf1::VT   # dimension n
 end
-
-Base.size(S::SchurComplementOperator) = (size(S.G, 1), size(S.G, 1))
-Base.eltype(S::SchurComplementOperator{T}) where T = T
 
 function SchurComplementOperator(
     K::MadNLP.AbstractLinearSolver,
@@ -19,6 +16,9 @@ function SchurComplementOperator(
     )
 end
 
+Base.size(S::SchurComplementOperator) = (size(S.G, 1), size(S.G, 1))
+Base.eltype(S::SchurComplementOperator{T}) where T = T
+
 function LinearAlgebra.mul!(y::VT, S::SchurComplementOperator{T, VT}, x::VT, alpha::Number, beta::Number) where {T, VT}
     y .= beta .* y
     mul!(S.buf1, S.G', x, alpha, zero(T))
@@ -26,6 +26,34 @@ function LinearAlgebra.mul!(y::VT, S::SchurComplementOperator{T, VT}, x::VT, alp
     mul!(y, S.G, S.buf1, one(T), one(T))
     return y
 end
+
+
+# Model linear operator K⁻¹ (dimension n x n)
+struct CondensedOperator{T, VT, LS}
+    K::LS      # dimension n x n
+    buf1::VT   # dimension n
+end
+
+function CondensedOperator(
+    K::MadNLP.AbstractLinearSolver,
+    buf::AbstractVector{T},
+) where T
+    return CondensedOperator{T, typeof(buf), typeof(K)}(
+        K, buf,
+    )
+end
+
+Base.size(S::CondensedOperator) = size(S.K.full)
+Base.eltype(S::CondensedOperator{T}) where T = T
+
+function LinearAlgebra.mul!(y::VT, S::CondensedOperator{T, VT}, x::VT, alpha::Number, beta::Number) where {T, VT}
+    y .= beta .* y
+    S.buf1 .= x
+    MadNLP.solve!(S.K, S.buf1)
+    axpy!(one(T), S.buf1, y)
+    return y
+end
+
 
 function _extract_subjacobian(jac::SparseMatrixCOO{Tv, Ti}, index_rows::AbstractVector{Int}) where {Tv, Ti}
     m, n = size(jac)
