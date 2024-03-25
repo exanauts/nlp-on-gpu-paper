@@ -32,7 +32,7 @@ In particular, we utilize the following solvers:
 We use the Julia language \cite{bezanson-edelman-karpinski-shah-2017} for the comparison, where CHOLMOD \cite{chen-davis-hager-rajamanickam-2008} is included with Julia.
 For the HSL linear solvers, we utilize libHSL \cite{fowkes-lister-montoison-orban-2024} with the Julia interface HSL.jl \cite{montoison-orban-hsl-2021}.
 HSL MA27 and CHOLMOD are both compiled with OpenBLAS \cite{openblas}, a multithreaded version of BLAS and LAPACK.
-The Julia package Krylov.jl~\cite{montoison2023krylov} contains a collection of Krylov methods with a polymorphic implementation that can used on both CPU or GPU architectures.
+The Julia package Krylov.jl~\cite{montoison2023krylov} contains a collection of Krylov methods with a polymorphic implementation that can be used on both CPU or GPU architectures.
 % Should we provide the version of the linear solvers?
 
 \subsection{Performance analysis on a large-scale instance}
@@ -436,3 +436,8 @@ particular instances are less amenable to GPU acceleration.
 %   \end{tabular}
 %   \caption{Comparison between HSL MA27 and MA57}
 % \end{table}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../main"
+%%% End:
