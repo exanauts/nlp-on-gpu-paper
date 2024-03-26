@@ -69,7 +69,7 @@ function benchmark_cholmod(K, ntrials)
             X = CHOLMOD.solve(CHOLMOD.CHOLMOD_A, solver, B)
             copyto!(x, X)
         end
-        w_gpu .= b_gpu
+        w .= b
         mul!(w, K, x, -1.0, 1.0)
         accuracy += norm(w, Inf)
     end
