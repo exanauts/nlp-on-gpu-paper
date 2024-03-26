@@ -160,7 +160,7 @@ function MadNLP.create_kkt_system(
     end
 
     buf1 = VT(undef, n)
-    S = if cg_algorithm ∈ (:cg, :gmres, :cr, :minres)
+    S = if cg_algorithm ∈ (:cg, :gmres, :cr, :minres, :car)
         SchurComplementOperator(linear_solver, G_csc, buf1)
     elseif cg_algorithm ∈ (:craigmr,)
         CondensedOperator(linear_solver, buf1)
@@ -170,6 +170,8 @@ function MadNLP.create_kkt_system(
         Krylov.CgSolver(me, me, VT)
     elseif cg_algorithm == :cr
         Krylov.CrSolver(me, me, VT)
+    elseif cg_algorithm == :car
+        Krylov.CarSolver(me, me, VT)
     elseif cg_algorithm == :gmres
         Krylov.GmresSolver(me, me, 10, VT)
     elseif cg_algorithm == :minres
@@ -340,13 +342,13 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
     mul!(wy, G, r1, one(T), -one(T))       # -wy + G (Kγ)⁻¹ [wx + γ Gᵀ wy]
 
     # Solve Schur-complement system with a Krylov iterative method.
-    if kkt.etc[:cg_algorithm] ∈ (:cg, :gmres, :cr, :minres)
+    if kkt.etc[:cg_algorithm] ∈ (:cg, :gmres, :cr, :minres, :car)
         t_cg = @elapsed Krylov.solve!(
             kkt.iterative_linear_solver,
             kkt.S,
             wy;
             atol=0.0,
-            rtol=1e-14,
+            rtol=1e-10,
             verbose=0,
         )
         copyto!(wy, kkt.iterative_linear_solver.x)
