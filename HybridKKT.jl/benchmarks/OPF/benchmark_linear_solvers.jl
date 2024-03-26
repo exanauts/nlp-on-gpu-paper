@@ -84,9 +84,10 @@ function benchmark_cholmod(K, ntrials)
 end
 
 @main function main(;
-    case="pglib_opf_case9241_pegase.m",
+    case="pglib_opf_case78484_epigrids.m",
     ntrials::Int=10,
     gamma::Float64=1e7,
+    verbose::Bool=true
 )
     if !isdir(RESULTS_DIR)
         mkpath(RESULTS_DIR)
@@ -104,6 +105,14 @@ end
     # Take condensed KKT system at iteration 1
     K = solver.kkt.aug_com
     K = 0.5 .* (K + K')
+    m, n = size(A)
+    nz = nnz(K)
+
+    if verbose
+        println("case: $case")
+        println("Size of K: $m × $n")
+        println("nnz(K): $nz")
+    end
 
     results[1, :] .= benchmark_cholmod(K, ntrials)
     results[2, :] .= benchmark_cudss(K, ntrials; structure="SPD")
@@ -113,4 +122,3 @@ end
     output_file = joinpath(RESULTS_DIR, "benchmark_cholesky.txt")
     writedlm(output_file, [columns results])
 end
-
