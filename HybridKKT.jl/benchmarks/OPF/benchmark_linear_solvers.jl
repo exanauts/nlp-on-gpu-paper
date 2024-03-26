@@ -23,14 +23,14 @@ function benchmark_cudss(K, ntrials; structure="SPD")
     (time_analysis, time_factorization, time_backsolve, accuracy) = (0.0, 0.0, 0.0, 0.0)
     for _ in 1:ntrials
         solver = CUDSS.CudssSolver(matrix, config, data)
-        time_analysis += CUDA.@elapsed begin
+        time_analysis += CUDA.@elapsed CUDA.@sync begin
             CUDSS.cudss("analysis", solver, x_gpu, b_gpu)
         end
-        time_factorization += CUDA.@elapsed begin
+        time_factorization += CUDA.@elapsed CUDA.@sync begin
             CUDSS.cudss("factorization", solver, x_gpu, b_gpu)
         end
         fill!(b_gpu, 1.0)
-        time_backsolve += CUDA.@elapsed begin
+        time_backsolve += CUDA.@elapsed CUDA.@sync begin
             CUDSS.cudss("solve", solver, x_gpu, b_gpu)
         end
         w_gpu .= b_gpu

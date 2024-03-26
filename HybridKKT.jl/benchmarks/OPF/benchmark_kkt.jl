@@ -43,7 +43,7 @@ function benchmark_kkt(solver, ntrials)
 end
 
 @main function main(;
-    case="pglib_opf_case9241_pegase.m",
+    case="pglib_opf_case78484_epigrids.m",
     ntrials::Int=3,
     gamma::Float64=1e7,
 )
