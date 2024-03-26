@@ -11,7 +11,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "kkt")
 function benchmark_cudss(K, ntrials; structure="SPD")
     n = size(K, 1)
     full = CUSPARSE.CuSparseMatrixCSR(K)
-    view = 'L'
+    view = 'F'
 
     matrix = CUDSS.CudssMatrix(full, structure, view)
     config = CUDSS.CudssConfig()
@@ -23,14 +23,14 @@ function benchmark_cudss(K, ntrials; structure="SPD")
     (time_analysis, time_factorization, time_backsolve, accuracy) = (0.0, 0.0, 0.0, 0.0)
     for _ in 1:ntrials
         solver = CUDSS.CudssSolver(matrix, config, data)
-        time_analysis += CUDA.@elapsed begin
+        time_analysis += CUDA.@elapsed CUDA.@sync begin
             CUDSS.cudss("analysis", solver, x_gpu, b_gpu)
         end
-        time_factorization += CUDA.@elapsed begin
+        time_factorization += CUDA.@elapsed CUDA.@sync begin
             CUDSS.cudss("factorization", solver, x_gpu, b_gpu)
         end
         fill!(b_gpu, 1.0)
-        time_backsolve += CUDA.@elapsed begin
+        time_backsolve += CUDA.@elapsed CUDA.@sync begin
             CUDSS.cudss("solve", solver, x_gpu, b_gpu)
         end
         w_gpu .= b_gpu
@@ -69,8 +69,9 @@ function benchmark_cholmod(K, ntrials)
             X = CHOLMOD.solve(CHOLMOD.CHOLMOD_A, solver, B)
             copyto!(x, X)
         end
-        mul!(w, K, x)
-        accuracy += norm(w .- b, Inf)
+        w .= b
+        mul!(w, K, x, -1.0, 1.0)
+        accuracy += norm(w, Inf)
     end
 
     return (
@@ -84,9 +85,9 @@ function benchmark_cholmod(K, ntrials)
 end
 
 @main function main(;
-    case="pglib_opf_case9241_pegase.m",
+    case="pglib_opf_case78484_epigrids.m",
     ntrials::Int=10,
-    gamma::Float64=1e7,
+    gamma::Float64=1e7
 )
     if !isdir(RESULTS_DIR)
         mkpath(RESULTS_DIR)
@@ -97,6 +98,7 @@ end
 
     datafile = joinpath(PGLIB_PATH, case)
     nlp = ac_power_model(datafile)
+    display(nlp)
 
     solver = build_hckkt_solver(nlp; gamma=gamma, max_iter=1, print_level=MadNLP.ERROR)
     MadNLP.solve!(solver)
@@ -104,6 +106,13 @@ end
     # Take condensed KKT system at iteration 1
     K = solver.kkt.aug_com
     K = 0.5 .* (K + K')
+    # K = K + K' - Diagonal(K) ?
+    m, n = size(K)
+    nz = nnz(K)
+
+    println("case: $case")
+    println("Size of K: $m × $n")
+    println("nnz(K): $nz")
 
     results[1, :] .= benchmark_cholmod(K, ntrials)
     results[2, :] .= benchmark_cudss(K, ntrials; structure="SPD")
@@ -113,4 +122,3 @@ end
     output_file = joinpath(RESULTS_DIR, "benchmark_cholesky.txt")
     writedlm(output_file, [columns results])
 end
-

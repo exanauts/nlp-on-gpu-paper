@@ -1,35 +1,43 @@
 % Jinja Template for Latex file
 % Copyright François Pacaud, 2023
 
-\documentclass{article}
+\documentclass[smallextended]{svjour3}
 
-\usepackage{amsmath,amsfonts,amssymb,amsthm}
+\usepackage{amsmath,amsfonts,amssymb}
 \usepackage{xcolor,bm,url}
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{tikz}
+% \usepackage{cleveref} % cleveref is not working with Springer journal classes
+\usepackage{xspace}
 
-\newtheorem{theorem}{Theorem}[section]
-\newtheorem{lemma}[theorem]{Lemma}
-\newtheorem{corollary}[theorem]{Corollary}
+% \newtheorem{theorem}{Theorem}[section]
+% \newtheorem{lemma}[theorem]{Lemma}
+% \newtheorem{corollary}[theorem]{Corollary}
 \newtheorem{assumption}[theorem]{Assumption}
-\newtheorem{proposition}[theorem]{Proposition}
-\theoremstyle{definition}
-\newtheorem{definition}[theorem]{Definition}
-\newtheorem{example}[theorem]{Example}
-\theoremstyle{remark}
-\newtheorem{remark}{Remark}
+% \newtheorem{proposition}[theorem]{Proposition}
+% \theoremstyle{definition}
+% \newtheorem{definition}[theorem]{Definition}
+% \newtheorem{example}[theorem]{Example}
+% \theoremstyle{remark}
+% \newtheorem{remark}{Remark}
 
 \DeclareMathOperator{\diag}{diag}
 \DeclareMathOperator{\argmin}{arg\,min}
-\DeclareMathOperator{\nullspace}{null}
+\DeclareMathOperator{\nullspace}{Ker}
 \DeclareMathOperator{\rangespace}{range}
+\newcommand{\ldlt}{$\mathrm{LDL^T}$\xspace}
+\newcommand{\lblt}{$\mathrm{LBL^T}$\xspace}
+\newcommand{\llt}{$\mathrm{LL^T}$\xspace}
+\newcommand{\lu}{$\mathrm{LU}$\xspace}
 \newcommand{\cond}{\kappa_2}
 \newcommand{\epstol}{\mathbf{u}}
 \newcommand{\cactive}{\mathcal{B}}
 \newcommand{\cinactive}{\mathcal{N}}
 
-\title{Nonlinear programming on GPU: current state-of-the-art}
+% \title{Nonlinear programming on GPU: current state-of-the-art}
+\title{Approaches to nonlinear programming on GPU architectures}
+% \title{Approaches to nonlinear optimization on GPU architectures} ?
 \author{François Pacaud \and
 Sungho Shin \and
 Alexis Montoison \and
@@ -42,26 +50,15 @@ Mihai Anitescu
 \maketitle
 
 \begin{abstract}
-  Solving nonlinear programs requires the
-  successive solutions of large-scale indefinite symmetric matrices
-  Sparse factorization routines rely
-  on expensive numerical pivoting operations
-  which are notoriously hard to parallelize on a GPU.
-  A workaround is to reformulate the successive Karush-Kuhn-Tucker (KKT) systems
-  in a form more amenable for the GPU,
-  by reducing it down to a symmetric positive-definite condensed
-  system whose factorization using Cholesky runs efficiently on the GPU.
-  In this paper, we analyze the performance of two different condensed-space methods
-  when used inside an interior-point solver.
-  We prove that the condensed matrices exhibit structured ill-conditioning,
-  limiting the loss of accuracy when computing a descent direction.
-  We implement the two methods on the GPU, using the newly
-  released cuDSS solver. We illustrate their strengths and weaknesses
-  on large-scale instances taken from the PGLIB and the COPS benchmarks.
-  Our findings indicate that GPUs excel in rapidly computing results,
-  achieving a moderate convergence tolerance---at a rate 10 times faster
-  than that of state-of-the-art CPU routines---though they exhibit
-  limited robustness.
+  This paper investigates numerical techniques for solving large-scale constrained nonlinear programs (NLP) using graphics processing units (GPUs). 
+  Solving NLPs requires the successive solutions of large, symmetric indefinite, and ill-conditioned linear systems, so-called Karush-Kuhn-Tucker (KKT) systems, a task known to pose computational challenges.
+  Traditional sparse factorization methods for these matrices involve numerical pivoting that makes parallelization impossible.
+  In this paper, we study the condensed space interior-point method to reformulate the challenging KKT systems into symmetric positive-definite systems, which is more amenable to parallelization on GPUs via Cholesky factorization.
+  Specifically, we compare two variations of condensation strategy, the Lifted and the Hybrid KKT System methods, and examine their performances in practice.
+  Although condensed KKT systems are generally more prone to ill-conditioning than the indefinite KKT systems, we show that these systems exhibit structured ill-conditioning, and thus, accuracy loss caused by ill-conditioning is partially mitigated.
+  We implement two methods on GPU within our packages MadNLP.jl, which is interfaced with the NVIDIA library cuDSS for solving sparse positive definite systems and ExaModels.jl for evaluating models on GPUs.
+  Performance is tested on large-scale problems from the PGLIB and COPS benchmarks, revealing that GPUs can achieve up to a tenfold speed increase over CPU counterparts up to medium convergence tolerances ($10^{-4}$).
+  However, our results also suggest that achieving high precisions ($10^{-8}$) on GPUs necessitates additional future research.
 \end{abstract}
 
 
@@ -78,27 +75,22 @@ Mihai Anitescu
 This article moves one step further in the solution of generic nonlinear
 programs on GPU architectures. We have compared two approaches
 to solve the KKT systems arising at each interior-point iteration, both
-based on a condensation procedure. Despite the forming of a ill-conditioned
-matrix, our theoretical analysis show that the loss of accuracy is benign
-in floating point arithmetic, thanks to the specific properties of IPM.
+based on a condensation procedure.
+Despite the formation of an ill-conditioned matrix, our theoretical analysis shows that the loss of accuracy is benign in floating-point arithmetic, thanks to the specific properties of the interior-point method.
 Our numerical results show that both methods are competitive to solve large-scale
-nonlinear programs. Compared to the state-of-the-art linear solvers in HSL, we obtain 10x speed-up on large-scale OPF instances
-and quasi-dense instances ({\tt elec}). The results are more mitigated
-on the various instances of the COPS benchmark, but the performance remains
-always competitive with HSL.
+nonlinear programs.
+Compared to the state-of-the-art HSL linear solvers, we achieve a 10x speed-up on large-scale OPF instances and quasi-dense instances (\texttt{elec}). While the results are more varied across the instances of the COPS benchmark, our performance consistently remains competitive with HSL.
 
-In the future, we are planning to robustify the performance of
-the two condensed KKT methods, in particular to stabilize the convergence
-for small tolerance (below $10^{-8}$). Notably, the sparse Cholesky solver
-can be adapted further to the specific needs of the IPM~\cite{wright1999modified}.
-Improving the two methods on the GPU would allow to solve large-scale
-problems intractable on the classical CPU architecture --- such as the multiperiod
-and security-constrained OPF problems --- especially when used in conjunction
-with a Schur-complement approach.
+Looking ahead, our future plans involve enhancing the robustness of the two condensed KKT methods, particularly focusing on stabilizing convergence for small tolerances (below $10^{-8}$).
+It's worth noting that the sparse Cholesky solver can be further customized to meet the specific requirements of the interior-point method~\cite{wright1999modified}.
+% Add a sentence about NCL on GPU?
+Enhancing the two methods on the GPU would enable the resolution of large-scale problems that are currently intractable on classical CPU architectures.
+Examples include multiperiod and security-constrained OPF problems, particularly when combined with a Schur-complement approach.
 
-
-\bibliographystyle{siam}
+\small
+\bibliographystyle{spmpsci}
 \bibliography{biblio.bib}
+\normalsize
 
 \end{document}
 

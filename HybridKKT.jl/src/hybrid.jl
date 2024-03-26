@@ -1,5 +1,5 @@
 
-struct HybridCondensedKKTSystem{T, VT, MT, QN, VI, VI32, VInd, LS, LS2, EXT} <: MadNLP.AbstractCondensedKKTSystem{T, VT, MT, QN}
+struct HybridCondensedKKTSystem{T, VT, MT, QN, VI, VI32, VInd, SC, LS, LS2, EXT} <: MadNLP.AbstractCondensedKKTSystem{T, VT, MT, QN}
     # Hessian
     hess::VT      # dimension nnzh
     hess_raw::SparseMatrixCOO{T,Int32,VT, VI32}
@@ -18,7 +18,7 @@ struct HybridCondensedKKTSystem{T, VT, MT, QN, VI, VI32, VInd, LS, LS2, EXT} <: 
     ind_eq_jac::Union{Nothing, VI}
 
     # Schur-complement operator
-    S::SchurComplementOperator{T,VT,MT,LS}
+    S::SC
 
     gamma::Ref{T}
 
@@ -71,6 +71,7 @@ function MadNLP.create_kkt_system(
     linear_solver;
     opt_linear_solver=MadNLP.default_options(linear_solver),
     hessian_approximation=MadNLP.ExactHessian,
+    cg_algorithm=:cg,
 ) where {T, VT}
 
     n = cb.nvar
@@ -159,12 +160,27 @@ function MadNLP.create_kkt_system(
     end
 
     buf1 = VT(undef, n)
-    S = SchurComplementOperator(linear_solver, G_csc, buf1)
+    S = if cg_algorithm ∈ (:cg, :gmres, :cr, :minres)
+        SchurComplementOperator(linear_solver, G_csc, buf1)
+    elseif cg_algorithm ∈ (:craigmr,)
+        CondensedOperator(linear_solver, buf1)
+    end
 
-    iterative_linear_solver = Krylov.CgSolver(me, me, VT)
+    iterative_linear_solver = if cg_algorithm == :cg
+        Krylov.CgSolver(me, me, VT)
+    elseif cg_algorithm == :cr
+        Krylov.CrSolver(me, me, VT)
+    elseif cg_algorithm == :gmres
+        Krylov.GmresSolver(me, me, 10, VT)
+    elseif cg_algorithm == :minres
+        Krylov.MinresSolver(me, me, VT)
+    elseif cg_algorithm == :craigmr
+        Krylov.CraigmrSolver(me, n, VT)
+    end
 
     ext = MadNLP.get_sparse_condensed_ext(VT, hess_com, jptr, jt_csc_map, hess_csc_map)
     etc = Dict{Symbol, Any}(
+        :cg_algorithm=>cg_algorithm,
         :cg_iters=>Int[],
         :accuracy=>Float64[],
         :time_cg=>0.0,
@@ -264,7 +280,6 @@ function MadNLP.compress_hessian!(kkt::HybridCondensedKKTSystem)
     MadNLP.transfer!(kkt.hess_com, kkt.hess_raw, kkt.hess_csc_map)
 end
 
-
 # build_kkt!
 function MadNLP.build_kkt!(kkt::HybridCondensedKKTSystem)
     n = size(kkt.hess_com, 1)
@@ -325,10 +340,29 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
     mul!(wy, G, r1, one(T), -one(T))       # -wy + G (Kγ)⁻¹ [wx + γ Gᵀ wy]
 
     # Solve Schur-complement system with a Krylov iterative method.
-    kkt.etc[:time_cg] += @elapsed begin
-        Krylov.solve!(kkt.iterative_linear_solver, kkt.S, wy; atol=1e-12, rtol=0.0, verbose=0)
+    if kkt.etc[:cg_algorithm] ∈ (:cg, :gmres, :cr, :minres)
+        t_cg = @elapsed Krylov.solve!(
+            kkt.iterative_linear_solver,
+            kkt.S,
+            wy;
+            atol=0.0,
+            rtol=1e-14,
+            verbose=0,
+        )
+        copyto!(wy, kkt.iterative_linear_solver.x)
+    elseif kkt.etc[:cg_algorithm] ∈ (:craigmr, )
+        t_cg = @elapsed Krylov.solve!(
+            kkt.iterative_linear_solver,
+            kkt.G_csc,
+            wy;
+            N=kkt.S,
+            atol=0.0,
+            rtol=1e-14,
+            verbose=0,
+        )
+        copyto!(wy, kkt.iterative_linear_solver.y)
     end
-    copyto!(wy, kkt.iterative_linear_solver.x)
+    kkt.etc[:time_cg] += t_cg
 
     # Extract solution of Golub & Greif
     mul!(wx, G', wy, -one(T), one(T))

@@ -1,17 +1,9 @@
 \section{Solving KKT systems on the GPU}
-The GPU has emerged as the new prominent landscape
-for numerical computing. GPUs are using a SIMD formalism
-that yields excellent throughput for parallelizing small-scale
-operations, but their use remains limited as soon as the computational
-pattern becomes more complex. With their heavy use of numerical
-pivoting, sparse factorization algorithms are notoriously hard to implement
-on a GPU for that exact reason. In particular, previous works have
-shown that GPU-based linear solvers lag far behind their equivalent
-on the CPU to factorize the system~\eqref{eq:kkt:augmented}
-\cite{tasseff2019exploring,swirydowicz2021linear}. One strategy
-has emerged to overcome this challenge:
-use a sparse factorization that does not require numerical pivoting~\cite{regev2023hykkt,shin2023accelerating}
-by leveraging the structure of the condensed KKT system~\eqref{eq:kkt:condensed}.
+The GPU has emerged as the new prominent landscape for numerical computing.
+GPUs employ a SIMD formalism that yields excellent throughput for parallelizing small-scale operations.
+However, their utility remains limited when computational algorithms require global communication.
+Sparse factorization algorithms, which heavily rely on numerical pivoting, pose significant challenges for implementation on GPUs due to this limitation. Previous research has demonstrated that GPU-based linear solvers significantly lag behind their CPU counterparts \cite{tasseff2019exploring,swirydowicz2021linear}.
+One emerging strategy to address this challenge is to utilize sparse factorization techniques that do not necessitate numerical pivoting \cite{regev2023hykkt,shin2023accelerating}, leveraging the structure of the condensed KKT system \eqref{eq:kkt:condensed}.
 
 \subsection{Golub \& Greif strategy}
 \label{sec:kkt:golubgreif}
@@ -68,35 +60,52 @@ that uses the following steps:
   \item Solve the system $K_\gamma d_x = \bar{r}_1 + \gamma G^\top \bar{r}_2 - G^\top d_y$
     to recover the primal descent direction.
 \end{enumerate}
-The method uses a sparse Cholesky factorization in conjunction with a CG algorithm.
+The method uses a sparse Cholesky factorization along with the conjugate gradient (CG) algorithm \cite{hestenes-stiefel-1952}.
 The sparse Cholesky factorization has the advantage of being stable without
 numerical pivoting, rendering the algorithm tractable on a GPU.
-Each CG iteration requires the application of a backsolve with the
-factors of $K_\gamma$, an operation that can be numerically demanding. For that reason,
+Each CG iteration requires the application of sparse triangular solves with the
+factors of $K_\gamma$, operations that can be numerically demanding. For that reason,
 HyKKT is efficient only if the CG solver converges in a small number of iterations.
 Fortunately, the eigenvalues of the Schur-complement $S_\gamma := G K_\gamma^{-1} G^\top$
 all converge to $\frac{1}{\gamma}$ as we increase the regularization parameter
 $\gamma$ (\cite[Theorem 4]{regev2023hykkt}), meaning that $\lim_{\gamma \to \infty} \cond(S_\gamma) = 1$.
-Stating it differently,
-the larger the $\gamma$, the less iterations is required in the CG algorithm.
+Because the convergence of the CG method depends on the number of distinct eigenvalues of $S_{\gamma}$, when $\gamma$ increases, the eigenvalues of $S_{\gamma}$ become more clustered, resulting in fewer iterations being required to solve \eqref{eq:kkt:schurcomplhykkt}.
 
-
-\subsection{A novel equality relaxation strategy (SS)}
+\subsection{Lifted KKT System strategy}
 \label{sec:kkt:sckkt}
 
-TODO
+We observe in \eqref{eq:kkt:condensed} that if all the constraints in the problem are inequalities, the system in \eqref{eq:kkt:condensed} becomes a $n \times n$ system which is guaranteed to be positive definite if the primal regularization parameter $\delta_x$ is chosento be adequately large. Furthermore, this parameter can be chosen dynamically using the inertia information of the system in \eqref{eq:kkt:condensed}. This motivates the Lifted KKT System strategy: we approximate the equalities with lifted inequalities.
+
+In particular, we relax the equality constraints in \eqref{eq:problem} using a small relaxation parameter $\tau > 0$ (chosen based on the numerical tolerance of the optimization solver), and solve the relaxed problem
+\begin{equation}
+  \label{eq:problemrelaxation}
+  \begin{aligned}
+    \min_{x \in \mathbb{R}^n} \; & f(x) \\
+    \text{s.t.} ~ & - \tau \leq g(x) \leq \tau \;, ~ h(x) \leq 0  \; .
+  \end{aligned}
+\end{equation}
+The problem~\eqref{eq:problemrelaxation} has only inequality constraints. After introducing slack variables, the condensed KKT system
+\eqref{eq:kkt:condensed} reduces to
+\begin{equation}
+  \label{eq:liftedkkt}
+    K_k d_x = - r_1 - H_k^\top(D_s r_4 - r_2) \; .
+\end{equation}
+Using the standard inertia correction procedure, the parameter $\delta_x$ is set to a value high enough to ensure that  $K_k$ is positive definite. Therefore, $K_k$ can be factorized with Cholesky factorization, satisfying the key requirement for the implementation on the GPUs. The relaxation causes error in the final solution, but the error is in the same order of the solver tolerance, and thus, do not significantly deteriorates the solution quality.
+
+While this method can be implemented with small modification in the optimization solver, the presence of tight inequality in \eqref{eq:problemrelaxation} causes severe ill-conditioning throughout the IPM iterations. Thus, the proper choice of the solver tolerance is necessary for the reliable convergence behavior.
+
 
 \subsection{Discussion}
 We have introduced two algorithms to solve
 the KKT system on the GPU. On the contrary to classical CPU algorithms,
-the two methods do not require computing a sparse LBL factorization of the KKT
+the two methods do not require computing a sparse \lblt factorization of the KKT
 system by using alternate reformulation based on the condensed KKT
 system~\eqref{eq:kkt:condensed}.
 
 The first strategy uses an augmented Lagrangian formulation
 of the KKT system. It requires a sparse Cholesky factorization (stable without numerical
 pivoting, hence favorable for the GPU) and uses it to solve the Schur-complement system
-using a CG algorithm. The performance of the method depends on a parameter $\gamma$, that
+using the CG algorithm. The performance of the method depends on a parameter $\gamma$, that
 has to be tuned independently. The larger the $\gamma$, the faster is the convergence
 in the CG algorithm, but the worst is the accuracy of the linear solve. Hence, a trade-off
 has to be found. The second method uses an equality relaxation strategy to
