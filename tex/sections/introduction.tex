@@ -18,10 +18,10 @@ Additionally, the utilization of GPUs has been impeded by the challenges associa
   \item \textbf{Role in exascale computing}: With the emergence of new exascale architectures, GPUs have become indispensable in achieving high-performance computing, particularly in supercomputing environments.
 \end{enumerate}
 
+\subsection{Solving optimization problems on GPU: current state-of-the-art}
 For all the reasons listed before, there is an increasing interest
 to solve optimization problems on the GPU.
 
-\subsection{Current state-of-the-art on GPU}
 
 \paragraph{GPU for mathematical programming.}
 The machine learning community has been a strong advocate for porting
@@ -39,7 +39,7 @@ compute the descent direction.
 For this reason, practitioners often resort to using first-order
 methods on GPUs, leveraging level-1 and level-2 BLAS operations that
 are more amenable to parallel computation.
-First-order algorithms depend mostly on (sparse) matrix-vector operations, that run
+First-order algorithms depend mostly on (sparse) matrix-vector operations that run
 very efficiently on modern GPUs. Hence, we can counterbalance
 the relative inaccuracy of the first-order method by running more
 iterations of the algorithm.
@@ -53,8 +53,8 @@ solving the LP problems to $10^{-8}$ accuracy.
 
 \paragraph{GPU for nonlinear programming.}
 The success of first-order algorithms in classical mathematical programming
-relies on the convexity of the problem. Thus, their approaches are nontrivial to replicate
-in nonlinear programming. Most engineering problems embed complex
+relies on the convexity of the problem. Thus, this approach is nontrivial to replicate
+in nonlinear programming: Most engineering problems encode complex
 physical equations that are likely to break any convex structure in the problem.
 Previous experiments on the OPF problem have shown that even a simple
 algorithm as ADMM has trouble converging as soon as the convergence
@@ -70,7 +70,7 @@ subsequent surveys~\cite{tasseff2019exploring,swirydowicz2021linear}.
 Fortunately, sparse solvers on GPUs are getting increasingly better with the newest
 generations of GPUs.
 In particular, NVIDIA has released in November 2023
-a new sparse direct solver that implements different sparse factorization routines: {\tt cuDSS}. Our
+a new sparse direct solver implementing different sparse factorization routines: {\tt cuDSS}. Our
 preliminary benchmark has shown {\tt cuDSS} is significantly
 faster than the previous sparse solvers using NVIDIA GPUs.
 The new NVIDIA Grace CPU architecture could also be a game changer in the future of sparse linear solvers, thanks to fast communication between the CPU and GPU.
@@ -117,11 +117,10 @@ backend ExaModels~\cite{shin2023accelerating}.
 The interior-point algorithm runs entirely on the GPU, from
 the evaluation of the model (using ExaModels) to the solution of
 the KKT system (using a condensed-space method running on the GPU).
-We use CUDSS.jl \cite{Montoison_CUDSS}, a Julia interface to the NVIDIA library {\tt cuDSS} to solve
-the condensed KKT systems.
-We evaluate the strengths
+We use CUDSS.jl \cite{Montoison_CUDSS}, a Julia interface to the NVIDIA library {\tt cuDSS},
+to solve the condensed KKT systems. We evaluate the strengths
 and weaknesses of both methods, in terms of accuracy and runtime.
-Extending beyond the classical OPF instances previously examined in our work, we incorporate large-scale problems sourced from the COPS nonlinear benchmark~\cite{dolan2004benchmarking}.
+Extending beyond the classical OPF instances examined in our previous work, we incorporate large-scale problems sourced from the COPS nonlinear benchmark~\cite{dolan2004benchmarking}.
 Our assessment involves comparing the performance achieved on the GPU with that of a state-of-the-art method executed on the CPU.
 The findings reveal that the condensed-space methods demonstrate a remarkable 10x acceleration in solving large-scale OPF instances when utilizing the GPU.
 However, performance outcomes on the COPS benchmark exhibit more variability.
