@@ -40,8 +40,8 @@ We initially evaluate the performance of each KKT solver on a large-scale OPF in
 the PGLIB benchmark~\cite{babaeinejadsarookolaee2019power}: {\tt 78484epigrids}.
 We have implemented the model in ExaModels.jl, to support
 the evaluation of the GPU: our formulation has
-a total of 85,568 variables, 82,679 equality constraints and 48,147
-inequality constraints.jl.
+a total of 674,562 variables, 661,017 equality constraints and 378,045
+inequality constraints.
 It is acknowledged that this particular instance is challenging to solve
 with IPM, as it requires a non-trivial amount of primal-dual regularization
 to achieve convergence.
@@ -54,7 +54,11 @@ We compare the analysis
 time, the factorization time and the triangular solve time with CHOLMOD.
 The results are displayed in Table~\ref{tab:linsol:time}. We benchmark the
 three decompositions implemented in cuDSS (\llt, \ldlt, \lu), and look at
-the accuracy obtained in the backsolve. We observe the analysis phase
+the accuracy obtained in the backsolve.
+% It depends on more factors than the backsolve.
+% The main error comes from the factorization.
+% We must explain how we compute the accuracy, error or residual? norm?
+We observe the analysis phase
 is almost 10 times slower for cuDSS, compared to CHOLMOD.
 That operation has to be computed only once, meaning that its cost is amortized if we run
 many IPM iterations. The refactorization is about twice as fast in cuDSS,
@@ -81,7 +85,7 @@ par with CHOLMOD, except for the \ldlt decomposition which lags behind by at lea
   }
   \caption{Comparing the performance of cuDSS with CHOLMOD.
     The matrix $K_\gamma$ is symmetric positive definite, with
-    a size $n = 85,568$. The matrix is extremely sparse, with only $1,057,200$ non-zero entries ($0.01$\%).
+    a size $n = 674,562$. The matrix is extremely sparse, with only $7,342,680$ non-zero entries ($0.002$\%).
     \label{tab:linsol:time}
     (A30 GPU)
   }

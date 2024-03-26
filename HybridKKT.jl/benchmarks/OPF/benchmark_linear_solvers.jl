@@ -11,7 +11,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "kkt")
 function benchmark_cudss(K, ntrials; structure="SPD")
     n = size(K, 1)
     full = CUSPARSE.CuSparseMatrixCSR(K)
-    view = 'L'
+    view = 'F'
 
     matrix = CUDSS.CudssMatrix(full, structure, view)
     config = CUDSS.CudssConfig()
@@ -69,8 +69,9 @@ function benchmark_cholmod(K, ntrials)
             X = CHOLMOD.solve(CHOLMOD.CHOLMOD_A, solver, B)
             copyto!(x, X)
         end
-        mul!(w, K, x)
-        accuracy += norm(w .- b, Inf)
+        w_gpu .= b_gpu
+        mul!(w, K, x, -1.0, 1.0)
+        accuracy += norm(w, Inf)
     end
 
     return (
@@ -97,6 +98,7 @@ end
 
     datafile = joinpath(PGLIB_PATH, case)
     nlp = ac_power_model(datafile)
+    display(nlp)
 
     solver = build_hckkt_solver(nlp; gamma=gamma, max_iter=1, print_level=MadNLP.ERROR)
     MadNLP.solve!(solver)
@@ -104,6 +106,7 @@ end
     # Take condensed KKT system at iteration 1
     K = solver.kkt.aug_com
     K = 0.5 .* (K + K')
+    # K = K + K' - Diagonal(K) ?
     m, n = size(K)
     nz = nnz(K)
 
