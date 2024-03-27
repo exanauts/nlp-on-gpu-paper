@@ -87,7 +87,7 @@ The problem~\eqref{eq:problemrelaxation} has only inequality constraints. After 
 \eqref{eq:kkt:condensed} reduces to
 \begin{equation}
   \label{eq:liftedkkt}
-    K \,d_x = - r_1 - H^\top(D_s r_4 - r_2) \; .
+    K_\tau \,d_x = - r_1 - H_\tau^\top(D_s r_4 - r_2) \; .
 \end{equation}
 Using the standard inertia correction procedure, the parameter $\delta_x$ is set to a value high enough to ensure that  $K_k$ is positive definite. Therefore, $K_k$ can be factorized with Cholesky factorization, satisfying the key requirement for the implementation on the GPU. The relaxation causes error in the final solution, but the error is in the same order of the solver tolerance, and thus, do not significantly deteriorates the solution quality.
 
@@ -113,6 +113,8 @@ by a relaxation parameter $\tau$, to solve the condensed KKT system~\eqref{eq:kk
 It just requires a sparse Cholesky solver to factorize~\eqref{eq:kkt:condensed}. For $\tau$
 small enough, the relaxed problem~\eqref{eq:problemrelaxation} is close enough to the original
 problem \eqref{eq:problem} to get an accurate solution.
+We will see in the next section that the ill-conditioned matrices $K_\gamma$ and $K_\tau$
+have a specific structure that limits the loss of accuracy in IPM.
 
 
 %%% Local Variables:

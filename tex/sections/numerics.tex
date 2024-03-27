@@ -343,7 +343,10 @@ with almost an 8x speed-up compared to the reference HSL MA27.
 
 \begin{figure}[!ht]
   \centering
-  \includegraphics[width=.6\textwidth]{../figures/pprof.pdf}
+  \begin{tabular}{cc}
+    \includegraphics[width=.4\textwidth]{../figures/pprof-cpu.pdf} &
+    \includegraphics[width=.4\textwidth]{../figures/pprof-cuda.pdf}
+  \end{tabular}
   \caption{Performance profile for the PGLIB OPF benchmark, solved
     with a tolerance {\tt tol=1e-4}.
   \label{fig:opf:pprof}}
@@ -434,27 +437,6 @@ particular instances are less amenable to GPU acceleration.
   \caption{COPS benchmark , solved with a tolerance {\tt tol=1e-6}\label{tab:cops:benchmark} (A30 GPU)}
 \end{table}
 
-
-% \begin{table}
-%   \centering
-%   \begin{tabular}{|l|rrr|rrr|}
-%     \hline
-%   & \multicolumn{3}{c|}{\bf HSL MA27} & \multicolumn{3}{c|}{\bf HSL MA57} \\
-%   \hline
-%   & it & lin & total & it & lin & total \\
-%   \hline
-%     bearing\_400 & 10 & 7.53 & 7.84 & 10 & 2.17 & 2.51 \\
-%     camshape\_6400 & 21 & 0.08 & 0.15 & 21 & 0.09 & 0.17 \\
-%     elec\_400 & 185 & 72.77 & 80.12 & 184 & 23.47 & 30.34 \\
-%     gasoil\_3200 & 18 & 0.89 & 4.85 & 80 & 8.15 & 10.01 \\
-%     marine\_1600 & 14 & 0.60 & 0.84 & 13 & 0.37 & 0.47 \\
-%     pinene\_3200 & 10 & 1.08 & 6.22 & 10 & 0.96 & 1.28 \\
-%     robot\_1600 & 61 & 0.94 & 1.26 & 66 & 0.85 & 1.03 \\
-%     steering\_12800 & 17 & 0.79 & 1.06 & 17 & 1.35 & 1.73 \\
-%     \hline
-%   \end{tabular}
-%   \caption{Comparison between HSL MA27 and MA57}
-% \end{table}
 
 %%% Local Variables:
 %%% mode: latex
