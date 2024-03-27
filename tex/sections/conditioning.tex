@@ -631,7 +631,7 @@ The two error bounds \eqref{eq:cond:errorrgamma} and
 algorithm, as the errors remain limited in floating-point
 arithmetic.
 
-\subsubsection{Solution with sparse-condensed KKT system}
+\subsubsection{Solution with Lifted KKT system}
 The sparse-condensed KKT system has removed the equality
 constraints from the optimization problems, simplifying
 the solution of the condensed KKT system to
@@ -653,7 +653,7 @@ iterative refinement.
 Numerically, the primal-dual step $(\widehat{d}_x, \widehat{d}_y)$
 is computed only with an (absolute) precision $\varepsilon_{K}$,
 greater than the machine precision $\epstol$ (for HyKKT, $\varepsilon_K$
-is the absolute tolerance of the CG algorithm, for SCKKT the
+is the absolute tolerance of the CG algorithm, for LiftedKKT the
 absolute tolerance of the iterative refinement algorithm $\varepsilon_{K}$).
 
 The errors $\widehat{d}_x - d_x = O(\varepsilon_K)$ and

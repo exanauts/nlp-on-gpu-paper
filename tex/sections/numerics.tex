@@ -1,11 +1,17 @@
 \section{Numerical results}
+LiftedKKT and HyKKT has been implemented on the GPU
+We compare the performance of LiftedKKT and HyKKT with HSL on two benchmarks.
+First, we detail in \S\ref{sec:num:pprof} the respective performance of the two hybrid solvers
+on a large-scale OPF instance. Then, we present in \S\ref{sec:num:opf}
+the results we get on the PGLIB OPF benchmark, complemented in \S\ref{sec:num:cops} by
+the COPS benchmark.
 
 \subsection{Implementation}
 
 \paragraph{IPM solver.}
 We have implemented the two condensed-space methods in our nonlinear IPM solver MadNLP~\cite{shin2021graph}.
 This implementation utilizes the abstraction {\tt AbstractKKTSystem} to represent the various formulations of the KKT linear systems.
-MadNLP is able to deport most of the IPM algorithm to the GPU, with the exception of basic IPM operations used for the coordination, such as the filter line-search algorithm.
+MadNLP can deport most of the IPM algorithm to the GPU, except for basic IPM operations used for the coordination, such as the filter line-search algorithm.
 
 \paragraph{Evaluation of the nonlinear models.}
 We use the ExaModels.jl modeling tool~\cite{shin2023accelerating} to implement all the nonlinear programs utilized in our benchmark.
@@ -22,7 +28,7 @@ In particular, we utilize the following solvers:
   \item {\tt CHOLMOD}: Implements the Cholesky factorization on the CPU
     (using the AMD ordering \cite{amestoy-david-duff-2004} by default).
     It factorizes the condensed matrix $K_\gamma$ appearing in \eqref{eq:kkt:hykkt}.
-    This solver is used to assess the performance of the Golub \& Greif strategy when running on the CPU.
+    This solver is used to assess the performance of the hybrid solvers when running on the CPU.
   \item {\tt cuDSS}: Implement \llt, \ldlt and \lu decompositions on an NVIDIA GPU.
     We use the Cholesky factorization to factorize the condensed matrix $K_\gamma$ on GPU.
     This newly released solver is the contender in our benchmark.
@@ -32,26 +38,24 @@ In particular, we utilize the following solvers:
 We use the Julia language \cite{bezanson-edelman-karpinski-shah-2017} for the comparison, where CHOLMOD \cite{chen-davis-hager-rajamanickam-2008} is included with Julia.
 For the HSL linear solvers, we utilize libHSL \cite{fowkes-lister-montoison-orban-2024} with the Julia interface HSL.jl \cite{montoison-orban-hsl-2021}.
 HSL MA27 and CHOLMOD are both compiled with OpenBLAS \cite{openblas}, a multithreaded version of BLAS and LAPACK.
-The Julia package Krylov.jl~\cite{montoison2023krylov} contains a collection of Krylov methods with a polymorphic implementation that can be used on both CPU or GPU architectures.
+The Julia package Krylov.jl~\cite{montoison2023krylov} contains a collection of Krylov methods with a polymorphic implementation that can be used on both CPU and GPU architectures.
 % Should we provide the version of the linear solvers?
 
 \subsection{Performance analysis on a large-scale instance}
+\label{sec:num:pprof}
 We initially evaluate the performance of each KKT solver on a large-scale OPF instance, taken from
 the PGLIB benchmark~\cite{babaeinejadsarookolaee2019power}: {\tt 78484epigrids}.
-We have implemented the model in ExaModels.jl, to support
-the evaluation of the GPU: our formulation has
+Our formulation with ExaModels has
 a total of 674,562 variables, 661,017 equality constraints and 378,045
 inequality constraints.
-It is acknowledged that this particular instance is challenging to solve
-with IPM, as it requires a non-trivial amount of primal-dual regularization
-to achieve convergence.
-Our previous work has pointed out that the KKT solver is the current bottleneck
+Our previous work has pointed out that as soon as the OPF model is
+evaluated on the GPU using ExaModels, the KKT solver is the current bottleneck
 in the numerical implementation~\cite{shin2023accelerating}.
 
 \subsubsection{Individual performance of the linear solvers}
 Subsequently, we evaluate the individual performance of the cuDSS solver when factorizing the matrix $K_{\gamma}$ at the first IPM iteration (here with $\gamma = 10^7$).
-We compare the analysis
-time, the factorization time and the triangular solves time with CHOLMOD.
+We compare the times to perform the symbolic analysis,
+the factorization and the triangular solves with CHOLMOD.
 
 The results are displayed in Table~\ref{tab:linsol:time}.
 We benchmark the three decompositions implemented in cuDSS (\llt, \ldlt, \lu), and assess the accuracy of the solution by computing the infinity norm of the residual.
@@ -110,12 +114,11 @@ In terms of accuracy, the quality of the solution remains on par with CHOLMOD, e
 
 \subsubsection{Tuning the Golub \& Greif strategy}
 In Figure~\ref{fig:hybrid:gamma} we depict the evolution of the number
-of CG iterations and accuracy, while increasing the parameter $\gamma$
-from $10^4$ to $10^8$. The associated table details the time spent
-in the algorithm.
+of CG iterations and relative accuracy as we increase the parameter $\gamma$
+from $10^4$ to $10^8$.
 
 On the algorithmic side, we observe that the higher the regularization $\gamma$,
-the fastest the CG algorithm: we decrease the total number of iterations
+the faster the CG algorithm: we decrease the total number of iterations
 spent in CG by a factor of 10. However, we have to pay a price in term
 of accuracy: for $\gamma > 10^8$ the solution returned by the linear solver
 is not accurate enough and the IPM algorithm has to proceed to more
@@ -123,18 +126,17 @@ primal-dual regularization, leading to an increase in the total number of iterat
 
 On the numerical side, the table in Figure~\ref{fig:hybrid:gamma} compares
 the time spent in the IPM solver on the CPU (using CHOLMOD) and on the GPU
-(using the solver {\tt cuDSS}). We observe that overall {\tt cuDSS} is
-faster than CHOLMOD, leading to a decrease in the total IPM solution time.
-We note that we decrease by a factor of 5 the time to assemble the condensed
-matrix $K_\gamma$ on the GPU, meaning that this operation is not a bottleneck in
-the algorithm.
+(using the solver {\tt cuDSS}). Overall {\tt cuDSS} is
+faster than CHOLMOD, leading to a 4x-8x speed-up in the total IPM solution time.
+The assembling of the condensed matrix $K_\gamma$ also parallelizes well
+on the GPU, and reduces from $\approx 8s$ on the CPU to $\approx 0.2s$ on the GPU.
 
 \begin{figure}[!ht]
   \centering
   \resizebox{\textwidth}{!}{
   \begin{tabular}{|r|rrrr >{\bfseries}r|rrrr >{\bfseries}r|}
   \hline
-  & \multicolumn{5}{c|}{\bf CHOLMOD (CPU)} & \multicolumn{5}{c|}{\bf cuDSS (CUDA)} \\
+  & \multicolumn{5}{c|}{\bf CHOLMOD (CPU)} & \multicolumn{5}{c|}{\bf cuDSS-\ldlt (CUDA)} \\
   \hline
   $\gamma$ & \# it & cond. (s) & CG (s) & linsol (s) & IPM (s) & \# it & cond. (s) & CG (s) & linsol (s) & IPM (s) \\
   \hline
@@ -150,11 +152,11 @@ the algorithm.
   \caption{
     Above: Decomposition of IPM solution time across
     (a) condensation time (cond.), (b) CG time, (c) total time
-    spent in linear solver (linsol.) and (d) total time spent in
+    spent in the linear solver (linsol.) and (d) total time spent in
     IPM solver (IPM).
     Below: Impact of $\gamma$ on the total number of CG iterations
-    and on the norm of the relative residual at each IPM iteration.
-    The peak observe in the norm of the relative residual correspond
+    and the norm of the relative residual at each IPM iteration.
+    The peak observed in the norm of the relative residual corresponds
     to the primal-dual regularization performed inside the IPM algorithm,
     applied when the matrix $K_\gamma$ is not positive definite.
     \label{fig:hybrid:gamma}
@@ -164,53 +166,35 @@ the algorithm.
 
 
 \subsubsection{Tuning the equality relaxation strategy}
-We now analyze the numerical performance of the equality relaxation strategy described in
-Section~\ref{sec:kkt:sckkt}. The method solves the KKT system~\eqref{eq:kkt:condensed}
-using a direct solver, as the relaxed problem does not have any equality constraints.
-The parameter $\varepsilon$ used in the equality relaxation $-\varepsilon \leq g(x) \leq \varepsilon$
-is set equal to the IPM tolerance $\varepsilon_{tol}$: in practice, it does not
-make sense to set a parameter $\varepsilon$ below the IPM tolerance as the
+We now analyze the numerical performance of LiftedKKT (\S\ref{sec:kkt:sckkt}).
+The method solves the KKT system~\eqref{eq:liftedkkt} using a direct solver.
+The parameter $\tau$ used in the equality relaxation~\eqref{eq:problemrelaxation}
+is set equal to the IPM tolerance $\varepsilon_{tol}$ (in practice, it does not
+make sense to set a parameter $\tau$ below IPM tolerance as the
 inequality constraints are satisfied only up to a tolerance $\pm \varepsilon_{tol}$
-in IPM.
+in IPM).
 
-We compare the performance obtained by the equality relaxation strategy
-in Table~\ref{tab:sckkt:performance}, for different values of $\varepsilon_{tol}$.
-We display both the runtimes on the CPU (using CHOLMOD) and on the GPU
-(using cuDSS), as well as the relative accuracy achieved as we decrease the tolerance
-$\varepsilon_{tol}$: we compare the solution
-returned by the equality relaxation strategy together
-with the solution returned by MadNLP when running on the CPU
-with HSL MA27 for a tight tolerance ($\varepsilon_{tol} = 10^{-8}$).
-We observe that we cannot solve the relaxed problem in MadNLP
-with a tolerance below $10^{-5}$. Indeed, the slacks associated
-to the relaxed equality constraints $-\varepsilon \leq g(x) \leq \varepsilon$
-are converging to a value below $2 \varepsilon$ at the optimum,
-leading to highly ill-conditioned terms in the diagonal matrices
-$\Sigma_s$: despite being easier to solve, the conditioning
-of the relaxed problem is preventing the IPM solver to converge
-to a solution more accurate than $10^{-5}$.
-
-This observation is corroborated by the results in Table~\ref{tab:sckkt:performance}.
-Overall, we observe that the method is converging fast
-if the tolerance $\varepsilon_{tol}$ is above $10^{-4}$.
-The method benefits from the GPU-accelerated linear solver cUDSS, as
-the running time decreases by a factor of 4 compared to CHOLMOD
-running on the CPU. However, the method remains inaccurate:
-for $\varepsilon_{tol} = 10^{-4}$, we get a $0.5$\% error on the objective,
-and a $10$\% error on the primal solution.
-To achieve convergence for the lower tolerance $\varepsilon_{tol} = 10^{-5}$,
-we had to decrease the tolerance of the iterative refinement
-to $10^{-12}$ to get a solution accurate enough in the linear solve:
-this explains the significant slowdown, as we have to perform more
-backsolve per iteration thanks to the additional iterative refinement
-iterations.
+We compare in Table~\ref{tab:sckkt:performance} the performance obtained by LiftedKKT
+as we decrease the IPM tolerance $\varepsilon_{tol}$.
+We display both the runtimes on the CPU (using CHOLMOD) and on the GPU (using cuDSS).
+We observe that LiftedKKT does not converge with CHOLMOD for a tolerance $\varepsilon_{tol} \leq 10^{-5}$.
+The slacks associated with the relaxed equality constraints are converging to a value below $2 \tau$,
+leading to highly ill-conditioned terms in the diagonal matrices $\Sigma_s$.
+As a consequence, the conditioning of the matrix $K_k$ in \eqref{eq:liftedkkt} can increase
+above $10^{18}$, leading to a nearly singular linear system. Interestingly,
+we can reduce the tolerance $\varepsilon_{tol}$ down to $10^{-8}$ when using {\tt cuDSS}-\ldlt.
+We observe {\tt cuDSS} is more stable: the factorization
+succeeds, and the loss of accuracy caused by the ill-conditioning is tamed by the multiple
+Richardson iterations (reducing the relative accuracy in the residual down to an acceptable level).
+As a result, {\tt cuDSS} can solve
+the problem to optimality in $\approx 20s$, a time comparable with HyKKT (see Figure~\ref{fig:hybrid:gamma}).
 
 \begin{table}[!ht]
   \centering
   \resizebox{.5\textwidth}{!}{
   \begin{tabular}{|l|rr|rr|}
     \hline
-    & \multicolumn{2}{c|}{\bf CPU (CHOLMOD)} & \multicolumn{2}{c|}{\bf CUDA (cuDSS)} \\
+    & \multicolumn{2}{c|}{\bf CHOLMOD (CPU)} & \multicolumn{2}{c|}{\bf cuDSS-\ldlt (CUDA)} \\
     \hline
     $\varepsilon_{tol}$ & \#it & time (s) & \#it & time (s)\\
     \hline
@@ -226,22 +210,23 @@ iterations.
   \caption{Performance of the equality-relaxation
     strategy as we decrease the IPM tolerance $\varepsilon_{tol}$.
     The table displays the wall time on the CPU (using CHOLMOD)
-    and on the GPU (using cuDSS). (A30 GPU)
+    and on the GPU (using cuDSS-\ldlt). (A30 GPU)
   }
 \end{table}
 
 \subsubsection{Breakdown of the time spent in one IPM iteration}
-Now, we decompose the total wall running time spent at a single
-IPM iteration, for the different linear solvers we have at our disposal.
+We decompose the time spent in a single
+IPM iteration for the available KKT solvers (HSL MA27, LiftedKKT, and HyKKT).
 We look at the 5th IPM iteration obtained when solving {\tt 78484epigrids}.
-The results are displayed in Figure~\ref{fig:timebreakdown}. We observe
-that building the KKT system represents only a fraction of the computation time, compared
-to the factorization and the backsolve. The solver {\tt cuDSS} is significantly
-faster to refactorize the KKT system, compared to the other linear solvers running on the CPU (MA27 and CHOLMOD).
-The backsolve is the bottleneck operation for HyKKT, as it has to run a
-full CG algorithm to solve the system~\eqref{eq:kkt:schurcomplhykkt}. Hence, the performance
-of the HyKKT algorithm significantly improves if we manage to reduce the total
-number of iterations in the CG algorithm, e.g. by increasing the parameter $\gamma$.
+When solving the KKT system, the time can be decomposed into: (1) assembling the
+KKT system, (2) factorizing the KKT system, and (3) computing the descent direction with a backsolve.
+As depicted in~\ref{fig:timebreakdown}, we observe
+that constructing the KKT system represents only a fraction of the computation time, compared
+to the factorization and the backsolve. Using {\tt cuDSS}-\ldlt, we observe speedups of
+30x and 15x in the factorization compared to MA27 and CHOLMOD running on the CPU.
+Once the KKT system is factorized, computing the descent direction with LiftedKKT is faster than with HyKKT
+(0.04s compared to 0.13s) as HyKKT has to run a CG algorithm to solve the Schur complement
+system~\eqref{eq:kkt:schurcomplhykkt}.
 
 \begin{figure}[!ht]
   \centering
@@ -267,6 +252,7 @@ number of iterations in the CG algorithm, e.g. by increasing the parameter $\gam
 
 
 \subsection{Benchmark on OPF instances}
+\label{sec:num:opf}
 % The previous subsection has detailed the performance of the two KKT solvers on a specific instance, and highlighted
 % the respective downsides of the Golub \& Greif strategy and the equality relaxation strategy.
 Now, we run a full benchmark on difficult OPF instances taken
@@ -309,8 +295,8 @@ with almost an 8x speed-up compared to the reference HSL MA27.
   \resizebox{\textwidth}{!}{
 		\begin{tabular}{|l|rrr >{\bfseries}r|rrr >{\bfseries}r|rrr >{\bfseries}r|}
 			\hline
-& \multicolumn{4}{c|}{\bf HSL MA27} &
-			\multicolumn{4}{c|}{\bf eq. relaxation+cuDSS} &
+      & \multicolumn{4}{c|}{\bf HSL MA27} &
+			\multicolumn{4}{c|}{\bf LiftedKKT+cuDSS} &
 			\multicolumn{4}{c|}{\bf HyKKT+cuDSS} \\
 			\hline
 			Case & it & AD & lin & total & it & AD & lin & total & it & AD & lin & total \\
@@ -365,6 +351,7 @@ with almost an 8x speed-up compared to the reference HSL MA27.
 
 
 \subsection{Benchmark on COPS instances}
+\label{sec:num:cops}
 We have observed in the previous section that both the equality relaxation
 and the HyKKT algorithm gives significant speed-up for large-scale
 OPF instances, compared to HSL MA27.
@@ -410,23 +397,37 @@ particular instances are less amenable to GPU acceleration.
   \resizebox{\textwidth}{!}{
     \begin{tabular}{|l|rr >{\bfseries}r|rr >{\bfseries}r|rr >{\bfseries}r|rr >{\bfseries}r|rr >{\bfseries}r|}
     \hline
-    & \multicolumn{3}{c|}{\bf HSL MA27} &
-			\multicolumn{3}{c|}{\bf SCKKT+cholmod} &
-			\multicolumn{3}{c|}{\bf SCKKT+cuDSS} &
-			\multicolumn{3}{c|}{\bf HyKKT+cholmod} &
-			\multicolumn{3}{c|}{\bf HyKKT+cuDSS} \\
+    & \multicolumn{3}{c|}{\bf Augmented KKT} &
+			\multicolumn{6}{c|}{\bf LiftedKKT} &
+			\multicolumn{6}{c|}{\bf HyKKT} \\
+      \hline
+    & \multicolumn{3}{c|}{\bf HSL MA57} &
+			\multicolumn{3}{c|}{\bf CHOLMOD} &
+			\multicolumn{3}{c|}{\bf cuDSS+\ldlt} &
+			\multicolumn{3}{c|}{\bf CHOLMOD} &
+			\multicolumn{3}{c|}{\bf cuDSS+\ldlt} \\
     \hline
-                    & it & lin & total & it & lin & total & it & lin & total & it & lin & total & it & lin & total \\
+      & it & lin & total & it & lin & total & it & lin & total & it & lin & total & it & lin & total \\
     \hline
-      bearing\_400 & 17 & 11.35 & 12.04 & 14 & 2.04 & 2.41 & 14 & 0.08 & 0.91 & 14 & 4.94 & 5.42 & 14 & 0.96 & 1.84 \\
-      camshape\_6400 & 38 & 0.16 & 0.29 & 35 & 0.04 & 0.38 & 35 & 0.03 & 0.15 & 38 & 0.06 & 0.17 & 38 & 0.03 & 0.20 \\
-      elec\_400 & 186 & 114.55 & 131.59 & 139 & 14.70 & 19.42 & 108 & 3.47 & 5.90 & 103 & 9.24 & 12.29 & 104 & 0.59 & 3.66 \\
-      gasoil\_3200 & 20 & 0.99 & 7.47 & 20 & 1.76 & 2.41 & 21 & 0.49 & 1.69 & 20 & 1.21 & 1.96 & 20 & 0.32 & 1.33 \\
-      marine\_1600 & 14 & 0.62 & 0.96 & 26 & 1.45 & 1.77 & 25 & 0.45 & 1.02 & 13 & 0.33 & 0.49 & 13 & 0.14 & 0.57 \\
-      pinene\_3200 & 12 & 1.17 & 8.75 & 21 & 1.58 & 2.83 & 21 & 0.23 & 1.53 & 12 & 3.08 & 3.73 & 11 & 1.38 & 2.48 \\
-      robot\_1600 & 55 & 0.78 & 1.09 & 61 & 0.78 & 1.18 & 61 & 0.41 & 1.61 & 34 & 0.24 & 0.44 & 34 & 0.09 & 0.77 \\
-      rocket\_12800 & 51 & 164.87 & 165.73 & 37 & 0.62 & 1.69 & 37 & 0.07 & 2.04 & 24 & 1.49 & 2.13 & 24 & 0.41 & 1.89 \\
-      steering\_12800 & 19 & 0.79 & 0.97 & 17 & 0.37 & 0.98 & 17 & 0.21 & 1.63 & 22 & 0.63 & 1.01 & 19 & 0.11 & 1.93 \\
+      bearing\_400 & 17 & 3.33 & 3.95 & 14 & 2.04 & 2.41 & 14 & 0.08 & 0.91 & 14 & 4.94 & 5.42 & 14 & 0.96 & 1.84 \\
+      camshape\_6400 & 38 & 0.17 & 0.28 & 35 & 0.04 & 0.38 & 35 & 0.03 & 0.15 & 38 & 0.06 & 0.17 & 38 & 0.03 & 0.20 \\
+      elec\_400 & 185 & 23.67 & 32.12 & 139 & 14.70 & 19.42 & 108 & 3.47 & 5.90 & 103 & 9.24 & 12.29 & 104 & 0.59 & 3.66 \\
+      gasoil\_3200 & 37 & 4.65 & 5.50 & 20 & 1.76 & 2.41 & 21 & 0.49 & 1.69 & 20 & 1.21 & 1.96 & 20 & 0.32 & 1.33 \\
+      marine\_1600 & 13 & 0.39 & 0.47 & 26 & 1.45 & 1.77 & 25 & 0.45 & 1.02 & 13 & 0.33 & 0.49 & 13 & 0.14 & 0.57 \\
+      pinene\_3200 & 12 & 1.27 & 1.77 & 21 & 1.58 & 2.83 & 21 & 0.23 & 1.53 & 12 & 3.08 & 3.73 & 11 & 1.38 & 2.48 \\
+      robot\_1600 & 55 & 0.65 & 0.77 & 61 & 0.78 & 1.18 & 61 & 0.41 & 1.61 & 34 & 0.24 & 0.44 & 34 & 0.09 & 0.77 \\
+      rocket\_12800 & 51 & 3.02 & 4.07 & 37 & 0.62 & 1.69 & 37 & 0.07 & 2.04 & 24 & 1.49 & 2.13 & 24 & 0.41 & 1.89 \\
+      steering\_12800 & 19 & 1.44 & 1.81 & 17 & 0.37 & 0.98 & 17 & 0.21 & 1.63 & 22 & 0.63 & 1.01 & 19 & 0.11 & 1.93 \\
+    \hline
+      bearing\_800 & 13 & 14.12 & 16.04 & 14 & 10.03 & 11.99 & 14 & 0.24 & 3.70 & 12 & 18.76 & 20.60 & 12 & 2.69 & 6.17 \\
+      camshape\_12800 & 34 & 0.33 & 0.51 & 33 & 0.08 & 0.26 & 33 & 0.03 & 0.17 & 34 & 0.07 & 0.29 & 34 & 0.04 & 0.23 \\
+      elec\_800 & 354 & 325.95 & 396.00 & 212 & 113.83 & 140.31 & 500 & 36.23 & 69.92 & 271 & 149.28 & 179.49 & 272 & 3.77 & 34.77 \\
+      gasoil\_12800 & 20 & 11.30 & 13.84 & 25 & 13.86 & 17.02 & 21 & 1.67 & 6.26 & 22 & 6.86 & 9.41 & 22 & 1.89 & 6.28 \\
+      marine\_12800 & 11 & 3.41 & 4.54 & 120 & 100.39 & 112.21 & 200 & 51.23 & 75.09 & 11 & 3.77 & 5.03 & 11 & 1.02 & 4.24 \\
+      pinene\_12800 & 10 & 6.99 & 8.20 & 21 & 8.76 & 13.35 & 21 & 1.44 & 7.25 & 11 & 12.45 & 15.25 & 12 & 5.31 & 10.23 \\
+      robot\_12800 & 35 & 4.44 & 5.92 & 33 & 2.03 & 3.30 & 33 & 0.36 & 4.53 & 35 & 2.00 & 3.26 & 35 & 0.41 & 4.91 \\
+      rocket\_51200 & 31 & 6.07 & 9.31 & 38 & 2.83 & 6.78 & 38 & 0.45 & 9.71 & 47 & 14.77 & 21.82 & 31 & 4.10 & 12.33 \\
+      steering\_51200 & 27 & 9.47 & 12.67 & 15 & 1.31 & 2.66 & 15 & 0.23 & 5.76 & 23 & 2.65 & 4.47 & 20 & 0.64 & 8.82 \\
     \hline
     \end{tabular}
   }
