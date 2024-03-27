@@ -1,9 +1,7 @@
 \section{Conditioning of the condensed KKT system}
-The condensed matrix $K$ appearing in \eqref{eq:kkt:condensed} is known to be ill-conditioned
-close to a local optimum solution. That behavior is amplified
-for the matrices $K_\gamma$ (for large $\gamma$) and $K_\tau$ (for small $\tau$).
-For a generic linear system $Mx = b$, the relative error after a perturbation
-$\Delta b$ on the right-hand-side is bounded by
+The condensed matrix $K$ appearing in \eqref{eq:kkt:condensed} is known to be ill-conditioned close to a local optimum solution.
+This behavior is amplified for the matrices $K_\gamma$ (for large $\gamma$) and $K_\tau$ (for small $\tau$).
+For a generic linear system $Mx = b$, the relative error after perturbing the right-hand side by $\Delta b$ is bounded by
 \begin{subequations}
   \label{eq:cond:defaultbond}
 \begin{equation}
@@ -20,7 +18,7 @@ giving the bounds
 \end{equation}
 \end{subequations}
 The relative errors are bounded above by the conditioning $\cond(M)$,
-meaning that without further assumptions the condensed matrix $K$ amplify
+indicating that without further assumptions the condensed matrix $K$ amplifies
 the errors made throughout the algorithm.
 Hence, it is legitimate to investigate the impact of the ill-conditioning
 when solving the condensed system~\eqref{eq:kkt:condensed} with LiftedKKT or with HyKKT.
@@ -42,7 +40,7 @@ We start this paragraph by recalling important results porting
 on the iterates of the interior-point algorithm~\cite{wright2001effects}.
 Let $p = (x, s, y, z)$ the current primal-dual iterate (the multiplier $v$ is considered apart),
 and $p^\star$ a solution of the KKT conditions~\eqref{eq:kktconditions}.
-We note $\delta(p, v) = \| (p, v) - (p^\star, v^\star) \|$ the Euclidean distance to the
+We denote $\delta(p, v) = \| (p, v) - (p^\star, v^\star) \|$ the Euclidean distance to the
 primal-dual stationary point $p^\star$.
 From \cite[Theorem 2.2]{wright2001effects}, if Assumptions~\ref{hyp:ipm}
 hold at $p^\star$ and $v > 0$,
@@ -69,7 +67,7 @@ for some constant $C > 0$ and $\alpha \in (0, 1)$.
 Conditions~\eqref{eq:centralitycond:complement} ensures that the products
 $s_i v_i$ are not too disparate in the diagonal term $D_s$.
 This condition is satisfied in the solver Ipopt (see \cite[Equation (16)]{wachter2006implementation}).
-We note $\cactive = \cactive(x^\star)$ the active-set at the optimal solution $x^\star$,
+We denote $\cactive = \cactive(x^\star)$ the active-set at the optimal solution $x^\star$,
 and $\cinactive = \cinactive(x^\star)$ the inactive set.
 
 \begin{proposition}[\cite{wright2001effects}, Lemma 3.2]
@@ -114,7 +112,7 @@ and show that the condensed matrix $K_\gamma$ can be decomposed as
   \end{bmatrix}
   \; ,
 \end{equation}
-with $U$ orthogonal matrix and $\Sigma$ diagonal, where
+with $U$ an orthogonal matrix and $\Sigma$ diagonal, where
 the two diagonal matrices $\Sigma_L$ and $\Sigma_S$ are both better conditioned than $K_\gamma$.
 The result is a consequence of the SVD decomposition,
 provided that the singular values satisfy $\frac{\sigma_1}{\sigma_{p}} \leq \frac{\sigma_1}{\sigma_n}$
@@ -122,7 +120,7 @@ and $\frac{\sigma_{p+1}}{\sigma_{n}} \leq \frac{\sigma_1}{\sigma_n}$.
 
 We recall that $K_\gamma = W + H^\top D_s H + \gamma G^\top G$, with
 the diagonal matrix $D_s = S^{-1} V$.
-In addition, we note $m_a$ the cardinal of $\mathcal{B}$,
+In addition, we denote $m_a$ the cardinal of $\mathcal{B}$,
 and $p := m_a + m_e$. We denote by
 $H_{\cactive}$ the Jacobian of active inequality constraints, $H_{\cinactive}$ the
 Jacobian of inactive inequality constraints and
@@ -133,9 +131,9 @@ We define the minimum and maximum active slack values as
   s_{max} = \max_{i \in \cactive} s_i \; .
 \end{equation}
 
-To prove $K_\gamma$ decomposes as in \eqref{eq:cond:svd},
-we adapt \cite[Theorem 3.2]{wright1998ill} by incorporating
-the additional term $\gamma G^\top G$ coming from the equality constraints.
+To establish the decomposition of $K_\gamma$ as presented in \eqref{eq:cond:svd},
+we modify the approach outlined in \cite[Theorem 3.2]{wright1998ill} to account for the additional
+term $\gamma G^\top G$ arising from the equality constraints.
 \begin{theorem}[Properties of $K_\gamma$]
   \label{thm:cond}
   Suppose the condensed matrix is evaluated at a primal-dual
@@ -368,7 +366,7 @@ factorization is $\Delta_s K_\gamma = O(\epstol \| K_\gamma\|)$. As
 we can incorporate $\Delta_s K_\gamma$ in the perturbation
 $\Delta K_\gamma$ given in Proposition~\ref{prop:cond:boundcondensedmatrix}.
 
-We note $x$ the solution of the linear system $K_\gamma x = b$
+We denote $x$ the solution of the linear system $K_\gamma x = b$
 in exact arithmetic, and $\widehat{x}$ the solution of
 the perturbed system $\widehat{K}_\gamma \widehat{x} = \widehat{b}$
 in floating-point arithmetic. We are interested in bounding
@@ -448,7 +446,7 @@ the error in the small-space is $O(\Xi^{-1}\epstol )$.
 
 \subsection{Solution of the condensed KKT system}
 We use the relations~\eqref{eq:cond:rhserror} and \eqref{eq:cond:inversecondensederror}
-to bound the error made when solving the original condensed KKT~\eqref{eq:kkt:condensed}
+to bound the error made when solving the condensed KKT system~\eqref{eq:kkt:condensed}
 in floating-point arithmetic.
 In all this section, we assume that
 the primal-dual iterate $(p,v)$ satisfies Assumption~\ref{hyp:cond:wellcond}.
@@ -486,7 +484,7 @@ and show that the error remains reasonable even for large values of
 the regularization parameter $\gamma$.
 
 \paragraph{Initial right-hand-side.}
-In floating-point arithmetic, the initial RHS in \eqref{eq:kkt:schurcomplhykkt}
+In floating-point arithmetic, the initial right-hand side in \eqref{eq:kkt:schurcomplhykkt}
 is evaluated as
 $\widehat{r}_\gamma :=\widehat{G} \widehat{K}_\gamma^{-1} (\bar{r}_1 + \gamma \widehat{G}^\top \bar{r}_2) - \bar{r}_2$. Using \eqref{eq:cond:condensedrhs}, we have
 \begin{equation}
@@ -504,7 +502,7 @@ $\widehat{r}_\gamma :=\widehat{G} \widehat{K}_\gamma^{-1} (\bar{r}_1 + \gamma \w
 \end{bmatrix}}_{O(\Xi^{-1}\epstol)} \; .
   \end{aligned}
 \end{equation}
-We note $\widehat{s}_\gamma = \bar{r}_1 + \gamma \widehat{G}^\top \bar{r}_2 =
+We denote $\widehat{s}_\gamma = \bar{r}_1 + \gamma \widehat{G}^\top \bar{r}_2 =
 Y \widehat{s}_Y + Z \widehat{s}_Z$.
 The error decomposes as $\Delta s_\gamma = Y \Delta s_Y Y + Z \Delta s_Z
 = U_L \Delta s_L + U_S \Delta s_S$.
@@ -586,7 +584,7 @@ $\widehat{S}_\gamma$ in floating-point arithmetic.
   \end{equation}
 \end{proposition}
 \begin{proof}
-  We note $\widehat{G} = G + \Delta G$ (with $G = O(\epstol)$). Then
+  We denote $\widehat{G} = G + \Delta G$ (with $G = O(\epstol)$). Then
   \begin{equation}
     \begin{aligned}
       \widehat{S}_\gamma &= \widehat{G} \widehat{K}_\gamma^{-1} \widehat{G}^\top \; , \\
