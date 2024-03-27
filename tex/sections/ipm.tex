@@ -229,10 +229,14 @@ $d_v = - S^{-1}(V d_s + S v_k - \mu e)$.
 
 The system \eqref{eq:kkt:augmented} is usually factorized using
 an inertia-revealing \lblt factorization.
-Because the block diagonal terms
-$D_x$ and $D_s$ are usually poorly conditioned, Krylov methods has difficulties to perform.
-Their effectiveness can be significantly enhanced when paired with suitable preconditioners.
-This synergy offers a promising alternative in interior point methods, especially for linear and convex quadratic programming \cite{gondzio-2012}. Additionally, because Krylov methods are efficient on GPU architectures, they are experimented in nonlinear programming applications to speed-up computations \cite{cao-seth-laird-2016}.
+Krylov methods are often not competitive when solving~\eqref{eq:kkt:augmented},
+as the block diagonal terms $D_x$ and $D_s$ are getting increasingly
+ill-conditioned near the solution. Their use in IPM has been limited in
+linear and convex quadratic programming \cite{gondzio-2012} (when paired
+with a suitable preconditioner). We also refer to \cite{cao-seth-laird-2016}
+for an efficient implementation of a preconditioned conjugate gradient
+on GPU, for solving the Newton step arising in an Augmented-Lagrangian Interior-Point
+approach.
 
 \paragraph{Condensed KKT system.}
 The $4 \times 4$ KKT system \eqref{eq:kkt:augmented} can be further

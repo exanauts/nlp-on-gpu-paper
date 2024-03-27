@@ -105,8 +105,7 @@ end
 
     # Take condensed KKT system at iteration 1
     K = solver.kkt.aug_com
-    K = 0.5 .* (K + K')
-    # K = K + K' - Diagonal(K) ?
+     K = K + K' - Diagonal(K)
     m, n = size(K)
     nz = nnz(K)
 
