@@ -1,54 +1,38 @@
 \section{Introduction}
-Graphical processing units (GPUs) have become the most popular parallel computing architecture
-for scientific computing, driven by their success in machine learning.
-GPUs offer massive parallel computing capability for applications
-that can exploit coarse-grain parallelism and high-memory bandwidth.
-As such, the library CUDA has revolutionized high-performance computing (HPC) by democratizing parallel capabilities previously exclusive to expensive supercomputers.
-In the post-Moore's law era, GPUs are becoming more power-efficient than CPUs for running parallel workloads, as they require fewer transistors to process multiple tasks in parallel.
-This efficiency is further enhanced by technologies like ``single instruction, multiple data'' (SIMD), which allow GPUs to perform the same operation on multiple data simultaneously, maximizing throughput and efficiency.
+Graphics processing units (GPUs) are driving the advancement of scientific computing, most remarkable success being the capabilities to train and utilize large artificial intelligence (AI) models.
+GPUs offer several practical advantages: (1) massive parallel computing capability for applications that can exploit coarse-grain parallelism and high-memory bandwidth and (2) power efficiency due to requiring fewer transistors to process multiple tasks in parallel via implementing ``single instruction, multiple data'' (SIMD) parallelism.
 
 While GPUs have made significant strides in enhancing machine learning applications, their adoption in the mathematical programming community has been relatively limited.
 This limitation stems primarily from the fact that most optimization solvers were developed in the 1990s and are heavily optimized for CPU architectures.
 Additionally, the utilization of GPUs has been impeded by the challenges associated with sparse matrix factorization routines, which are inherently difficult to parallelize on SIMD architectures. Nevertheless, recent years have witnessed notable advancements that are reshaping this landscape.
+Some of the recently changed circumstances can be summarized as follows.
 
 \begin{enumerate}
   \item \textbf{Improved sparse matrix operations}: The performance of sparse matrix operations has seen substantial improvements in the CUDA library, largely attributed to the integration of novel tensor cores in recent GPUs~\cite{markidis2018nvidia}.
   \item \textbf{Interest in batch optimization}: There is a growing interest in solving optimization problems in batch mode, for problems sharing the same structure but with different parameters~\cite{amos2017optnet,pineda2022theseus}.
   \item \textbf{Advancements in automatic differentiation}: GPUs offer unparalleled performance for automatic differentiation, benefiting both machine learning ~\cite{jax2018github} and scientific computing applications \cite{enzyme2021}. Engineering problems often exhibit recurring patterns throughout the model. Once these patterns are identified, they can be evaluated in parallel within a SIMD framework, enabling near speed-of-light performance~\cite{shin2023accelerating}.
-  \item \textbf{Role in exascale computing}: With the emergence of new exascale architectures, GPUs have become indispensable in achieving high-performance computing, particularly in supercomputing environments.
+  \item \textbf{Role in exascale computing}: With the emergence of new exascale supercomputers (e.g., Frontier and Aurora), the capabilities to run on GPUs have become even more important, as these supercomputers are mostly powered by GPUs.
 \end{enumerate}
 
-For all the reasons listed before, there is an increasing interest
-to solve optimization problems on the GPU.
+For all the reasons listed before, there is an increasing interest to solve optimization problems on the GPUs.
 
-\subsection{Current state-of-the-art on GPU}
+\subsection{Current state-of-the-art}
+We now summarize the previous work on solving classical---large-scale, sparse, constrained----mathematical programs on GPUs.
 
 \paragraph{GPU for mathematical programming.}
-The machine learning community has been a strong advocate for porting
-mathematical optimization on the GPU. One of the most promising
-applications is embedding mathematical programs inside neural networks,
-a task that requires batching the solution of the optimization model
-for the training algorithm to be
-efficient~\cite{amos2017optnet,pineda2022theseus}.  This has led to
-the development of prototype code solving thousands of (small)
-optimization problems in parallel on the GPU.  However, it is not
-trivial to adapt such code to solve large-scale optimization problems,
-as the previous prototypes are reliant on dense linear solvers to
-compute the descent direction.
-
-For this reason, practitioners often resort to using first-order
+The factorization of sparse matrices encountered within second-order optimization algorithms has been considered to be challenging  on GPUs.
+For this reason, practitioners often has resorted to using first-order
 methods on GPUs, leveraging level-1 and level-2 BLAS operations that
 are more amenable to parallel computation.
 First-order algorithms depend mostly on (sparse) matrix-vector operations, that run
 very efficiently on modern GPUs. Hence, we can counterbalance
 the relative inaccuracy of the first-order method by running more
 iterations of the algorithm.
-A recent breakthrough~\cite{lu2023cupdlp,lu2023cupdlp2} demonstrates
+A recent breakthrough~\cite{lu2023cupdlp,lu2023cupdlp2} based on the primal-dual hybrid gradient method demonstrates
 that a first-order algorithm can surpass the performance of Gurobi, a
 commercial solver, in tackling large-scale linear programs. This
 performance gain is made possible by executing the first-order
-iterations solely on the GPU through an optimized codebase, thereby
-solving the LP problems to $10^{-8}$ accuracy.
+iterations solely on the GPU through an optimized codebase.
 
 
 \paragraph{GPU for nonlinear programming.}
@@ -56,8 +40,8 @@ The success of first-order algorithms in classical mathematical programming
 relies on the convexity of the problem. Thus, their approaches are nontrivial to replicate
 in nonlinear programming. Most engineering problems embed complex
 physical equations that are likely to break any convex structure in the problem.
-Previous experiments on the OPF problem have shown that even a simple
-algorithm as ADMM has trouble converging as soon as the convergence
+Previous experiments on the alternating current (AC) optimal power flow (OPF) problem have shown that even a simple
+algorithm as an alternating direction method of multipliers (ADMM) has trouble converging as soon as the convergence
 tolerance is set below $10^{-3}$~\cite{kim2021leveraging}.
 
 Thus, second-order methods continue to be a competitive option, particularly
@@ -67,13 +51,8 @@ iteration, an operation relying on non-trivial sparse linear algebra operations.
 The previous generation of GPU-accelerated sparse linear
 solvers were lagging behind their CPU equivalents, as illustrated in
 subsequent surveys~\cite{tasseff2019exploring,swirydowicz2021linear}.
-Fortunately, sparse solvers on GPUs are getting increasingly better with the newest
-generations of GPUs.
-In particular, NVIDIA has released in November 2023
-a new sparse direct solver that implements different sparse factorization routines: {\tt cuDSS}. Our
-preliminary benchmark has shown {\tt cuDSS} is significantly
-faster than the previous sparse solvers using NVIDIA GPUs.
-The new NVIDIA Grace CPU architecture could also be a game changer in the future of sparse linear solvers, thanks to fast communication between the CPU and GPU.
+Fortunately, sparse solvers on GPUs are becoming increasingly better, and in particular, NVIDIA has released in November 2023
+a new sparse direct solver that implements different sparse factorization routines: {\tt cuDSS}, with remarkably improved performance.
 Furthermore, variants of interior point methods have been proposed
 that does not require the use of numerical pivoting.
 As these algorithms do not require expensive numerical pivoting
@@ -100,6 +79,20 @@ The null-space method reduces the KKT system down to
 a medium-sized dense matrix, which then can be factorized efficiently on the GPU.
 Our previous research has shown that the method plays nicely with the interior-point
 methods if the number of degrees of freedom in the problem is relatively small~\cite{pacaud2022condensed}.
+
+\paragraph{Batched Optimization Solvers}
+The machine learning community has been a strong advocate for porting
+mathematical optimization on the GPU. One of the most promising
+applications is embedding mathematical programs inside neural networks,
+a task that requires batching the solution of the optimization model
+for the training algorithm to be
+efficient~\cite{amos2017optnet,pineda2022theseus}.  This has led to
+the development of prototype code solving thousands of (small)
+optimization problems in parallel on the GPU.  However, it is not
+trivial to adapt such code to solve large-scale optimization problems,
+as the previous prototypes are reliant on dense linear solvers to
+compute the descent directions.
+
 
 \subsection{Contributions}
 In this article, we assess the current capabilities of modern GPUs
