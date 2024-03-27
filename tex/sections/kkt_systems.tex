@@ -71,7 +71,7 @@ all converge to $\frac{1}{\gamma}$ as we increase the regularization parameter
 $\gamma$ (\cite[Theorem 4]{regev2023hykkt}), meaning that $\lim_{\gamma \to \infty} \cond(S_\gamma) = 1$.
 Because the convergence of the CG method depends on the number of distinct eigenvalues of $S_{\gamma}$, when $\gamma$ increases, the eigenvalues of $S_{\gamma}$ become more clustered, resulting in fewer iterations being required to solve \eqref{eq:kkt:schurcomplhykkt}.
 
-\subsection{Lifted KKT System strategy}
+\subsection{Equality relaxation strategy}
 \label{sec:kkt:sckkt}
 
 We observe in \eqref{eq:kkt:condensed} that if all the constraints in the problem are inequalities, the system in \eqref{eq:kkt:condensed} becomes a $n \times n$ system which is guaranteed to be positive definite if the primal regularization parameter $\delta_x$ is adequately large. Furthermore, this parameter can be chosen dynamically using the inertia information of the system in \eqref{eq:kkt:condensed}. This motivates the Lifted KKT System strategy: we approximate the equalities with lifted inequalities.
