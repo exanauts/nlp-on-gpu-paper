@@ -8,7 +8,7 @@ clean:
 	rm -rf results/
 
 build:
-	zip -r resuls.zip results/
+	zip -r results.zip results/
 
 update:
 	$(JULIAEXEC) --project -e "using Pkg; Pkg.update()"  

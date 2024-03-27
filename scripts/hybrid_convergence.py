@@ -1,10 +1,11 @@
 
+import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
 
-RESULTS_DIR = "HybridKKT.jl/results/hybrid/"
+RESULTS_DIR = sys.argv[1]
 GAMMA = [4, 5, 6, 7, 8]
 nexp = len(GAMMA)
 
@@ -24,17 +25,17 @@ for (k, gamma) in enumerate(GAMMA):
 axs[0].set_title("Number of CG iterations")
 axs[0].set_ylabel("# CG iters")
 axs[1].set_title("Relative accuracy along the iterations")
-axs[1].set_ylabel("RR")
+axs[1].set_ylabel("Relative residual")
 axs[1].set_yscale("log")
 
 # Global formatting
 for ax in axs:
     ax.grid(ls=":", which="both", alpha=.8, axis="y", lw=.5)
-    ax.set_xlabel("#it")
+    ax.set_xlabel("#IPM it")
     ax.legend(fontsize="x-small")
 
 plt.tight_layout()
-plt.savefig("figures/hybrid-gamma.pdf")
+plt.savefig("hybrid-gamma.pdf")
 
 
 # Analyze statistics
@@ -61,7 +62,5 @@ df["t_total_cuda"] = results_cuda[:, 5]
 df = df.astype({'it_cpu': int, 'it_cuda': int})
 
 print(df.to_latex(index=False, float_format="%.2f"))
-
-
 
 

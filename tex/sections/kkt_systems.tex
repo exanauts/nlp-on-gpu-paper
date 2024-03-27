@@ -3,7 +3,8 @@ The GPU has emerged as the new prominent landscape for numerical computing.
 GPUs employ a SIMD formalism that yields excellent throughput for parallelizing small-scale operations.
 However, their utility remains limited when computational algorithms require global communication.
 Sparse factorization algorithms, which heavily rely on numerical pivoting, pose significant challenges for implementation on GPUs due to this limitation. Previous research has demonstrated that GPU-based linear solvers significantly lag behind their CPU counterparts \cite{tasseff2019exploring,swirydowicz2021linear}.
-One emerging strategy to address this challenge is to utilize sparse factorization techniques that do not necessitate numerical pivoting \cite{regev2023hykkt,shin2023accelerating}, leveraging the structure of the condensed KKT system \eqref{eq:kkt:condensed}.
+One emerging strategy to address this challenge is to utilize sparse factorization techniques that do not necessitate numerical pivoting \cite{regev2023hykkt,shin2023accelerating},
+by leveraging the structure of the condensed KKT system \eqref{eq:kkt:condensed}.
 
 \subsection{Golub \& Greif strategy}
 \label{sec:kkt:golubgreif}
@@ -11,7 +12,6 @@ The Golub \& Greif~\cite{golub2003solving} strategy reformulates the KKT system
 using an Augmented Lagrangian formulation.
 It has been recently revisited in \cite{regev2023hykkt}
 to solve the condensed KKT system~\eqref{eq:kkt:condensed} on the GPU.
-
 The trick is to reformulate the condensed KKT system \eqref{eq:kkt:condensed} in the equivalent form
 \begin{equation}
   \label{eq:kkt:hykkt}
@@ -26,7 +26,7 @@ The trick is to reformulate the condensed KKT system \eqref{eq:kkt:condensed} in
   \begin{bmatrix}
     \bar{r}_1 + \gamma G^\top \bar{r}_2 \\
     \bar{r}_2
-  \end{bmatrix}
+  \end{bmatrix} \; ,
 \end{equation}
 where we have introduced the regularized matrix $K_\gamma := K + \gamma G^\top G$.
 If SOSC holds, the matrix $K_\gamma$ is positive definite for a large-enough parameter $\gamma$.
@@ -74,45 +74,45 @@ Because the convergence of the CG method depends on the number of distinct eigen
 \subsection{Lifted KKT System strategy}
 \label{sec:kkt:sckkt}
 
-We observe in \eqref{eq:kkt:condensed} that if all the constraints in the problem are inequalities, the system in \eqref{eq:kkt:condensed} becomes a $n \times n$ system which is guaranteed to be positive definite if the primal regularization parameter $\delta_x$ is chosento be adequately large. Furthermore, this parameter can be chosen dynamically using the inertia information of the system in \eqref{eq:kkt:condensed}. This motivates the Lifted KKT System strategy: we approximate the equalities with lifted inequalities.
+We observe in \eqref{eq:kkt:condensed} that if all the constraints in the problem are inequalities, the system in \eqref{eq:kkt:condensed} becomes a $n \times n$ system which is guaranteed to be positive definite if the primal regularization parameter $\delta_x$ is adequately large. Furthermore, this parameter can be chosen dynamically using the inertia information of the system in \eqref{eq:kkt:condensed}. This motivates the Lifted KKT System strategy: we approximate the equalities with lifted inequalities.
 
 In particular, we relax the equality constraints in \eqref{eq:problem} using a small relaxation parameter $\tau > 0$ (chosen based on the numerical tolerance of the optimization solver), and solve the relaxed problem
 \begin{equation}
   \label{eq:problemrelaxation}
-  \begin{aligned}
-    \min_{x \in \mathbb{R}^n} \; & f(x) \\
-    \text{s.t.} ~ & - \tau \leq g(x) \leq \tau \;, ~ h(x) \leq 0  \; .
-  \end{aligned}
+    \min_{x \in \mathbb{R}^n} \;  f(x)
+\quad \text{subject to}\quad
+     - \tau \leq g(x) \leq \tau \;,~  h(x) \leq 0  \; .
 \end{equation}
 The problem~\eqref{eq:problemrelaxation} has only inequality constraints. After introducing slack variables, the condensed KKT system
 \eqref{eq:kkt:condensed} reduces to
 \begin{equation}
   \label{eq:liftedkkt}
-    K_k d_x = - r_1 - H_k^\top(D_s r_4 - r_2) \; .
+    K \,d_x = - r_1 - H^\top(D_s r_4 - r_2) \; .
 \end{equation}
-Using the standard inertia correction procedure, the parameter $\delta_x$ is set to a value high enough to ensure that  $K_k$ is positive definite. Therefore, $K_k$ can be factorized with Cholesky factorization, satisfying the key requirement for the implementation on the GPUs. The relaxation causes error in the final solution, but the error is in the same order of the solver tolerance, and thus, do not significantly deteriorates the solution quality.
+Using the standard inertia correction procedure, the parameter $\delta_x$ is set to a value high enough to ensure that  $K_k$ is positive definite. Therefore, $K_k$ can be factorized with Cholesky factorization, satisfying the key requirement for the implementation on the GPU. The relaxation causes error in the final solution, but the error is in the same order of the solver tolerance, and thus, do not significantly deteriorates the solution quality.
 
-While this method can be implemented with small modification in the optimization solver, the presence of tight inequality in \eqref{eq:problemrelaxation} causes severe ill-conditioning throughout the IPM iterations. Thus, the proper choice of the solver tolerance is necessary for the reliable convergence behavior.
+While this method can be implemented with small modification in the optimization solver, the presence of tight inequality in \eqref{eq:problemrelaxation} causes severe ill-conditioning throughout the IPM iterations. Thus,
+choosing the solver tolerance appropriately is necessary to get a reliable convergence behavior.
 
 
 \subsection{Discussion}
 We have introduced two algorithms to solve
-the KKT system on the GPU. On the contrary to classical CPU algorithms,
+KKT systems on the GPU. On the contrary to classical implementations,
 the two methods do not require computing a sparse \lblt factorization of the KKT
-system by using alternate reformulation based on the condensed KKT
+system by using instead alternate reformulations based on the condensed KKT
 system~\eqref{eq:kkt:condensed}.
 
 The first strategy uses an augmented Lagrangian formulation
-of the KKT system. It requires a sparse Cholesky factorization (stable without numerical
-pivoting, hence favorable for the GPU) and uses it to solve the Schur-complement system
-using the CG algorithm. The performance of the method depends on a parameter $\gamma$, that
-has to be tuned independently. The larger the $\gamma$, the faster is the convergence
-in the CG algorithm, but the worst is the accuracy of the linear solve. Hence, a trade-off
-has to be found. The second method uses an equality relaxation strategy to
-solve the condensed KKT system~\eqref{eq:kkt:condensed} directly. It just requires
-a sparse Cholesky solver to factorize~\eqref{eq:kkt:condensed}. However, the method
-solves a relaxation of the original problem~\eqref{eq:problem}, limiting the accuracy
-of the solution.
+of the KKT system. It requires a sparse Cholesky factorization
+to solve the Schur-complement system~\eqref{eq:kkt:schurcomplhykkt}
+using the CG algorithm. The performance of the method depends on a parameter $\gamma$ that
+has to be tuned independently. A trade-off has to be found: the larger the $\gamma$, the faster is the convergence
+in the CG algorithm, but the worst is the accuracy of the linear solve.
+The second method uses an equality relaxation strategy, parameterized
+by a relaxation parameter $\tau$, to solve the condensed KKT system~\eqref{eq:kkt:condensed} directly.
+It just requires a sparse Cholesky solver to factorize~\eqref{eq:kkt:condensed}. For $\tau$
+small enough, the relaxed problem~\eqref{eq:problemrelaxation} is close enough to the original
+problem \eqref{eq:problem} to get an accurate solution.
 
 
 %%% Local Variables:

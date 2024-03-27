@@ -31,7 +31,7 @@ function solve_hybrid(nlp, gamma; options...)
     )
 end
 
-@main function main(; solver="all", case="pglib_opf_case9241_pegase.m", tol=1e-4)
+@main function main(; solver="all", case="pglib_opf_case78484_epigrids.m", tol=1e-4)
     if !isdir(RESULTS_DIR)
         mkpath(RESULTS_DIR)
     end
