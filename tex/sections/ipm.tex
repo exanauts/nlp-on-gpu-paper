@@ -1,7 +1,7 @@
 \section{Primal-dual interior-point method}
-
+ 
 The interior-point method (IPM) is among the most popular algorithms
-to solve nonlinear programs. The basis of the algorithm is to
+to solve nonlinear programs. The basis of the algorithm is to 
 reformulate the Karush-Kuhn-Tucker (KKT) conditions of the nonlinear program as a smooth
 system of nonlinear equations using a homotopy method~\cite{nocedal_numerical_2006}.
 In a standard implementation, the
@@ -307,3 +307,9 @@ Additionally, condensation may result in increased fill-in within system $K_1$~\
 In the worst cases where an inequality row is completely dense, $K_1$ itself may become fully dense.
 Consequently, condensation methods are not commonly utilized in practical optimization settings.
 To the best our knowledge, Knitro~\cite{waltz2006interior} is the only solver that supports computing the descent direction with \eqref{eq:kkt:condensed}.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% TeX-master: "../main"
+%%% End:

@@ -12,6 +12,7 @@ the COPS benchmark.
 We have implemented the two condensed-space methods in our nonlinear IPM solver MadNLP~\cite{shin2021graph}.
 This implementation utilizes the abstraction {\tt AbstractKKTSystem} to represent the various formulations of the KKT linear systems.
 MadNLP can deport most of the IPM algorithm to the GPU, except for basic IPM operations used for the coordination, such as the filter line-search algorithm.
+In particular, any operation that involves the manipulation of array entries is performed by GPU kernels without transferring data to host memory.
 
 \paragraph{Evaluation of the nonlinear models.}
 We use the ExaModels.jl modeling tool~\cite{shin2023accelerating} to implement all the nonlinear programs utilized in our benchmark.
@@ -19,13 +20,13 @@ ExaModels.jl harnesses the implicit sparsity structure and provides custom deriv
 This approach caters to the SIMD architecture of the GPU by assigning each expression to multiple threads responsible for computing derivatives for different values.
 
 \paragraph{Linear solvers.}
-We factorize the KKT systems assembled within MadNLP using various sparse linear solvers, chosen based on the KKT formulation (K1, K2, K3) and the device (CPU, GPU) being utilized.
+We factorize the KKT systems assembled within MadNLP using various sparse linear solvers, chosen based on the KKT formulation (\ref{eq:kkt:condensed}, \ref{eq:kkt:augmented}, \ref{eq:kkt:unreduced}) and the device (CPU, GPU) being utilized.
 In particular, we utilize the following solvers:
 \begin{itemize}
   \item {\tt HSL MA27}: Implements the \lblt factorization on the CPU.
     It solves the augmented KKT system~\eqref{eq:kkt:augmented}.
     This solver serves as the reference when running on the CPU.
-  \item {\tt CHOLMOD}: Implements the Cholesky factorization on the CPU
+  \item {\tt CHOLMOD}: Implements the Cholesky factorization on the CPU % Sungho: Maybe LDLFactorizations.jl instead, once the results are updated.
     (using the AMD ordering \cite{amestoy-david-duff-2004} by default).
     It factorizes the condensed matrix $K_\gamma$ appearing in \eqref{eq:kkt:hykkt}.
     This solver is used to assess the performance of the hybrid solvers when running on the CPU.
@@ -35,7 +36,7 @@ In particular, we utilize the following solvers:
   \item {\tt Krylov.jl}: Contains the CG method for both CPU and GPU architectures, as part of the Golub \& Greif strategy.
 \end{itemize}
 
-We use the Julia language \cite{bezanson-edelman-karpinski-shah-2017} for the comparison, where CHOLMOD \cite{chen-davis-hager-rajamanickam-2008} is included with Julia.
+We use the Julia language \cite{bezanson-edelman-karpinski-shah-2017} for the comparison, where CHOLMOD \cite{chen-davis-hager-rajamanickam-2008} is shipped with Julia.
 For the HSL linear solvers, we utilize libHSL \cite{fowkes-lister-montoison-orban-2024} with the Julia interface HSL.jl \cite{montoison-orban-hsl-2021}.
 HSL MA27 and CHOLMOD are both compiled with OpenBLAS \cite{openblas}, a multithreaded version of BLAS and LAPACK.
 The Julia package Krylov.jl~\cite{montoison2023krylov} contains a collection of Krylov methods with a polymorphic implementation that can be used on both CPU and GPU architectures.
@@ -98,7 +99,7 @@ In terms of accuracy, the quality of the solution remains on par with CHOLMOD, e
   linear solver & analysis (s) & factorization (s) & backsolve (s) & accuracy \\
   \hline
     cholmod     & 1.18  & $8.57 \times 10^{-1}$ & $1.27 \times 10^{-1}$ & $3.60\times 10^{-13}$\\
-    cudss-\llt  & 4.52  & $3.75 \times 10^{-2}$ & $1.32 \times 10^{-2}$ & $2.64\times 10^{-13}$\\
+    cudss-\llt   & 4.52  & $3.75 \times 10^{-2}$ & $1.32 \times 10^{-2}$ & $2.64\times 10^{-13}$\\ % Sungho: not Cholesky? it would be better to use consistent term. I'd recommend Cholesky instead of LL^T.
     cudss-\lu   & 4.50  & $3.72 \times 10^{-2}$ & $1.49 \times 10^{-2}$ & $2.58\times 10^{-13}$\\
     cudss-\ldlt & 4.50  & $4.07 \times 10^{-2}$ & $1.55 \times 10^{-2}$ & $7.62\times 10^{-11}$\\
   \hline
@@ -128,8 +129,8 @@ On the numerical side, the table in Figure~\ref{fig:hybrid:gamma} compares
 the time spent in the IPM solver on the CPU (using CHOLMOD) and on the GPU
 (using the solver {\tt cuDSS}). Overall {\tt cuDSS} is
 faster than CHOLMOD, leading to a 4x-8x speed-up in the total IPM solution time.
-The assembling of the condensed matrix $K_\gamma$ also parallelizes well
-on the GPU, and reduces from $\approx 8s$ on the CPU to $\approx 0.2s$ on the GPU.
+The assembly of the condensed matrix $K_\gamma$ also parallelizes well
+on the GPU; this helps reduce the assembly time from $\approx 8s$ on the CPU to $\approx 0.2s$ on the GPU.
 
 \begin{figure}[!ht]
   \centering

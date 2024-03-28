@@ -81,7 +81,7 @@ nonlinear programs.
 Compared to the state-of-the-art HSL linear solvers, we achieve a 10x speed-up on large-scale OPF instances and quasi-dense instances (\texttt{elec}). While the results are more varied across the instances of the COPS benchmark, our performance consistently remains competitive with HSL.
 
 Looking ahead, our future plans involve enhancing the robustness of the two condensed KKT methods, particularly focusing on stabilizing convergence for small tolerances (below $10^{-8}$).
-It's worth noting that the sparse Cholesky solver can be further customized to meet the specific requirements of the interior-point method~\cite{wright1999modified}.
+It is worth noting that the sparse Cholesky solver can be further customized to meet the specific requirements of the interior-point method~\cite{wright1999modified}.
 % Add a sentence about NCL on GPU?
 Enhancing the two methods on the GPU would enable the resolution of large-scale problems that are currently intractable on classical CPU architectures.
 Examples include multiperiod and security-constrained OPF problems, particularly when combined with a Schur-complement approach.
