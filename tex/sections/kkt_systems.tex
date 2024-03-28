@@ -71,7 +71,7 @@ all converge to $\frac{1}{\gamma}$ as we increase the regularization parameter
 $\gamma$ (\cite[Theorem 4]{regev2023hykkt}), meaning that $\lim_{\gamma \to \infty} \cond(S_\gamma) = 1$.
 Because the convergence of the CG method depends on the number of distinct eigenvalues of $S_{\gamma}$, when $\gamma$ increases, the eigenvalues of $S_{\gamma}$ become more clustered, resulting in fewer iterations being required to solve \eqref{eq:kkt:schurcomplhykkt}.
 
-\subsection{Lifted KKT System strategy}
+\subsection{Equality relaxation strategy}
 \label{sec:kkt:sckkt}
 
 We observe in \eqref{eq:kkt:condensed} that if all the constraints in the problem are inequalities, the system in \eqref{eq:kkt:condensed} becomes a $n \times n$ system which is guaranteed to be positive definite if the primal regularization parameter $\delta_x$ is adequately large. Furthermore, this parameter can be chosen dynamically using the inertia information of the system in \eqref{eq:kkt:condensed}. This motivates the Lifted KKT System strategy: we approximate the equalities with lifted inequalities.
@@ -87,7 +87,7 @@ The problem~\eqref{eq:problemrelaxation} has only inequality constraints. After 
 \eqref{eq:kkt:condensed} reduces to
 \begin{equation}
   \label{eq:liftedkkt}
-    K_k d_x = - r_1 - H_k^\top(D_s r_4 - r_2) \; .
+    K_\tau \,d_x = - r_1 - H_\tau^\top(D_s r_4 - r_2) \; .
 \end{equation}
 Using the standard inertia correction procedure, the parameter $\delta_x$ is set to a value high enough to ensure that  $K_k$ is positive definite. Therefore, $K_k$ can be factorized with Cholesky factorization, satisfying the key requirement for the implementation on the GPU. The relaxation causes error in the final solution, but the error is in the same order of the solver tolerance, and thus, do not significantly deteriorates the solution quality.
 
@@ -97,23 +97,24 @@ choosing the solver tolerance appropriately is necessary to get a reliable conve
 
 \subsection{Discussion}
 We have introduced two algorithms to solve
-the KKT system on the GPU. On the contrary to classical CPU algorithms,
+KKT systems on the GPU. On the contrary to classical implementations,
 the two methods do not require computing a sparse \lblt factorization of the KKT
-system by using alternate reformulation based on the condensed KKT
+system by using instead alternate reformulations based on the condensed KKT
 system~\eqref{eq:kkt:condensed}.
 
 The first strategy uses an augmented Lagrangian formulation
-of the KKT system. It requires a sparse Cholesky factorization (stable without numerical
-pivoting, hence favorable for the GPU) and uses it to solve the Schur-complement system
-using the CG algorithm. The performance of the method depends on a parameter $\gamma$, that
-has to be tuned independently. The larger the $\gamma$, the faster is the convergence
-in the CG algorithm, but the worst is the accuracy of the linear solve. Hence, a trade-off
-has to be found. The second method uses an equality relaxation strategy to
-solve the condensed KKT system~\eqref{eq:kkt:condensed} directly, parameterized
-by a relaxation parameter $\tau$. It just requires
-a sparse Cholesky solver to factorize~\eqref{eq:kkt:condensed}. However, the method
-solves a relaxed problem, limiting the accuracy
-of the solution.
+of the KKT system. It requires a sparse Cholesky factorization
+to solve the Schur-complement system~\eqref{eq:kkt:schurcomplhykkt}
+using the CG algorithm. The performance of the method depends on a parameter $\gamma$ that
+has to be tuned independently. A trade-off has to be found: the larger the $\gamma$, the faster is the convergence
+in the CG algorithm, but the worst is the accuracy of the linear solve.
+The second method uses an equality relaxation strategy, parameterized
+by a relaxation parameter $\tau$, to solve the condensed KKT system~\eqref{eq:kkt:condensed} directly.
+It just requires a sparse Cholesky solver to factorize~\eqref{eq:kkt:condensed}. For $\tau$
+small enough, the relaxed problem~\eqref{eq:problemrelaxation} is close enough to the original
+problem \eqref{eq:problem} to get an accurate solution.
+We will see in the next section that the ill-conditioned matrices $K_\gamma$ and $K_\tau$
+have a specific structure that limits the loss of accuracy in IPM.
 
 
 %%% Local Variables:

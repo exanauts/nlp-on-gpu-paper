@@ -156,14 +156,15 @@ The Newton step~\eqref{eq:newton_step} expands as the $6 \times 6$
 \emph{unreduced KKT system}:
 \begin{equation}
   \label{eq:kkt:unreduced}
+  \setlength\arraycolsep{5pt}
   \tag{$K_3$}
   \begin{bmatrix}
-    W & 0 & G^\top           & H^\top           & -I           & \phantom{-}0 \\
+    W_k & 0 & G_k^\top           & H_k^\top           & -I           & \phantom{-}0 \\
     0 & 0 & 0\phantom{^\top} & I\phantom{^\top} & \phantom{-}0 & -I           \\
-    G & 0 & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0 & \phantom{-}0 \\
-    H & I & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0 & \phantom{-}0 \\
-    U & 0 & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}X & \phantom{-}0 \\
-    0 & V & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0 & \phantom{-}S
+    G_k & 0 & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0 & \phantom{-}0 \\
+    H_k & I & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0 & \phantom{-}0 \\
+    U_k & 0 & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}X_k & \phantom{-}0 \\
+    0 & V_k & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0 & \phantom{-}S_k
   \end{bmatrix}
   \begin{bmatrix}
     d_x \\
@@ -184,10 +185,11 @@ The Newton step~\eqref{eq:newton_step} expands as the $6 \times 6$
        S_k v_k - \mu e
   \end{bmatrix} \; ,
 \end{equation}
-where we have introduced the Hessian $W = \nabla^2_{x x} L(w_k)$ and
-the two Jacobians $G = \nabla g(x_k)$, $H = \nabla h(x_k)$.
-In addition, we define $X$, $S$, $U$ and $V$ the diagonal matrices built from the vectors $x_k$, $s_k$, $u_k$ and $v_k$.
+where we have introduced the Hessian $W_k = \nabla^2_{x x} L(w_k)$ and
+the two Jacobians $G_k = \nabla g(x_k)$, $H_k = \nabla h(x_k)$.
+In addition, we define $X_k$, $S_k$, $U_k$ and $V_k$ the diagonal matrices built from the vectors $x_k$, $s_k$, $u_k$ and $v_k$.
 Note that~\eqref{eq:kkt:unreduced} is not symmetric but can be symmetrized.
+In what follows, we will omit the index $k$ to alleviate the notations.
 
 \paragraph{Augmented KKT system.}
 It is usual to remove the blocks associated
@@ -196,6 +198,7 @@ $4 \times 4$ symmetric system, called the \emph{augmented KKT system}:
 \begin{equation}
   \label{eq:kkt:augmented}
   \tag{$K_2$}
+  \setlength\arraycolsep{3pt}
   \begin{bmatrix}
     W + D_x & 0   & G^\top           & H^\top           \\
     0       & D_s & 0\phantom{^\top} & I\phantom{^\top} \\
@@ -246,9 +249,10 @@ The resulting system is called the \emph{condensed KKT system}:
 \begin{equation}
   \label{eq:kkt:condensed}
   \tag{$K_1$}
+  \setlength\arraycolsep{3pt}
   \begin{bmatrix}
     K & G^\top \\
-    G & 0
+    G & 0\phantom{^\top}
   \end{bmatrix}
   \begin{bmatrix}
     d_x \\ d_y
