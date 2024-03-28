@@ -15,8 +15,7 @@ Some of the recently changed circumstances can be summarized as follows.
 \end{enumerate}
 
 \subsection{Solving optimization problems on GPU: current state-of-the-art} 
-For all the reasons listed before, there is an increasing interest
-to solve optimization problems on the GPU.
+For all the reasons listed before, there is an increasing interest to solve optimization problems on GPUs.
 We now summarize the previous work on solving classical---large-scale, sparse, constrained----mathematical programs on GPUs.
 
 \paragraph{GPU for mathematical programming.}
@@ -63,14 +62,17 @@ operations, parallelized sparse solvers can be effectively exploited
 within the solution algorithms.
 Coupled with a GPU-accelerated automatic differentiation library and a
 sparse Cholesky solver, these nonlinear programming solvers can solve
-Optimal Power Flow (OPF) problems 10x faster than state-of-the-art
+optimal power flow (OPF) problems 10x faster than state-of-the-art
 methods~\cite{shin2023accelerating}.
 
 An alternative thread of research is investigating the solution of the Newton steps
 on the GPU using iterative methods such as Krylov methods.
-Iterative methods often require non-trivial reformulation of the Newton step to avoid
-ill-conditioned matrices, which has limited their use inside interior-point
-algorithms. New results are giving promising outlooks for convex problems~\cite{ghannad2022linear},
+Iterative methods often require non-trivial reformulation or
+specialized preconditioning of the KKT systems to mitigate the
+inherent ill-conditioning of the KKT matrices, which has limited their
+use within the interior-point algorithms
+\cite{curtisNoteImplementationInteriorpoint2012,rodriguezScalablePreconditioningBlockstructured2020}.
+New results are giving promising outlooks for convex problems~\cite{ghannad2022linear},
 but nonconvex problems often require an Augmented Lagrangian reformulation
 to be tractable~\cite{cao2016augmented,regev2023hykkt}. In particular,
 \cite{regev2023hykkt} presents an interesting use of the Golub and Greif
@@ -91,7 +93,11 @@ a task that requires batching the solution of the optimization model
 for the training algorithm to be
 efficient~\cite{amos2017optnet,pineda2022theseus}.  This has led to
 the development of prototype code solving thousands of (small)
-optimization problems in parallel on the GPU.  However, it is not
+optimization problems in parallel on the GPU.
+Furthermore, the batched solution method on GPUs has been also exploited to
+solve a large number of problems with same structure within a temporal
+decomposition algorithm \cite{kimLeveragingGPUBatching2021}.
+However, it is not
 trivial to adapt such code to solve large-scale optimization problems,
 as the previous prototypes are reliant on dense linear solvers to
 compute the descent directions.
@@ -118,7 +124,7 @@ to solve the condensed KKT systems. We evaluate the strengths
 and weaknesses of both methods, in terms of accuracy and runtime.
 Extending beyond the classical OPF instances examined in our previous work, we incorporate large-scale problems sourced from the COPS nonlinear benchmark~\cite{dolan2004benchmarking}.
 Our assessment involves comparing the performance achieved on the GPU with that of a state-of-the-art method executed on the CPU.
-The findings reveal that the condensed-space methods demonstrate a remarkable 10x acceleration in solving large-scale OPF instances when utilizing the GPU.
+The findings reveal that the condensed-space IPM enables a remarkable 10x acceleration in solving large-scale OPF instances when utilizing the GPU.
 However, performance outcomes on the COPS benchmark exhibit more variability.
 
 \subsection{Notations}
