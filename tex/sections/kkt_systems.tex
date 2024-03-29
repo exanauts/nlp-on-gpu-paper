@@ -1,5 +1,5 @@
 \section{Solving KKT systems on the GPU}
-The GPU has emerged as the new prominent landscape for numerical computing.
+The GPU has emerged as a new prominent computing hardware not only for graphics-related but also for general-purpose computing.
 GPUs employ a SIMD formalism that yields excellent throughput for parallelizing small-scale operations.
 However, their utility remains limited when computational algorithms require global communication.
 Sparse factorization algorithms, which heavily rely on numerical pivoting, pose significant challenges for implementation on GPUs due to this limitation. Previous research has demonstrated that GPU-based linear solvers significantly lag behind their CPU counterparts \cite{tasseff2019exploring,swirydowicz2021linear}.
@@ -12,7 +12,7 @@ The Golub \& Greif~\cite{golub2003solving} strategy reformulates the KKT system
 using an Augmented Lagrangian formulation.
 It has been recently revisited in \cite{regev2023hykkt}
 to solve the condensed KKT system~\eqref{eq:kkt:condensed} on the GPU.
-The trick is to reformulate the condensed KKT system \eqref{eq:kkt:condensed} in the equivalent form
+The trick is to reformulate the condensed KKT system \eqref{eq:kkt:condensed} in an equivalent form
 \begin{equation}
   \label{eq:kkt:hykkt}
   \begin{bmatrix}
@@ -29,7 +29,7 @@ The trick is to reformulate the condensed KKT system \eqref{eq:kkt:condensed} in
   \end{bmatrix} \; ,
 \end{equation}
 where we have introduced the regularized matrix $K_\gamma := K + \gamma G^\top G$.
-If SOSC holds, the matrix $K_\gamma$ is positive definite for a large-enough parameter $\gamma$.
+If SOSC holds, the matrix $K_\gamma$ is positive definite for sufficiently large $\gamma$.
 \begin{proposition}[\cite{regev2023hykkt}, Theorem 1, p.7]
   \label{prop:kkt:hykkt:pd}
   We suppose $G$ is full row rank. Then there exists $\gamma_{min}$
