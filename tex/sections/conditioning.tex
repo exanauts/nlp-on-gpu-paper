@@ -1,7 +1,14 @@
 \section{Conditioning of the condensed KKT system}
-The condensed matrix $K$ appearing in \eqref{eq:kkt:condensed} is known to be ill-conditioned close to a local optimum solution.
-This behavior is amplified for the matrices $K_\gamma$ (for large $\gamma$) and $K_\tau$ (for small $\tau$).
-For a generic linear system $Mx = b$, the relative error after perturbing the right-hand side by $\Delta b$ is bounded by
+The condensed matrix $K$ appearing in \eqref{eq:kkt:condensed} is known to be increasingly ill-conditioned as the primal-dual iterate approaches to the local solution with active inequalities.
+This behavior is amplified for the matrices $K_\gamma$ and $K_\tau$,
+as the practical implementation of these methods requires the use of
+large $\gamma$ and small $\tau$. In this section, we analyze the
+numerical error associated with the solution of the condensed KKT
+system and discuss how the structured ill-conditioning makes the
+adverse effect of ill-conditioning relatively benign.
+
+We first discuss the perturbation bound for a generic linear system $Mx = b$.
+The relative error after perturbing the right-hand side by $\Delta b$ can be expressed as follows:
 \begin{subequations}
   \label{eq:cond:defaultbond}
 \begin{equation}
@@ -13,8 +20,8 @@ $\widehat{x}$ satisfies $\Delta x = \widehat{x}- x =  - (M + \Delta M)^{-1} \Del
 If $\cond(M) \approx \cond(M + \Delta M)$, we have $M \Delta x \approx -\Delta M x$ (neglecting second-order terms),
 giving the bounds
 \begin{equation}
-  \| \Delta x \| \leq \|M^{-1}\| \|\Delta M \| \|x \| \; , \quad
-  \frac{\| \Delta x \|}{\|x\|} \leq \cond(M)\frac{\|\Delta M \|}{\|M\|} \; .
+  \| \Delta x \| \lessapprox \|M^{-1}\| \|\Delta M \| \|x \| \; , \quad
+  \frac{\| \Delta x \|}{\|x\|} \lessapprox \cond(M)\frac{\|\Delta M \|}{\|M\|} \; .
 \end{equation}
 \end{subequations}
 The relative errors are bounded above by the conditioning $\cond(M)$,
@@ -28,9 +35,9 @@ We base our analysis on \cite{wright1998ill}, where
 the author has put a particular emphasis on the condensed KKT
 system~\eqref{eq:kkt:condensed}, but without equality constraints. We generalize her results to the
 matrix $K_\gamma$, which incorporates both equality and inequality
-constraints. The results extend directly to $K_\tau$ (by setting $\gamma = 0$).
+constraints. The results extend directly to $K_\tau$ (by letting the number of equalities to be zero).
 
-To alleviate the notations, we suppose that the primal variable
+To ease the notation, we suppose that the primal variable
 $x$ is unconstrained, leaving only the slack $s$ with bounded values in \eqref{eq:slack_problem}.
 This is equivalent to include the bounds on the variable $x$ in the inequality constraints,
 as $\bar{h}(x) \leq 0$ with $\bar{h}(x) := (h(x), -x)$.
@@ -43,7 +50,7 @@ and $p^\star$ a solution of the KKT conditions~\eqref{eq:kktconditions}.
 We denote $\delta(p, v) = \| (p, v) - (p^\star, v^\star) \|$ the Euclidean distance to the
 primal-dual stationary point $p^\star$.
 From \cite[Theorem 2.2]{wright2001effects}, if Assumption~\ref{hyp:ipm}
-hold at $p^\star$ and $v^\star > 0$,
+holds at $p^\star$ and $v^\star > 0$,
 \begin{equation}
   \delta(p, v) = \Theta\left( \left\Vert \begin{bmatrix}
       \nabla_p L(p, v) \\ \min(v, s)
@@ -52,7 +59,7 @@ hold at $p^\star$ and $v^\star > 0$,
 \end{equation}
 For $(s, v) > 0$, we define the \emph{duality measure} $\Xi(s, v)$ as the mapping
 \begin{equation}
-  \Xi(s, v) = s^\top v / m_i \; . % Sungho: m_i not defined here. 
+  \Xi(s, v) = s^\top v / m_i \; . % Sungho: m_i not defined here. Also, I'd suggest explaining a bit of context on the duality measure. 
 \end{equation}
 We suppose the iterates $(p, v)$ satisfy the \emph{centrality conditions}
 \begin{subequations}
@@ -96,32 +103,33 @@ the distance to the solution $\delta(p, v)$ with the duality measure $\Xi$.
 \subsection{Structured ill-conditioning}
 We show that if the iterates $(p, v)$ satisfy
 the centrality conditions~\eqref{eq:centralitycond}, then the
-condensed matrix $K_\gamma$ has a structured ill-conditioning.
+condensed matrix $K_\gamma$ exhibits a structured ill-conditioning.
 
 \subsubsection{Invariant subspaces in $K_\gamma$}
-First, we follow the analysis presented in \cite{wright1998ill}
-and show that the condensed matrix $K_\gamma$ can be decomposed as
+We now elaborate on what do we mean by structured ill-conditioning.
+Here, we follow the analysis presented in \cite{wright1998ill}.
+First, we show that the singular value decomposition of $K_\gamma$ can be structured as
 \begin{equation}
   \label{eq:cond:svd}
-  K_\gamma = \begin{bmatrix} U_L & U_S \end{bmatrix}
-  \begin{bmatrix}
+  K_\gamma = \underbrace{\begin{bmatrix} U_L & U_S \end{bmatrix}}_{U}
+  \underbrace{\begin{bmatrix}
     \Sigma_L & 0 \\ 0 & \Sigma_S
-  \end{bmatrix}
-  \begin{bmatrix}
-    U_L^\top \\ U_S^\top
-  \end{bmatrix}
-  \; ,
+  \end{bmatrix}}_{\Sigma}
+\underbrace{\begin{bmatrix}
+  U_L^\top \\ U_S^\top
+\end{bmatrix}}_{U^\top}
+\; ,
 \end{equation}
-with $U$ an orthogonal matrix and $\Sigma$ diagonal, where
-the two diagonal matrices $\Sigma_L$ and $\Sigma_S$ are both better conditioned than $K_\gamma$.
-The result is a consequence of the SVD decomposition,
-provided that the singular values satisfy $\frac{\sigma_1}{\sigma_{p}} \leq \frac{\sigma_1}{\sigma_n}$
+where $U$ is an orthogonal matrix and $\Sigma$ is diagonal, which are subsequently partitioned into $U_L$, $U_S$, $\Sigma_L$, and $\Sigma_U$.Here, we assume that the two diagonal matrices $\Sigma_L$ and $\Sigma_S$ are both better conditioned than $K_\gamma$.
+% The result is a consequence of the SVD decomposition,
+% provided that the singular values satisfy
+That is, $\frac{\sigma_1}{\sigma_{p}} \leq \frac{\sigma_1}{\sigma_n}$
 and $\frac{\sigma_{p+1}}{\sigma_{n}} \leq \frac{\sigma_1}{\sigma_n}$.
 
 We recall that $K_\gamma = W + H^\top D_s H + \gamma G^\top G$, with
-the diagonal matrix $D_s = S^{-1} V$.
-In addition, we denote $m_a$ the cardinal of $\mathcal{B}$,
-and $p := m_a + m_e$. We denote by
+the diagonal $D_s = S^{-1} V$.
+In addition, we denote by $m_a$ the cardinality of $\mathcal{B}$,
+and $p := m_a + m_e$. We denote by % Sungho: we already have used $p$ for primal variable. Should use a different symbol.
 $H_{\cactive}$ the Jacobian of active inequality constraints, $H_{\cinactive}$ the
 Jacobian of inactive inequality constraints and
 $A := \begin{bmatrix} G^\top & H_{\cactive}^\top \end{bmatrix}^\top$ the active Jacobian.
@@ -143,8 +151,8 @@ term $\gamma G^\top G$ arising from the equality constraints.
   $K_\gamma$, ordered as $|\lambda_1| \geq  \cdots \geq |\lambda_n|$.
   Let $\begin{bmatrix} Y & Z \end{bmatrix}$ be an orthogonal
   matrix, where the columns of $Z$ span the null-space of
-  $A$. Let $\underline{\sigma} =\min\{\frac{1}{\Xi}, \gamma\}$
-  and $\overline{\sigma} = \max\{\frac{1}{s_{min}}, \gamma\}$.
+  $A$. Let $\underline{\sigma} =\min\left(\frac{1}{\Xi}, \gamma\right)$
+  and $\overline{\sigma} = \max\left(\frac{1}{s_{min}}, \gamma\right)$.
   Then,
   \begin{enumerate}
     \item[(i)] The $p$ largest-magnitude eigenvalues of $K_\gamma$ are positive,
@@ -189,7 +197,7 @@ term $\gamma G^\top G$ arising from the equality constraints.
   and the largest diagonal element is $\Theta(\max\{\frac{1}{s_{min}}, \gamma\})$.
   Hence,
   \begin{equation}
-    \eta_1 = \Theta(\overline{\sigma}) \; , \quad
+    \eta_1 = \Theta(\overline{\sigma}) \; , \quad 
     \eta_p = \Omega(\underline{\sigma}) \; .
   \end{equation}
   Using \cite[Lemma 3.1]{wright1998ill}, we deduce $\lambda_1 = \Theta(\overline{\sigma})$
@@ -218,15 +226,15 @@ term $\gamma G^\top G$ arising from the equality constraints.
   $Z^\top W Z$ is positive definite for small enough $\Xi$, implying
   all its eigenvalues are $\Theta(1)$. Using again \cite[Lemma 3.1]{wright1998ill},
   we get that the $n-p$ smallest eigenvalues in $K_\gamma$ are $\Theta(1)$,
-  proving (ii). The third point (iii) is proved by combining
+  proving (ii). The results in (iii) can be obtained by combining
   (i) and (ii) (provided $0 < p < n$).
-  Eventually, point (iv) is proven by using \cite[Theorem 3.1 (i)]{wright1998ill}.
+  Finally, point (iv) directly follows from \cite[Theorem 3.1 (i)]{wright1998ill}.
 \end{proof}
 
 \begin{corollary}
   The condensed matrix $K_\gamma$ can be decomposed as
   \eqref{eq:cond:svd}, with $\Sigma_L \in \mathbb{R}^{p \times p}$ and $\Sigma_S \in \mathbb{R}^{(n-p) \times (n-p)}$.
-  In addition, for suitably chosen $Y$ and $Z$,
+  In addition, for suitably chosen $Y$ and $Z$, % Sungho: maybe we should remind reader that $Y$ and $Z$ are the row and null spaces of constraint Jacobian.
   \begin{equation}
     \label{eq:cond:invariantsubpsace}
     U_L - Y = O(\underline{\sigma}^{-1}) \; , \quad
@@ -293,7 +301,7 @@ We have
 A^\top D_\gamma A = \Theta(\overline{\sigma}) \; , \quad
 A^\top \Delta D_\gamma A = O(\epstol \overline{\sigma}) \; .
 \end{equation}
-We deduce that the perturbation $\Delta K_\gamma$ is bounded by $O(\epstol \overline{\sigma})$.
+We deduce that the perturbation $\Delta K_\gamma$ is bounded by $O(\epstol \overline{\sigma})$. % Sungho: Here, we should elaborate more; I do not see this directly.
 \begin{proposition}
   \label{prop:cond:boundcondensedmatrix}
   In floating-point arithmetic, the perturbation
