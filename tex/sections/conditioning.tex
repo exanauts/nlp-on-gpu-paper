@@ -301,7 +301,7 @@ We have
 A^\top D_\gamma A = \Theta(\overline{\sigma}) \; , \quad
 A^\top \Delta D_\gamma A = O(\epstol \overline{\sigma}) \; .
 \end{equation}
-We deduce that the perturbation $\Delta K_\gamma$ is bounded by $O(\epstol \overline{\sigma})$. % Sungho: Here, we should elaborate more; I do not see this directly.
+We deduce that the perturbation $\Delta K_\gamma$ is bounded by $O(\epstol \overline{\sigma})$. % Sungho: Here, we should elaborate more; I do not see this immediately.
 \begin{proposition}
   \label{prop:cond:boundcondensedmatrix}
   In floating-point arithmetic, the perturbation
@@ -337,12 +337,12 @@ point arithmetic. We suppose $K_\gamma$ is factorized using
 a backward-stable Cholesky decomposition. The computed
 solution $\widehat{x}$ is solution of a perturbed system
 $\widetilde{K}_\gamma \widehat{x} = b$, with $\widetilde{K}_\gamma
-= K_\gamma + \Delta_s K_\gamma$ and $\Delta_s K_\gamma$ a symmetric matrix satisfying,
+= K_\gamma + \Delta_s K_\gamma$ and $\Delta_s K_\gamma$ a symmetric matrix satisfying
 \begin{equation}
   \label{eq:cond:backwardstable}
   \|\Delta_s K_\gamma\| \leq \epstol \varepsilon_n \|K_\gamma\| \;,
 \end{equation}
-for $\epsilon_n$ a small constant depending on the dimension $n$.
+for $\varepsilon_n$ a small constant depending on the dimension $n$.
 We need the following additional assumptions to
 ensure (a) the Cholesky factorization runs to completion
 and (b) we can incorporate the backward-stable perturbation $\Delta_s K_\gamma$
@@ -351,7 +351,7 @@ Proposition~\ref{prop:cond:boundcondensedmatrix}.
 \begin{assumption} Let $(p, v)$ be the current primal-dual iterate. We assume:
   \begin{itemize}
     \item[(a)] $(p, v)$ satisfies the centrality conditions~\eqref{eq:centralitycond}.
-    \item[(c)] The parameter $\gamma$ satisfies $\gamma = \Theta(\Xi^{-1})$.
+    \item[(b)] The parameter $\gamma$ satisfies $\gamma = \Theta(\Xi^{-1})$.
     \item[(c)] The duality measure is large enough relative to the precision $\epstol$: $\epstol \ll \Xi$.
     \item[(d)] The primal step $\widehat{x}$ is computed using a backward
       stable method satisfying \eqref{eq:cond:backwardstable} for a small constant
@@ -374,6 +374,7 @@ factorization is $\Delta_s K_\gamma = O(\epstol \| K_\gamma\|)$. As
 we can incorporate $\Delta_s K_\gamma$ in the perturbation
 $\Delta K_\gamma$ given in Proposition~\ref{prop:cond:boundcondensedmatrix}.
 
+We are now ready to analyze the perturbation bound for the systems involving the perturbation $\widehat{K}_\gamma$ of $K_\gamma$.
 We denote $x$ the solution of the linear system $K_\gamma x = b$
 in exact arithmetic, and $\widehat{x}$ the solution of
 the perturbed system $\widehat{K}_\gamma \widehat{x} = \widehat{b}$
