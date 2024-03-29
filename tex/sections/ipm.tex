@@ -6,11 +6,12 @@ reformulate the Karush-Kuhn-Tucker (KKT) conditions of the nonlinear program as 
 system of nonlinear equations using a homotopy method~\cite{nocedal_numerical_2006}.
 In a standard implementation, the
 resulting system is solved iteratively with a Newton method (used in conjunction
-with a line-search method for globalization). In this section, we
-give a brief description of a nonlinear program in \ref{sec:ipm:problem}
-and detail the Newton step solved at each IPM iteration in \ref{sec:ipm:kkt}.
+with a line-search method for globalization). In Section \ref{sec:ipm:problem}, we
+give a brief description of a nonlinear program.
+Furthermore, in Section \ref{sec:ipm:kkt}, we detail the Newton step
+computation within each IPM iteration.
 
-\subsection{Problem's formulation and KKT conditions}
+\subsection{Problem formulation and KKT conditions}
 \label{sec:ipm:problem}
 We are interested in solving the following nonlinear program:
 \begin{equation}
@@ -78,7 +79,7 @@ condition $x_i u_i = 0$ (for all $i=1\cdots, n$).
 
 The set of active constraints at a point $x$ is denoted by
 \begin{equation}
-  \mathcal{B}(x) := \{ i = 1, \cdots, m_i \; | \; h_i(x) = 0 \} \; .
+  \mathcal{B}(x) := \{ i \in\{ 1, \cdots, m_i\} \; | \; h_i(x) = 0 \} \; .
 \end{equation}
 The inactive set is defined as the complement $\mathcal{N}(x) := \{1, \cdots, m_i \} \setminus \mathcal{B}(x)$.
 We note $m_a$ the number of active constraints.
@@ -132,10 +133,10 @@ KKT conditions~\eqref{eq:kktconditions}.
 
 We note that at a fixed parameter $\mu$, the function $F_\mu(\cdot)$
 is smooth. Hence, the system \eqref{eq:kkt_ipm} can be solved iteratively
-using a regular Newton method. For a given primal-dual variable
-$w_k := (x_k, s_k, y_k, z_k, u_k, v_k)$, the Newton step writes out
-$w_{k+1} = w_k + \alpha_k d_k$, with $d_k$ a descent
-direction being solution of the linear system
+using a regular Newton method. For each primal-dual iterate
+$w_k := (x_k, s_k, y_k, z_k, u_k, v_k)$ at iteration step $k$, the Newton step is applied as
+$w_{k+1} = w_k + \alpha_k d_k$, where $d_k$ is a descent
+direction computed by solving
 \begin{equation}
   \label{eq:newton_step}
   \nabla_w F_{\mu}(w_k) d_k = -F_{\mu}(w_k) \; .
@@ -144,15 +145,15 @@ The step $\alpha_k$ is computed using a line-search algorithm, in a way
 that ensures that the bounded variables remain positive
 at the next primal-dual iterate (so that $(x_{k+1}, s_{k+1}, u_{k+1}, v_{k+1}) > 0$).
 Once the iterates are sufficiently close to the central path,
-the IPM decreases the barrier term $\mu$ to find a solution closer to
+the IPM decreases the barrier parameter $\mu$ to find a solution closer to
 the original KKT conditions~\eqref{eq:kktconditions}.
 
 In IPM, the bulk of the workload is the computation of the Newton
 step \eqref{eq:newton_step}, which involves assembling the Jacobian
 $\nabla_w F_\mu(w_k)$ and solving the linear system to compute
 the descent direction $d_k$.
-In order to avoid overloading the notation, we omitted the subscript $k$ in the components of the KKT systems. However, it's important to remember that they are non-constant.
-The Newton step~\eqref{eq:newton_step} expands as the $6 \times 6$
+In order to avoid overloading the notation, we omitted the subscript $k$ in the components of the KKT systems. However, it's important to remember that they are dependent on the iteration counter $k$.
+By writing out all the blocks, the system in~\eqref{eq:newton_step} expands as the $6 \times 6$
 \emph{unreduced KKT system}:
 \begin{equation}
   \label{eq:kkt:unreduced}
@@ -188,7 +189,7 @@ The Newton step~\eqref{eq:newton_step} expands as the $6 \times 6$
 where we have introduced the Hessian $W_k = \nabla^2_{x x} L(w_k)$ and
 the two Jacobians $G_k = \nabla g(x_k)$, $H_k = \nabla h(x_k)$.
 In addition, we define $X_k$, $S_k$, $U_k$ and $V_k$ the diagonal matrices built from the vectors $x_k$, $s_k$, $u_k$ and $v_k$.
-Note that~\eqref{eq:kkt:unreduced} is not symmetric but can be symmetrized.
+Note that~\eqref{eq:kkt:unreduced} is not symmetric but can be symmetrized by performing simple block row and column operations.
 In what follows, we will omit the index $k$ to alleviate the notations.
 
 \paragraph{Augmented KKT system.}
@@ -280,18 +281,16 @@ $d_s = -r_4 - Hd_x$ and $d_z = -r_2 - D_s d_s$.
 Compared to \eqref{eq:kkt:unreduced},
 the diagonal matrices $D_x$ and $D_s$ in \eqref{eq:kkt:augmented} introduce
 an additional ill-conditioning in \eqref{eq:kkt:augmented}, amplified
-in the condensed form~\eqref{eq:kkt:condensed}. For that reason, it
-is recommended to refine the solution returned by the direct sparse linear
-solver by using Richardson iterations on the original system~\eqref{eq:kkt:unreduced}
-(see \cite[Section 3.10]{wachter2006implementation}).
+in the condensed form~\eqref{eq:kkt:condensed}. To address the numerical error arising from such ill-conditioning, most of the
+implementation of IPM employs Richardson iterations on the original system~\eqref{eq:kkt:unreduced} to refine the solution returned by the direct sparse linear solver (see \cite[Section 3.10]{wachter2006implementation}).
 
 \subsection{Discussion}
 
-We have obtained three different formulations for the KKT system
-appearing at each IPM iteration.
-The original formulation \eqref{eq:kkt:unreduced} is not symmetric, but
-has a better conditioning than the two alternatives \eqref{eq:kkt:augmented}
-and \eqref{eq:kkt:condensed}.
+We have obtained three different formulations of the KKT systems
+appearing at each IPM iteration.  The original formulation
+\eqref{eq:kkt:unreduced} is not symmetric but has a better
+conditioning than the two alternatives \eqref{eq:kkt:augmented} and
+\eqref{eq:kkt:condensed}.
 % Is it possible to make K3 symmetric like in the LP framework?
 The second formulation~\eqref{eq:kkt:augmented} is
 used by default in state-of-the-art nonlinear solvers~\cite{wachter2006implementation,waltz2006interior}.
@@ -299,11 +298,8 @@ The system~\eqref{eq:kkt:augmented} is usually factorized using a \lblt factoriz
 multifrontal algorithm~\cite{duff1983multifrontal} is the favored method (as implemented in the HSL linear solvers MA27 and MA57~\cite{duff2004ma57}).
 On its end, the condensed KKT system~\eqref{eq:kkt:condensed} is often discarded,
 as its conditioning is higher
-than \eqref{eq:kkt:augmented} (implying less accurate solutions)
-and the term $H^\top D_s H$ can lead to a dense condensed matrix if one column
-of the Jacobian is dense.
-
-Additionally, condensation may result in increased fill-in within system $K_1$~\cite[Section 19.3, p.571]{nocedal_numerical_2006}.
+than \eqref{eq:kkt:augmented} (implying less accurate solutions).
+Additionally, condensation may result in increased fill-in within the condensed system $K_1$~\cite[Section 19.3, p.571]{nocedal_numerical_2006}.
 In the worst cases where an inequality row is completely dense, $K_1$ itself may become fully dense.
 Consequently, condensation methods are not commonly utilized in practical optimization settings.
 To the best our knowledge, Knitro~\cite{waltz2006interior} is the only solver that supports computing the descent direction with \eqref{eq:kkt:condensed}.
