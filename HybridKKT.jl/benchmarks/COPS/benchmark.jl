@@ -9,7 +9,7 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "cops")
 # Instances
 const COPS_INSTANCES_QUICK = [
     (COPSBenchmark.bearing_model, (50, 50), 1e6),
-    (COPSBenchmark.camshape_model, (1000,), 1e6), # TODO: result is slightly different
+    (COPSBenchmark.camshape_model, (1000,), 1e6),
     (COPSBenchmark.elec_model, (50,), 1e6),
     (COPSBenchmark.gasoil_model, (100,), 1e6),
     (COPSBenchmark.marine_model, (100,), 1e6),
@@ -18,9 +18,10 @@ const COPS_INSTANCES_QUICK = [
     (COPSBenchmark.steering_model, (200,), 1e6),
 ]
 
-const COPS_INSTANCES_MITTELMANN = [
+const COPS_INSTANCES_FULL = [
+    # Mittelmann instances
     (COPSBenchmark.bearing_model, (400, 400), 1e6),
-    (COPSBenchmark.camshape_model, (6400,), 1e6), # TODO: result is slightly different
+    (COPSBenchmark.camshape_model, (6400,), 1e6),
     (COPSBenchmark.elec_model, (400,), 1e6),
     (COPSBenchmark.gasoil_model, (3200,), 1e6),
     (COPSBenchmark.marine_model, (1600,), 1e6),
@@ -28,6 +29,16 @@ const COPS_INSTANCES_MITTELMANN = [
     (COPSBenchmark.robot_model, (1600,), 1e9),
     (COPSBenchmark.rocket_model, (12800,), 1e9),
     (COPSBenchmark.steering_model, (12800,), 1e10),
+    # Large-scale instances
+    (COPSBenchmark.bearing_model, (800, 800), 1e6),
+    (COPSBenchmark.camshape_model, (12800,), 1e6),
+    (COPSBenchmark.elec_model, (800,), 1e6),
+    (COPSBenchmark.gasoil_model, (12800,), 1e6),
+    (COPSBenchmark.marine_model, (12800,), 1e6),
+    (COPSBenchmark.pinene_model, (12800,), 1e5),
+    (COPSBenchmark.robot_model, (12800,), 1e9),
+    (COPSBenchmark.rocket_model, (51200,), 1e11),
+    (COPSBenchmark.steering_model, (51200,), 1e9),
 ]
 
 function parse_name(cops_instance)
@@ -42,12 +53,14 @@ function benchmark_solver(bench_solver, nlp, ntrials; gamma=1e7, maxit=1000, opt
     solver = bench_solver(nlp; max_iter=1, options...)
     MadNLP.solve!(solver)
 
-    t_total, t_callbacks, t_linear_solver = (0.0, 0.0, 0.0)
+    t_init, t_total, t_callbacks, t_linear_solver = (0.0, 0.0, 0.0, 0.0)
     n_it, obj = 0, 0.0
     status = 0
     ## Benchmark
     for _ in 1:ntrials
-        solver = bench_solver(nlp; gamma=gamma, max_iter=maxit, options...)
+        t_init += CUDA.@elapsed begin
+            solver = bench_solver(nlp; gamma=gamma, max_iter=maxit, options...)
+        end
         results = MadNLP.solve!(solver)
 
         status += Int(results.status)
@@ -65,13 +78,14 @@ function benchmark_solver(bench_solver, nlp, ntrials; gamma=1e7, maxit=1000, opt
         n_it / ntrials,
         obj / ntrials,
         t_total / ntrials,
+        t_init / ntrials,
         t_callbacks / ntrials,
         t_linear_solver / ntrials,
     )
 end
 
 function run_benchmark(bench_solver, instances, ntrials; use_gpu=false, options...)
-    n, m = length(instances), 6
+    n, m = length(instances), 7
     results = zeros(n, m)
     for (k, (instance, params, gamma)) in enumerate(instances)
         @info "Benchmark $(parse_name((instance, params)))"
@@ -90,7 +104,7 @@ end
     solver="all",
     verbose::Bool=false,
     quick::Bool=false,
-    tol::Float64=1e-4,
+    tol::Float64=1e-6,
     ntrials::Int=1,
     max_iter::Int=500,
 )
@@ -108,7 +122,7 @@ end
     instances = if quick
         COPS_INSTANCES_QUICK
     else
-        COPS_INSTANCES_MITTELMANN
+        COPS_INSTANCES_FULL
     end
     index = [parse_name(it) for it in instances]
 

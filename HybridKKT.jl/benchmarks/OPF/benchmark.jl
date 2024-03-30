@@ -12,9 +12,9 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "opf")
 CUDA.allowscalar(false)
 
 N_COLUMNS = Dict{Symbol, Int}(
-    :benchmark_hsl => 6,
-    :benchmark_sparse_condensed => 6,
-    :benchmark_hybrid => 10,
+    :benchmark_hsl => 7,
+    :benchmark_sparse_condensed => 7,
+    :benchmark_hybrid => 11,
 )
 
 FULL_BENCHMARK = [
@@ -56,12 +56,14 @@ function benchmark_hsl(nlp, ntrials; options...)
     solver = MadNLP.MadNLPSolver(nlp; linear_solver=Ma27Solver, max_iter=1, options...)
     MadNLP.solve!(solver)
 
-    t_total, t_callbacks, t_linear_solver = (0.0, 0.0, 0.0)
+    t_init, t_total, t_callbacks, t_linear_solver = (0.0, 0.0, 0.0, 0.0)
     n_it, obj = 0, 0.0
     status = 0
     ## Benchmark
     for _ in 1:ntrials
-        solver = MadNLP.MadNLPSolver(nlp; linear_solver=Ma27Solver, options...)
+        t_init += CUDA.@elapsed begin
+            solver = MadNLP.MadNLPSolver(nlp; linear_solver=Ma27Solver, options...)
+        end
         results = MadNLP.solve!(solver)
 
         status += Int(results.status)
@@ -79,6 +81,7 @@ function benchmark_hsl(nlp, ntrials; options...)
         n_it / ntrials,
         obj / ntrials,
         t_total / ntrials,
+        t_init / ntrials,
         t_callbacks / ntrials,
         t_linear_solver / ntrials,
     )
@@ -97,19 +100,21 @@ function benchmark_sparse_condensed(nlp, ntrials; options...)
     )
     MadNLP.solve!(solver)
 
-    t_total, t_callbacks, t_linear_solver = (0.0, 0.0, 0.0)
+    t_init, t_total, t_callbacks, t_linear_solver = (0.0, 0.0, 0.0, 0.0)
     n_it, obj = 0, 0.0
     status = 0
     ## Benchmark
     for _ in 1:ntrials
-        solver = MadNLP.MadNLPSolver(
-            nlp;
-            kkt_system=MadNLP.SparseCondensedKKTSystem,
-            dual_initialized=true,
-            equality_treatment=MadNLP.RelaxEquality,
-            fixed_variable_treatment=MadNLP.RelaxBound,
-            options...,
-        )
+        t_init += CUDA.@elapsed begin
+            solver = MadNLP.MadNLPSolver(
+                nlp;
+                kkt_system=MadNLP.SparseCondensedKKTSystem,
+                dual_initialized=true,
+                equality_treatment=MadNLP.RelaxEquality,
+                fixed_variable_treatment=MadNLP.RelaxBound,
+                options...,
+            )
+        end
         results = MadNLP.solve!(solver)
 
         status += Int(results.status)
@@ -127,6 +132,7 @@ function benchmark_sparse_condensed(nlp, ntrials; options...)
         n_it / ntrials,
         obj / ntrials,
         t_total / ntrials,
+        t_init / ntrials,
         t_callbacks / ntrials,
         t_linear_solver / ntrials,
     )
@@ -143,20 +149,22 @@ function benchmark_hybrid(nlp, ntrials; gamma=1e5, options...)
     )
     MadNLP.solve!(solver)
 
-    t_total, t_callbacks, t_linear_solver = (0.0, 0.0, 0.0)
+    t_init, t_total, t_callbacks, t_linear_solver = (0.0, 0.0, 0.0, 0.0)
     t_backsolve, t_condensation, t_cg = (0.0, 0.0, 0.0)
     n_it, obj = 0, 0.0
     cg_iters = 0.0
     status = 0
     ## Benchmark
     for _ in 1:ntrials
-        solver = MadNLP.MadNLPSolver(
-            nlp;
-            kkt_system=HybridKKT.HybridCondensedKKTSystem,
-            equality_treatment=MadNLP.EnforceEquality,
-            fixed_variable_treatment=MadNLP.MakeParameter,
-            options...,
-        )
+        t_init += CUDA.@elapsed begin
+            solver = MadNLP.MadNLPSolver(
+                nlp;
+                kkt_system=HybridKKT.HybridCondensedKKTSystem,
+                equality_treatment=MadNLP.EnforceEquality,
+                fixed_variable_treatment=MadNLP.MakeParameter,
+                options...,
+            )
+        end
         solver.kkt.gamma[] = gamma
         results = MadNLP.solve!(solver)
 
@@ -179,6 +187,7 @@ function benchmark_hybrid(nlp, ntrials; gamma=1e5, options...)
         n_it / ntrials,
         obj / ntrials,
         t_total / ntrials,
+        t_init / ntrials,
         t_callbacks / ntrials,
         t_linear_solver / ntrials,
         cg_iters / ntrials,
