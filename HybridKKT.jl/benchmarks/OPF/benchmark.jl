@@ -218,7 +218,7 @@ end
     solver="all",
     verbose::Bool=false,
     quick::Bool=false,
-    tol::Float64=1e-4,
+    tol::Float64=1e-6,
     gamma::Float64=1e7,
     ntrials::Int=1,
 )
@@ -285,10 +285,10 @@ end
             use_gpu=true,
             tol=tol,
             linear_solver=MadNLPGPU.CUDSSSolver,
-            cudss_algorithm=MadNLP.CHOLESKY,
+            cudss_algorithm=MadNLP.BUNCHKAUFMAN,
             print_level=print_level,
         )
-        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-sckkt-cudss-cholesky.csv")
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-sckkt-cudss-ldl.csv")
         writedlm(output_file, [cases results])
     end
 

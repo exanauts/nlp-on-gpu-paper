@@ -37,7 +37,7 @@ cops_benchmark:
 
 benchmarks: opf_benchmark cops_benchmark
 
-article: table1 table2 figure1 figure2 
+article: table1 figure1 figure2 
 
 all: benchmarks article
 

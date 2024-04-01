@@ -126,7 +126,7 @@ end
     end
     index = [parse_name(it) for it in instances]
 
-    if solver == "all" || solver == "ma27"
+    if solver == "ma27"
         @info "[CPU] Benchmark SparseKKTSystem+ma27"
         results = run_benchmark(
             build_ma27_solver,
@@ -194,10 +194,10 @@ end
             use_gpu=true,
             tol=tol,
             linear_solver=MadNLPGPU.CUDSSSolver,
-            cudss_algorithm=MadNLP.CHOLESKY,
+            cudss_algorithm=MadNLP.BUNCHKAUFMAN,
             print_level=print_level,
         )
-        output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-sckkt-cudss-cholesky.csv")
+        output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-sckkt-cudss-ldl.csv")
         writedlm(output_file, [index results])
     end
 
