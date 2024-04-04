@@ -26,6 +26,7 @@
 \DeclareMathOperator{\argmin}{arg\,min}
 \DeclareMathOperator{\nullspace}{Ker}
 \DeclareMathOperator{\rangespace}{range}
+\DeclareMathOperator{\inertia}{inertia}
 \newcommand{\ldlt}{$\mathrm{LDL^T}$\xspace}
 \newcommand{\lblt}{$\mathrm{LBL^T}$\xspace}
 \newcommand{\llt}{$\mathrm{LL^T}$\xspace}
@@ -50,10 +51,10 @@ Mihai Anitescu
 \maketitle
 
 \begin{abstract}
-  This paper investigates numerical techniques for solving large-scale constrained nonlinear programs (NLP) using graphics processing units (GPUs). 
+  This paper investigates numerical techniques for solving large-scale constrained nonlinear programs (NLP) using graphics processing units (GPUs).
   Solving NLPs requires the successive solutions of large, symmetric indefinite, and ill-conditioned linear systems, so-called Karush-Kuhn-Tucker (KKT) systems, a task known to pose computational challenges.
   Traditional sparse factorization methods for these matrices involve numerical pivoting that makes parallelization impossible.
-  In this paper, we study two variants of condensed space interior-point methods---namely, Hybrid and Lifted KKT System methods---to reformulate the challenging KKT systems into symmetric positive-definite systems, which is more amenable to parallelization on GPUs via Cholesky factorization. 
+  In this paper, we study two variants of condensed space interior-point methods---namely, Hybrid and Lifted KKT System methods---to reformulate the challenging KKT systems into symmetric positive-definite systems, which is more amenable to parallelization on GPUs via Cholesky factorization.
   Although condensed KKT systems are generally more prone to ill-conditioning than indefinite KKT systems, we show that these systems exhibit structured ill-conditioning, and thus, accuracy loss caused by ill-conditioning is partially mitigated.
   We implement two methods on GPU within our packages MadNLP.jl, which is interfaced with the NVIDIA library cuDSS for solving sparse positive definite systems and ExaModels.jl for evaluating models on GPUs.
   Performance is tested on large-scale problems from the PGLIB and COPS benchmarks, revealing that GPUs can achieve up to a tenfold speed increase over CPU counterparts up to medium convergence tolerances ($10^{-4}$).

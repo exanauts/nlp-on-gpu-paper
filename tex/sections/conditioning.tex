@@ -46,7 +46,25 @@ as $\bar{h}(x) \leq 0$ with $\bar{h}(x) := (h(x), -x)$.
 We start the discussion by recalling important results porting
 on the iterates of the interior-point algorithm~\cite{wright2001effects}.
 Let $p = (x, s, y, z)$ the current primal-dual iterate (the multiplier $v$ is considered apart),
-and $p^\star$ a solution of the KKT conditions~\eqref{eq:kktconditions}.
+and $p^\star$ a solution of the KKT conditions~\eqref{eq:kktconditions}. We suppose
+that the solution $p^\star$ is regular and satisfies the following assumptions.
+
+% Sungho: not sure if this should be introduced here.
+\begin{assumption}
+  \label{hyp:ipm}
+  Let $w^\star = (x^\star, s^\star, y^\star, z^\star, u^\star, v^\star)$ be a primal-dual solution
+  satisfying the KKT conditions~\eqref{eq:kktconditions}. Let the following hold:
+  \begin{itemize}
+  \item Continuity: The Hessian $\nabla^2_{x x} L(\cdot)$ is Lipschitz continuous
+    near $w^\star$;
+  \item Linear Independence Constraint Qualification: the active Jacobian $A(x^\star)$ is full row-rank;
+  \item Strict Complementarity: for every $i \in \mathcal{B}(x^\star)$, $z_i^\star > 0$.
+  \item Second-order sufficiency: for every $v \in \nullspace\!\big(A(x^\star)\big)$,
+    $v^\top \nabla_{x x}^2 L(w^\star)v > 0$.
+  \end{itemize}
+\end{assumption}
+
+
 We denote $\delta(p, v) = \| (p, v) - (p^\star, v^\star) \|$ the Euclidean distance to the
 primal-dual stationary point $p^\star$.
 From \cite[Theorem 2.2]{wright2001effects}, if Assumption~\ref{hyp:ipm}
@@ -59,7 +77,7 @@ holds at $p^\star$ and $v^\star > 0$,
 \end{equation}
 For $(s, v) > 0$, we define the \emph{duality measure} $\Xi(s, v)$ as the mapping
 \begin{equation}
-  \Xi(s, v) = s^\top v / m_i \; . % Sungho: m_i not defined here. Also, I'd suggest explaining a bit of context on the duality measure. 
+  \Xi(s, v) = s^\top v / m_i \; . % Sungho: m_i not defined here. Also, I'd suggest explaining a bit of context on the duality measure.
 \end{equation}
 We suppose the iterates $(p, v)$ satisfy the \emph{centrality conditions}
 \begin{subequations}
@@ -197,7 +215,7 @@ term $\gamma G^\top G$ arising from the equality constraints.
   and the largest diagonal element is $\Theta(\max\{\frac{1}{s_{min}}, \gamma\})$.
   Hence,
   \begin{equation}
-    \eta_1 = \Theta(\overline{\sigma}) \; , \quad 
+    \eta_1 = \Theta(\overline{\sigma}) \; , \quad
     \eta_p = \Omega(\underline{\sigma}) \; .
   \end{equation}
   Using \cite[Lemma 3.1]{wright1998ill}, we deduce $\lambda_1 = \Theta(\overline{\sigma})$
