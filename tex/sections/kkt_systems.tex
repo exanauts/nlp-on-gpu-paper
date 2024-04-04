@@ -60,7 +60,7 @@ leverages the positive definiteness of $K_\gamma$ and solves
 that uses the following steps:
 \begin{enumerate}
   \item Assemble $K_\gamma$ and factorize it using sparse Cholesky ;
-  \item Solve the Schur complement of \eqref{eq:kkt:hykkt} using a conjugate gradient (CG)
+  \item Solve the Schur complement of \eqref{eq:kkt:hykkt} using a conjugate gradient (\CG)
     algorithm to recover the dual descent direction:
     \begin{equation}
       \label{eq:kkt:schurcomplhykkt}
@@ -69,18 +69,20 @@ that uses the following steps:
   \item Solve the system $K_\gamma d_x = \bar{r}_1 + \gamma G^\top \bar{r}_2 - G^\top d_y$
     to recover the primal descent direction.
 \end{enumerate}
-The method uses a sparse Cholesky factorization along with the conjugate gradient (CG) algorithm \cite{hestenes-stiefel-1952}.
+The method uses a sparse Cholesky factorization along with the conjugate gradient (\CG) algorithm \cite{hestenes-stiefel-1952}.
 The sparse Cholesky factorization has the advantage of being stable without
 numerical pivoting, rendering the algorithm tractable on a GPU.
-Each CG iteration requires the application of sparse triangular solves with the
+Each \CG iteration requires the application of sparse triangular solves with the
 factors of $K_\gamma$, operations that can be numerically demanding. For that reason,
-HyKKT is efficient only if the CG solver converges in a small number of iterations.
+HyKKT is efficient only if the \CG solver converges in a small number of iterations.
 Fortunately, the eigenvalues of the Schur-complement $S_\gamma := G K_\gamma^{-1} G^\top$
 all converge to $\frac{1}{\gamma}$ as we increase the regularization parameter
 $\gamma$ \cite[Theorem 4]{regev2023hykkt}, implying that $\lim_{\gamma \to \infty} \cond(S_\gamma) = 1$.
-Because the convergence of the CG method depends on the number of distinct eigenvalues of $S_{\gamma}$,
-the CG algorithm in \eqref{eq:kkt:schurcomplhykkt} converges in fewer iterations
+Because the convergence of the \CG method depends on the number of distinct eigenvalues of $S_{\gamma}$,
+the \CG algorithm in \eqref{eq:kkt:schurcomplhykkt} converges in fewer iterations
 as we increase $\gamma$.
+\CR \cite{hestenes-stiefel-1952} and \CAR \cite{montoison-orban-saunders-2023} can also be used as an alternative to \CG.
+Although we observe similar performance, these methods ensure a monotonic decrease in the residual norm of \eqref{eq:kkt:schurcomplhykkt} at each iteration.
 
 \subsection{Equality relaxation strategy}
 \label{sec:kkt:sckkt}

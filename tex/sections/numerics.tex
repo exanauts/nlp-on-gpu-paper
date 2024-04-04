@@ -34,7 +34,7 @@ We solve the KKT systems assembled within MadNLP using various sparse linear sol
   \item {\tt cuDSS}: Implement \llt, \ldlt and \lu decompositions on an NVIDIA GPU.
     We use the \ldlt factorization to factorize the condensed matrices $K_\gamma$ on GPU.
     This newly released solver is the contender in our benchmark.
-  \item {\tt Krylov.jl}: Contains the CG method
+  \item {\tt Krylov.jl}: Contains the \CG method
     used in the Golub \& Greif strategy to solve \eqref{eq:kkt:schurcomplhykkt} on both CPU and GPU architectures.
 \end{itemize}
 CHOLMOD \cite{chen-davis-hager-rajamanickam-2008} is shipped with Julia.
@@ -118,12 +118,12 @@ In terms of accuracy, the quality of the solution remains on par with CHOLMOD, e
 \subsubsection{Tuning the Golub \& Greif strategy}
 \label{sec:num:tuninghykkt}
 In Figure~\ref{fig:hybrid:gamma} we depict the evolution of the number
-of CG iterations and relative accuracy as we increase the parameter $\gamma$
+of \CG iterations and relative accuracy as we increase the parameter $\gamma$
 from $10^4$ to $10^8$ in HyKKT.
 
 On the algorithmic side, we observe that the higher the regularization $\gamma$,
-the faster the CG algorithm: we decrease the total number of iterations
-spent in CG by a factor of 10. However, we have to pay a price in term
+the faster the \CG algorithm: we decrease the total number of iterations
+spent in \CG by a factor of 10. However, we have to pay a price in term
 of accuracy: for $\gamma > 10^8$ the solution returned by the linear solver
 is not accurate enough and the IPM algorithm has to proceed to more
 primal-dual regularization, leading to an increase in the total number of iterations.
@@ -142,7 +142,7 @@ on the GPU, with a reduction in the assembly time from $\approx 8s$ on the CPU t
   \hline
   & \multicolumn{5}{c|}{\bf CHOLMOD (CPU)} & \multicolumn{5}{c|}{\bf cuDSS-\ldlt (CUDA)} \\
   \hline
-  $\gamma$ & \# it & cond. (s) & CG (s) & linsol (s) & IPM (s) & \# it & cond. (s) & CG (s) & linsol (s) & IPM (s) \\
+  $\gamma$ & \# it & cond. (s) & \CG (s) & linsol (s) & IPM (s) & \# it & cond. (s) & \CG (s) & linsol (s) & IPM (s) \\
   \hline
   $10^4$ & 96 & 8.15 & 463.86 & 536.83 & 575.06 & 96 & 0.17 & 113.27 & 114.52 & 124.00 \\
   $10^5$ & 96 & 8.33 & 163.35 & 235.61 & 273.36 & 96 & 0.17 & 53.37 & 54.62 & 64.39 \\
@@ -155,10 +155,10 @@ on the GPU, with a reduction in the assembly time from $\approx 8s$ on the CPU t
   \includegraphics[width=\textwidth]{../figures/hybrid-gamma.pdf}
   \caption{
     Above: Decomposition of IPM solution time across
-    (a) condensation time (cond.), (b) CG time, (c) total time
+    (a) condensation time (cond.), (b) \CG time, (c) total time
     spent in the linear solver (linsol.) and (d) total time spent in
     IPM solver (IPM).
-    Below: Impact of $\gamma$ on the total number of CG iterations
+    Below: Impact of $\gamma$ on the total number of \CG iterations
     and the norm of the relative residual at each IPM iteration.
     The peak observed in the norm of the relative residual corresponds
     to the primal-dual regularization performed inside the IPM algorithm,
@@ -226,7 +226,7 @@ that constructing the KKT system represents only a fraction of the computation t
 to the factorization and the triangular solve. Using {\tt cuDSS}-\ldlt, we observe speedups of
 30x and 15x in the factorization compared to MA27 and CHOLMOD running on the CPU.
 Once the KKT system is factorized, computing the descent direction with LiftedKKT is faster than with HyKKT
-(0.04s compared to 0.13s) as HyKKT has to run a CG algorithm to solve the Schur complement
+(0.04s compared to 0.13s) as HyKKT has to run a \CG algorithm to solve the Schur complement
 system~\eqref{eq:kkt:schurcomplhykkt}.
 
 \begin{figure}[!ht]
@@ -271,15 +271,15 @@ Hence, the block elimination algorithm implemented in HSL MA57 is not beneficial
 \footnote{Personal communication with Iain Duff.}.
 
 On the GPU, LiftedKKT is faster than HyKKT on small and medium instances: indeed, the algorithm
-does not have to run a CG algorithm at each IPM iteration, limiting the number
+does not have to run a \CG algorithm at each IPM iteration, limiting the number
 of backsolves to the number of Richardson iterations in the iterative refinement
 algorithm.
 Regarding HyKKT, we set $\gamma = 10^7$ following the analysis in \S\ref{sec:num:tuninghykkt}.
 The algorithm is significantly faster than HSL MA27, only specific
 instances when $\gamma$ is not high enough to reduce significantly the number
-of CG iterations. For example, compared
+of \CG iterations. For example, compared
 to the other instances, the solution of {\tt 8387\_pegase} is impaired
-by a larger total number of CG iterations leading to a 4x slowdown compared to LiftedKKT.
+by a larger total number of \CG iterations leading to a 4x slowdown compared to LiftedKKT.
 Nevertheless, the performance of HyKKT is better on the largest instances,
 with almost an 8x speed-up compared to the reference HSL MA27.
 
