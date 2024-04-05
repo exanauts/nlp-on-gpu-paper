@@ -7,6 +7,10 @@ the COPS benchmark.
 
 \subsection{Implementation}
 All our implementation uses the Julia language \cite{bezanson-edelman-karpinski-shah-2017}.
+We have used our local workstation to generate the results on the CPU, here equipped
+with an AMD EPYC 7443 processor (3.2GHz).
+For the results on the GPU, we have used an NVIDIA A100 GPU with CUDA 12.3 on
+the Polaris testbed at Argonne National Laboratory.
 
 \paragraph{IPM solver.}
 We have implemented the two condensed-space methods in our nonlinear IPM solver MadNLP~\cite{shin2021graph}.
@@ -220,10 +224,10 @@ the problem to optimality in $\approx 20s$, a time comparable with HyKKT (see Fi
 We decompose the time spent in a single
 IPM iteration for all the available KKT solvers (HSL MA27, LiftedKKT, and HyKKT).
 When solving the KKT system, the time can be decomposed into: (1) assembling the
-KKT system, (2) factorizing the KKT system, and (3) computing the descent direction with a triangular solve.
+KKT system, (2) factorizing the KKT system, and (3) computing the descent direction with triangular solves.
 As depicted in Figure~\ref{fig:timebreakdown}, we observe
 that constructing the KKT system represents only a fraction of the computation time, compared
-to the factorization and the triangular solve. Using {\tt cuDSS}-\ldlt, we observe speedups of
+to the factorization and the triangular solves. Using {\tt cuDSS}-\ldlt, we observe speedups of
 30x and 15x in the factorization compared to MA27 and CHOLMOD running on the CPU.
 Once the KKT system is factorized, computing the descent direction with LiftedKKT is faster than with HyKKT
 (0.04s compared to 0.13s) as HyKKT has to run a \CG algorithm to solve the Schur complement
@@ -231,16 +235,16 @@ system~\eqref{eq:kkt:schurcomplhykkt}.
 
 \begin{figure}[!ht]
   \centering
-  \resizebox{.7\textwidth}{!}{
+  \resizebox{.8\textwidth}{!}{
     \begin{tabular}{|l|rrrr|}
       \hline
        & build (s) & factorize (s) & backsolve (s) & accuracy \\
-      \hline
-      hsl        & $3.15\times 10^{-2}$&$1.22 \times 10^{-0} $&$3.58\times 10^{-1}$&$5.52\times 10^{-7}$\\
-    sckkt-cpu  & $8.71\times 10^{-2}$&$6.08\times 10^{-1}$&$2.32\times 10^{-1}$&$3.73\times 10^{-9}$\\
-    hckkt-cpu  & $7.97\times 10^{-2}$&$6.02\times 10^{-1}$&$7.30\times 10^{-1}$&$3.38\times 10^{-3}$\\
-    sckkt-cuda & $2.09\times 10^{-3}$&$4.37\times 10^{-2}$&$3.53\times 10^{-2}$&$4.86\times 10^{-9}$\\
-    hckkt-cuda & $1.86\times 10^{-3}$&$3.38\times 10^{-2}$&$1.35\times 10^{-1}$&$3.91\times 10^{-3}$\\
+       \hline
+      HSL MA27       & $3.15\times 10^{-2}$&$1.22 \times 10^{-0} $&$3.58\times 10^{-1}$&$5.52\times 10^{-7}$\\
+      LiftedKKT (CPU)  & $8.71\times 10^{-2}$&$6.08\times 10^{-1}$&$2.32\times 10^{-1}$&$3.73\times 10^{-9}$\\
+      HyKKT (CPU)  & $7.97\times 10^{-2}$&$6.02\times 10^{-1}$&$7.30\times 10^{-1}$&$3.38\times 10^{-3}$\\
+      LiftedKKT (CUDA) & $2.09\times 10^{-3}$&$4.37\times 10^{-2}$&$3.53\times 10^{-2}$&$4.86\times 10^{-9}$\\
+      HyKKT (CUDA) & $1.86\times 10^{-3}$&$3.38\times 10^{-2}$&$1.35\times 10^{-1}$&$3.91\times 10^{-3}$\\
       \hline
     \end{tabular}
   }
@@ -272,8 +276,7 @@ Hence, the block elimination algorithm implemented in HSL MA57 is not beneficial
 
 On the GPU, LiftedKKT is faster than HyKKT on small and medium instances: indeed, the algorithm
 does not have to run a \CG algorithm at each IPM iteration, limiting the number
-of backsolves to the number of Richardson iterations in the iterative refinement
-algorithm.
+of backsolves to the number of Richardson iterations in the iterative refinement algorithm.
 Regarding HyKKT, we set $\gamma = 10^7$ following the analysis in \S\ref{sec:num:tuninghykkt}.
 The algorithm is significantly faster than HSL MA27, only specific
 instances when $\gamma$ is not high enough to reduce significantly the number
@@ -282,6 +285,13 @@ to the other instances, the solution of {\tt 8387\_pegase} is impaired
 by a larger total number of \CG iterations leading to a 4x slowdown compared to LiftedKKT.
 Nevertheless, the performance of HyKKT is better on the largest instances,
 with almost an 8x speed-up compared to the reference HSL MA27.
+
+The benchmark presented in Table~\ref{tab:opf:benchmark} has been generated using a
+NVIDIA A100 GPUs (current selling price: \$10k). We have also compared the performance
+with cheaper GPUs: a NVIDIA A1000, a laptop-based GPU (price: \$150) and a NVIDIA A30,
+a workstation based GPU (price: \$5k). As a comparison, the selling price of the AMD EPYC
+7443 processor we used for the benchmark on the CPU is \$1.2k. The results are
+displayed in Figure~\ref{fig:gpubench}.
 
 \begin{table}[!ht]
   \centering
@@ -294,44 +304,44 @@ with almost an 8x speed-up compared to the reference HSL MA27.
       \hline
       Case & it & init & lin & total & it & init & lin & total & it & init & lin & total \\
       \hline
-        89\_pegase & 32 & 0.00 & 0.02 & 0.03 & 31 & 0.02 & 0.12 & 0.23 & 32 & 0.02 & 0.07 & 0.19 \\
-        179\_goc & 45 & 0.00 & 0.03 & 0.05 & 38 & 0.03 & 0.19 & 0.32 & 45 & 0.03 & 0.07 & 0.23 \\
-        500\_goc & 39 & 0.01 & 0.10 & 0.14 & 39 & 0.04 & 0.10 & 0.24 & 39 & 0.04 & 0.08 & 0.24 \\
-        793\_goc & 35 & 0.01 & 0.12 & 0.18 & 47 & 0.05 & 0.27 & 0.46 & 35 & 0.04 & 0.10 & 0.27 \\
-        1354\_pegase & 49 & 0.02 & 0.35 & 0.52 & 71 & 0.08 & 0.66 & 1.05 & 49 & 0.08 & 0.18 & 0.47 \\
-              \hline
-        2000\_goc & 42 & 0.03 & 0.66 & 0.93 & 48 & 0.12 & 0.43 & 0.78 & 42 & 0.14 & 0.15 & 0.48 \\
-        2312\_goc & 43 & 0.02 & 0.59 & 0.82 & 63 & 0.12 & 0.45 & 0.90 & 43 & 0.40 & 0.23 & 0.82 \\
-        2742\_goc & 125 & 0.04 & 3.76 & 7.31 & 168 & 0.15 & 2.38 & 3.91 & - & - & - & - \\
-        2869\_pegase & 55 & 0.04 & 1.09 & 1.52 & 57 & 0.15 & 0.33 & 0.80 & 55 & 0.15 & 0.30 & 0.71 \\
-        3022\_goc & 55 & 0.03 & 0.98 & 1.39 & 53 & 0.13 & 0.30 & 0.74 & 55 & 0.14 & 0.26 & 0.66 \\
-              \hline
-        3970\_goc & 48 & 0.05 & 1.95 & 2.53 & 48 & 0.22 & 0.49 & 1.00 & 48 & 0.21 & 0.27 & 0.77 \\
-        4020\_goc & 59 & 0.06 & 3.90 & 4.60 & 64 & 0.22 & 0.77 & 1.60 & 59 & 0.23 & 0.46 & 1.09 \\
-        4601\_goc & 71 & 0.09 & 3.09 & 4.16 & 67 & 0.21 & 0.60 & 1.22 & 71 & 0.23 & 0.44 & 1.12 \\
-        4619\_goc & 49 & 0.07 & 3.21 & 3.91 & 52 & 0.26 & 0.70 & 1.34 & 49 & 0.28 & 0.37 & 1.00 \\
-        4837\_goc & 59 & 0.08 & 2.49 & 3.33 & 56 & 0.22 & 0.44 & 1.10 & 59 & 0.24 & 0.43 & 1.03 \\
-              \hline
-        4917\_goc & 63 & 0.07 & 1.97 & 2.72 & 69 & 0.20 & 0.79 & 1.51 & 63 & 0.21 & 0.40 & 0.96 \\
-        5658\_epigrids & 51 & 0.31 & 2.80 & 3.86 & 48 & 0.27 & 0.55 & 1.23 & 51 & 0.29 & 0.42 & 1.06 \\
-        7336\_epigrids & 50 & 0.13 & 3.60 & 4.91 & 54 & 0.36 & 1.12 & 2.08 & 50 & 0.35 & 0.46 & 1.20 \\
-        8387\_pegase & 74 & 0.14 & 5.31 & 7.62 & 76 & 0.46 & 0.70 & 2.29 & 75 & 0.47 & 11.17 & 12.34 \\
-        9241\_pegase & 74 & 0.15 & 6.11 & 8.60 & 107 & 0.50 & 1.18 & 3.42 & 71 & 0.51 & 1.46 & 2.72 \\
-              \hline
-        9591\_goc & 67 & 0.20 & 11.14 & 13.37 & 75 & 0.49 & 1.99 & 3.74 & 67 & 0.50 & 1.02 & 2.24 \\
-        10000\_goc & 82 & 0.15 & 6.00 & 8.16 & 64 & 0.39 & 1.12 & 2.21 & 82 & 0.38 & 0.96 & 1.97 \\
-        10192\_epigrids & 54 & 0.41 & 7.79 & 10.08 & 68 & 0.57 & 1.54 & 3.14 & 54 & 0.55 & 0.93 & 2.07 \\
-        10480\_goc & 71 & 0.24 & 12.04 & 14.74 & 66 & 0.60 & 1.57 & 3.51 & 71 & 0.60 & 1.45 & 2.91 \\
-        13659\_pegase & 63 & 0.45 & 7.21 & 10.14 & 68 & 0.69 & 1.09 & 3.03 & 62 & 0.68 & 1.37 & 2.77 \\
-              \hline
-        19402\_goc & 69 & 0.63 & 31.71 & 36.92 & - & - & - & - & 69 & 1.55 & 2.52 & 5.38 \\
-        20758\_epigrids & 51 & 0.63 & 14.27 & 18.21 & 52 & 1.07 & 1.48 & 4.18 & 51 & 1.13 & 2.17 & 4.13 \\
-        30000\_goc & 183 & 0.65 & 63.02 & 75.95 & 139 & 0.98 & 4.50 & 8.46 & 228 & 0.99 & 7.73 & 13.71 \\
-        78484\_epigrids & 102 & 2.57 & 179.29 & 207.79 & 110 & 4.84 & 9.90 & 26.01 & 102 & 5.01 & 15.27 & 25.70 \\
+      89\_pegase & 32 & 0.00 & 0.02 & 0.03 & 29 & 0.03 & 0.12 & 0.24 & 32 & 0.03 & 0.07 & 0.22 \\
+      179\_goc & 45 & 0.00 & 0.03 & 0.05 & 39 & 0.03 & 0.19 & 0.35 & 45 & 0.03 & 0.07 & 0.25 \\
+      500\_goc & 39 & 0.01 & 0.10 & 0.14 & 39 & 0.05 & 0.09 & 0.26 & 39 & 0.05 & 0.07 & 0.27 \\
+      793\_goc & 35 & 0.01 & 0.12 & 0.18 & 57 & 0.06 & 0.27 & 0.52 & 35 & 0.05 & 0.10 & 0.30 \\
+      1354\_pegase & 49 & 0.02 & 0.35 & 0.52 & 96 & 0.12 & 0.69 & 1.22 & 49 & 0.12 & 0.17 & 0.50 \\
+      \hline
+      2000\_goc & 42 & 0.03 & 0.66 & 0.93 & 46 & 0.15 & 0.30 & 0.66 & 42 & 0.16 & 0.14 & 0.50 \\
+      2312\_goc & 43 & 0.02 & 0.59 & 0.82 & 45 & 0.14 & 0.32 & 0.68 & 43 & 0.14 & 0.21 & 0.56 \\
+      2742\_goc & 125 & 0.04 & 3.76 & 7.31 & 157 & 0.20 & 1.93 & 15.49 & - & - & - & - \\
+      2869\_pegase & 55 & 0.04 & 1.09 & 1.52 & 57 & 0.20 & 0.30 & 0.80 & 55 & 0.21 & 0.26 & 0.73 \\
+      3022\_goc & 55 & 0.03 & 0.98 & 1.39 & 48 & 0.18 & 0.23 & 0.66 & 55 & 0.18 & 0.23 & 0.68 \\
+      \hline
+      3970\_goc & 48 & 0.05 & 1.95 & 2.53 & 47 & 0.26 & 0.37 & 0.87 & 48 & 0.27 & 0.24 & 0.80 \\
+      4020\_goc & 59 & 0.06 & 3.90 & 4.60 & 123 & 0.28 & 1.75 & 3.15 & 59 & 0.29 & 0.41 & 1.08 \\
+      4601\_goc & 71 & 0.09 & 3.09 & 4.16 & 67 & 0.27 & 0.51 & 1.17 & 71 & 0.28 & 0.39 & 1.12 \\
+      4619\_goc & 49 & 0.07 & 3.21 & 3.91 & 49 & 0.34 & 0.59 & 1.25 & 49 & 0.33 & 0.31 & 0.95 \\
+      4837\_goc & 59 & 0.08 & 2.49 & 3.33 & 59 & 0.29 & 0.58 & 1.31 & 59 & 0.29 & 0.35 & 0.98 \\
+      \hline
+      4917\_goc & 63 & 0.07 & 1.97 & 2.72 & 55 & 0.26 & 0.55 & 1.18 & 63 & 0.26 & 0.34 & 0.94 \\
+      5658\_epigrids & 51 & 0.31 & 2.80 & 3.86 & 58 & 0.35 & 0.66 & 1.51 & 51 & 0.35 & 0.35 & 1.03 \\
+      7336\_epigrids & 50 & 0.13 & 3.60 & 4.91 & 56 & 0.45 & 0.95 & 1.89 & 50 & 0.43 & 0.35 & 1.13 \\
+      8387\_pegase & 74 & 0.14 & 5.31 & 7.62 & 82 & 0.59 & 0.79 & 2.30 & 75 & 0.58 & 7.66 & 8.84 \\
+      9241\_pegase & 74 & 0.15 & 6.11 & 8.60 & 101 & 0.63 & 0.88 & 2.76 & 71 & 0.63 & 0.99 & 2.24 \\
+      \hline
+      9591\_goc & 67 & 0.20 & 11.14 & 13.37 & 98 & 0.63 & 2.67 & 4.58 & 67 & 0.62 & 0.74 & 1.96 \\
+      10000\_goc & 82 & 0.15 & 6.00 & 8.16 & 64 & 0.49 & 0.81 & 1.83 & 82 & 0.49 & 0.75 & 1.82 \\
+      10192\_epigrids & 54 & 0.41 & 7.79 & 10.08 & 57 & 0.67 & 1.14 & 2.40 & 54 & 0.67 & 0.66 & 1.81 \\
+      10480\_goc & 71 & 0.24 & 12.04 & 14.74 & 67 & 0.75 & 0.99 & 2.72 & 71 & 0.74 & 1.09 & 2.50 \\
+      13659\_pegase & 63 & 0.45 & 7.21 & 10.14 & 75 & 0.83 & 1.05 & 2.96 & 62 & 0.84 & 0.93 & 2.47 \\
+      \hline
+      19402\_goc & 69 & 0.63 & 31.71 & 36.92 & 73 & 1.42 & 2.28 & 5.38 & 69 & 1.44 & 1.93 & 4.31 \\
+      20758\_epigrids & 51 & 0.63 & 14.27 & 18.21 & 53 & 1.34 & 1.05 & 3.57 & 51 & 1.35 & 1.55 & 3.51 \\
+      30000\_goc & 183 & 0.65 & 63.02 & 75.95 & - & - & - & - & 225 & 1.22 & 5.59 & 10.27 \\
+      78484\_epigrids & 102 & 2.57 & 179.29 & 207.79 & 101 & 5.94 & 5.62 & 18.03 & 104 & 6.29 & 9.01 & 18.90 \\
       \hline
     \end{tabular}
   }
-  \caption{OPF benchmark, solved with a tolerance {\tt tol=1e-6}. (A30 GPU) \label{tab:opf:benchmark}}
+  \caption{OPF benchmark, solved with a tolerance {\tt tol=1e-6}. (A100 GPU) \label{tab:opf:benchmark}}
 \end{table}
 
 \begin{figure}[!ht]
@@ -340,6 +350,14 @@ with almost an 8x speed-up compared to the reference HSL MA27.
   \caption{Performance profile for the PGLIB OPF benchmark, solved
     with a tolerance {\tt tol=1e-6}.
   \label{fig:opf:pprof}}
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=.6\textwidth]{../figures/benchmark_gpus.pdf}
+  \caption{Comparing the performance obtained with various GPUs
+    on three different OPF instances.
+  \label{fig:gpubench}}
 \end{figure}
 
 
@@ -383,73 +401,42 @@ highly sparse and have highly structured Cholesky lower triangular factors.
   }
 \end{figure}
 
-\begin{table}[!ht]
-  \centering
-  \resizebox{0.5\textwidth}{!}{
-    \begin{tabular}{|l|rrrr|}
-      \hline
-      & $n$ & $m$ & $nnzj$ & $nnzh$ \\
-      \hline
-      bearing\_400 & 161604 & 1608 & 1608 & 1128816 \\
-      camshape\_6400 & 6400 & 19204 & 63999 & 57589 \\
-      elec\_400 & 1200 & 400 & 1200 & 6225600 \\
-      gasoil\_3200 & 83203 & 83200 & 435190 & 155002 \\
-      marine\_1600 & 51215 & 51192 & 185576 & 105800 \\
-      pinene\_3200 & 160005 & 160000 & 751980 & 288880 \\
-      robot\_1600 & 14411 & 9613 & 70414 & 155200 \\
-      rocket\_12800 & 51205 & 38404 & 345604 & 1318400 \\
-      steering\_12800 & 64006 & 51208 & 281608 & 307200 \\
-      \hline
-      bearing\_800 & 643204 & 3208 & 3208 & 4497616 \\
-      camshape\_12800 & 12800 & 38404 & 127999 & 115189 \\
-      elec\_800 & 2400 & 800 & 2400 & 24931200 \\
-      gasoil\_12800 & 332803 & 332800 & 1740790 & 615802 \\
-      marine\_12800 & 409615 & 409592 & 1484776 & 845000 \\
-      pinene\_12800 & 640005 & 640000 & 3007980 & 1152880 \\
-      robot\_12800 & 115211 & 76813 & 563214 & 1241600 \\
-      rocket\_51200 & 204805 & 153604 & 1382404 & 5273600 \\
-      steering\_51200 & 256006 & 204808 & 1126408 & 1228800 \\
-      \hline
-    \end{tabular}
-  }
-    \caption{Selected instances in the COPS benchmark}
-  \end{table}
-
 
 \begin{table}[!ht]
   \centering
   \resizebox{\textwidth}{!}{
-    \begin{tabular}{|l|rrr >{\bfseries}r|rrr >{\bfseries}r|rrr >{\bfseries}r|}
-    \hline
-    & \multicolumn{4}{c|}{\bf HSL MA57} &
+    \begin{tabular}{|l|rr|rrr >{\bfseries}r|rrr >{\bfseries}r|rrr >{\bfseries}r|}
+      \hline
+  & &
+  & \multicolumn{4}{c|}{\bf HSL MA57} &
       \multicolumn{4}{c|}{\bf LiftedKKT+cuDSS} &
       \multicolumn{4}{c|}{\bf HyKKT+cuDSS} \\
-    \hline
-    & it & init & lin & total & it & init & lin & total & it & init & lin & total \\
-    \hline
-    bearing\_400 & 17 & 0.14 & 3.42 & 4.10 & 14 & 0.62 & 0.08 & 0.93 & 14 & 0.61 & 0.94 & 1.82 \\
-    camshape\_6400 & 38 & 0.02 & 0.18 & 0.29 & 35 & 0.04 & 0.03 & 0.15 & 38 & 0.04 & 0.04 & 0.20 \\
-    elec\_400 & 185 & 0.54 & 24.64 & 33.02 & 114 & 0.37 & 3.65 & 6.17 & 100 & 0.43 & 0.57 & 3.43 \\
-    gasoil\_3200 & 37 & 0.36 & 4.81 & 5.81 & 22 & 0.46 & 0.43 & 1.56 & 20 & 0.46 & 0.32 & 1.33 \\
-    marine\_1600 & 13 & 0.05 & 0.41 & 0.50 & 26 & 0.29 & 0.51 & 1.08 & 13 & 0.32 & 0.14 & 0.60 \\
-    pinene\_3200 & 12 & 0.11 & 1.32 & 1.60 & 21 & 0.75 & 0.21 & 1.50 & 12 & 0.78 & 1.52 & 2.65 \\
-    robot\_1600 & 34 & 0.04 & 0.33 & 0.45 & 35 & 0.16 & 0.11 & 0.73 & 34 & 0.16 & 0.10 & 0.81 \\
-    rocket\_12800 & 23 & 0.12 & 1.73 & 2.16 & 37 & 0.28 & 0.12 & 2.11 & 24 & 0.23 & 2.17 & 3.62 \\
-    steering\_12800 & 19 & 0.25 & 1.49 & 1.93 & 17 & 0.40 & 0.20 & 1.62 & 20 & 0.38 & 0.12 & 1.91 \\
-    \hline
-    bearing\_800 & 13 & 0.94 & 14.59 & 16.86 & 14 & 2.65 & 0.24 & 3.60 & 12 & 3.04 & 2.63 & 6.50 \\
-    camshape\_12800 & 34 & 0.02 & 0.34 & 0.54 & 33 & 0.04 & 0.02 & 0.14 & 34 & 0.05 & 0.03 & 0.17 \\
-    elec\_800 & 354 & 2.36 & 337.41 & 409.57 & 354 & 1.60 & 27.21 & 59.54 & 189 & 2.00 & 2.46 & 19.01 \\
-    gasoil\_12800 & 20 & 1.78 & 11.15 & 13.65 & 17 & 1.87 & 1.31 & 5.16 & 22 & 1.90 & 1.89 & 6.24 \\
-    marine\_12800 & 11 & 0.36 & 3.51 & 4.46 & 148 & 2.28 & 38.01 & 55.87 & 11 & 2.35 & 1.00 & 4.02 \\
-    pinene\_12800 & 10 & 0.48 & 7.15 & 8.45 & 21 & 3.51 & 1.29 & 7.11 & 12 & 3.99 & 5.29 & 10.67 \\
-    robot\_12800 & 35 & 0.54 & 4.63 & 5.91 & 33 & 1.05 & 0.37 & 4.48 & 35 & 1.06 & 0.41 & 4.92 \\
-    rocket\_51200 & 31 & 1.21 & 6.24 & 9.51 & 38 & 0.89 & 0.47 & 9.63 & 30 & 0.90 & 4.09 & 11.99 \\
-    steering\_51200 & 27 & 1.40 & 9.74 & 13.00 & 15 & 1.73 & 0.23 & 5.76 & 24 & 1.73 & 0.85 & 10.81 \\
-    \hline
+      \hline
+      & $n$ & $m$ & it & init & lin & total & it & init & lin & total & it & init & lin & total \\
+      \hline
+      bearing\_400 & 162k & 2k & 17 & 0.14 & 3.42 & 4.10 & 14 & 0.85 & 0.07 & 1.13 & 14 & 0.78 & 0.76 & 1.74 \\
+      camshape\_6400 & 6k & 19k & 38 & 0.02 & 0.18 & 0.29 & 35 & 0.05 & 0.03 & 0.19 & 38 & 0.05 & 0.04 & 0.23 \\
+      elec\_400 & 1k & 0.4k & 185 & 0.54 & 24.64 & 33.02 & 273 & 0.46 & 0.97 & 20.01 & 128 & 0.48 & 0.75 & 4.16 \\
+      gasoil\_3200 & 83k & 83k & 37 & 0.36 & 4.81 & 5.81 & 21 & 0.54 & 0.24 & 1.40 & 20 & 0.59 & 0.21 & 1.35 \\
+      marine\_1600 & 51k & 51k & 13 & 0.05 & 0.41 & 0.50 & 33 & 0.38 & 0.58 & 1.29 & 13 & 0.37 & 0.12 & 0.62 \\
+      pinene\_3200 & 160k & 160k & 12 & 0.11 & 1.32 & 1.60 & 21 & 0.87 & 0.16 & 1.52 & 11 & 0.90 & 0.84 & 2.02 \\
+      robot\_1600 & 14k & 10k & 34 & 0.04 & 0.33 & 0.45 & 35 & 0.20 & 0.07 & 0.76 & 34 & 0.21 & 0.08 & 0.80 \\
+      rocket\_12800 & 51k & 38k & 23 & 0.12 & 1.73 & 2.16 & 37 & 0.74 & 0.06 & 2.49 & 24 & 0.25 & 1.70 & 3.12 \\
+      steering\_12800 & 64k & 51k & 19 & 0.25 & 1.49 & 1.93 & 18 & 0.44 & 0.06 & 1.64 & 18 & 0.46 & 0.07 & 1.83 \\
+      \hline
+      bearing\_800 & 643k & 3k & 13 & 0.94 & 14.59 & 16.86 & 14 & 3.31 & 0.18 & 4.10 & 12 & 3.32 & 1.98 & 5.86 \\
+      camshape\_12800 & 13k & 38k & 34 & 0.02 & 0.34 & 0.54 & 33 & 0.05 & 0.02 & 0.16 & 34 & 0.06 & 0.03 & 0.19 \\
+      elec\_800 & 2k & 0.8k & 354 & 2.36 & 337.41 & 409.57 & 298 & 2.11 & 2.58 & 24.38 & 184 & 1.81 & 2.40 & 16.33 \\
+      gasoil\_12800 & 333k & 333k & 20 & 1.78 & 11.15 & 13.65 & 18 & 2.11 & 0.98 & 5.50 & 22 & 2.99 & 1.21 & 6.47 \\
+      marine\_12800 & 410k & 410k & 11 & 0.36 & 3.51 & 4.46 & 146 & 2.80 & 25.04 & 39.24 & 11 & 2.89 & 0.63 & 4.03 \\
+      pinene\_12800 & 640k & 640k & 10 & 0.48 & 7.15 & 8.45 & 21 & 4.50 & 0.99 & 7.44 & 11 & 4.65 & 3.54 & 9.25 \\
+      robot\_12800 & 115k & 77k & 35 & 0.54 & 4.63 & 5.91 & 33 & 1.13 & 0.30 & 4.29 & 35 & 1.15 & 0.27 & 4.58 \\
+      rocket\_51200 & 205k & 154k & 31 & 1.21 & 6.24 & 9.51 & 37 & 0.83 & 0.17 & 8.49 & 30 & 0.87 & 2.67 & 10.11 \\
+      steering\_51200 & 256k & 205k & 27 & 1.40 & 9.74 & 13.00 & 15 & 1.82 & 0.19 & 5.41 & 28 & 1.88 & 0.56 & 11.31 \\
+      \hline
     \end{tabular}
   }
-  \caption{COPS benchmark , solved with a tolerance {\tt tol=1e-6}\label{tab:cops:benchmark} (A30 GPU)}
+  \caption{COPS benchmark , solved with a tolerance {\tt tol=1e-6}\label{tab:cops:benchmark} (A100 GPU)}
 \end{table}
 
 
