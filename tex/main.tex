@@ -54,14 +54,15 @@ Mihai Anitescu
 \maketitle
 
 \begin{abstract}
-  This paper investigates numerical techniques for solving large-scale constrained nonlinear programs (NLP) using graphics processing units (GPUs).
-  Solving NLPs requires the successive solutions of large, symmetric indefinite, and ill-conditioned linear systems, so-called Karush-Kuhn-Tucker (KKT) systems, a task known to pose computational challenges.
-  Traditional sparse factorization methods for these matrices involve numerical pivoting that makes parallelization impossible.
-  In this paper, we study two variants of condensed space interior-point methods---namely, Hybrid and Lifted KKT System methods---to reformulate the challenging KKT systems into symmetric positive-definite systems, which is more amenable to parallelization on GPUs via Cholesky factorization.
-  Although condensed KKT systems are generally more prone to ill-conditioning than indefinite KKT systems, we show that these systems exhibit structured ill-conditioning, and thus, accuracy loss caused by ill-conditioning is partially mitigated.
-  We implement two methods on GPU within our packages MadNLP.jl, which is interfaced with the NVIDIA library cuDSS for solving sparse positive definite systems and ExaModels.jl for evaluating models on GPUs.
-  Performance is tested on large-scale problems from the PGLIB and COPS benchmarks, revealing that GPUs can achieve up to a tenfold speed increase over CPU counterparts up to medium convergence tolerances ($10^{-4}$).
-  However, our results also suggest that achieving high precisions ($10^{-8}$) on GPUs necessitates additional future research.
+  This paper investigates an interior-point method for solving large-scale constrained nonlinear programs using graphics processing units (GPUs).
+  The interior-point method involves resolving symmetric indefinite linear systems, or Karush-Kuhn-Tucker (KKT) systems,
+  which become increasingly ill-conditioned as we approach to the solution.
+  Solving the KKT systems using traditional sparse factorization methods involve numerical pivoting that makes parallelization difficult.
+  This paper introduces two condensed space interior-point methods, HybridKKT and LiftedKKT.
+  Both reformulate the challenging KKT systems into symmetric positive-definite systems, more amenable for GPU parallelization using Cholesky factorization.
+  Although condensed KKT systems are more prone to ill-conditioning than indefinite KKT systems, they exhibit structured ill-conditioning that mitigates the loss of accuracy.
+  We implement the two methods on GPUs with MadNLP.jl, a solver interfaced with the NVIDIA library cuDSS for solving sparse positive definite systems and ExaModels.jl for evaluating models on GPUs.
+  We assess the performance on large-scale problems from the PGLIB and COPS benchmarks, revealing that GPUs can achieve up to a tenfold speed increase compared to CPUs.
 \end{abstract}
 
 

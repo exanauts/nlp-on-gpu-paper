@@ -204,7 +204,7 @@ the problem to optimality in $\approx 20s$, a time comparable with HyKKT (see Fi
     $10^{-5}$ &120&  683.1& 113 & 30.4&$1.2 \times 10^{-3}$ \\
     $10^{-6}$ &109&  328.7& 109 & 25.0&$1.2 \times 10^{-4}$  \\
     $10^{-7}$ &108&  272.9& 104 & 20.1&$1.2 \times 10^{-5}$ \\
-    $10^{-8}$ & - &  268.9& 105 & 20.3&$1.2 \times 10^{-6}$  \\
+    $10^{-8}$ & - &  - & 105 & 20.3&$1.2 \times 10^{-6}$  \\
     \hline
   \end{tabular}
   }
@@ -289,8 +289,8 @@ with almost an 8x speed-up compared to the reference HSL MA27.
     \begin{tabular}{|l|rrr >{\bfseries}r|rrr >{\bfseries}r|rrr >{\bfseries}r|}
       \hline
       & \multicolumn{4}{c|}{\bf HSL MA27} &
-      \multicolumn{4}{c|}{\bf LiftedKKT+cuDSS+\ldlt} &
-      \multicolumn{4}{c|}{\bf HyKKT+cuDSS+\ldlt} \\
+      \multicolumn{4}{c|}{\bf LiftedKKT+cuDSS} &
+      \multicolumn{4}{c|}{\bf HyKKT+cuDSS} \\
       \hline
       Case & it & init & lin & total & it & init & lin & total & it & init & lin & total \\
       \hline
@@ -422,8 +422,8 @@ highly sparse and have highly structured Cholesky lower triangular factors.
     \begin{tabular}{|l|rrr >{\bfseries}r|rrr >{\bfseries}r|rrr >{\bfseries}r|}
     \hline
     & \multicolumn{4}{c|}{\bf HSL MA57} &
-      \multicolumn{4}{c|}{\bf LiftedKKT+cuDSS+\ldlt} &
-      \multicolumn{4}{c|}{\bf HyKKT+cuDSS+\ldlt} \\
+      \multicolumn{4}{c|}{\bf LiftedKKT+cuDSS} &
+      \multicolumn{4}{c|}{\bf HyKKT+cuDSS} \\
     \hline
     & it & init & lin & total & it & init & lin & total & it & init & lin & total \\
     \hline
