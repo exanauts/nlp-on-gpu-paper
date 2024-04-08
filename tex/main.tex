@@ -54,10 +54,10 @@ Mihai Anitescu
 \maketitle
 
 \begin{abstract}
-  This paper investigates an interior-point method for solving large-scale constrained nonlinear programs using graphics processing units (GPUs).
-  The interior-point method involves resolving symmetric indefinite linear systems, or Karush-Kuhn-Tucker (KKT) systems,
+  This paper explores an interior-point method for solving large-scale constrained nonlinear programs with the aid of graphics processing units (GPUs).
+  The interior-point method involves resolving a sequence of symmetric indefinite linear systems, or Karush-Kuhn-Tucker (KKT) systems,
   which become increasingly ill-conditioned as we approach to the solution.
-  Solving the KKT systems using traditional sparse factorization methods involve numerical pivoting that makes parallelization difficult.
+  Solving the KKT systems with traditional sparse factorization methods involve numerical pivoting that makes parallelization difficult.
   This paper introduces two condensed space interior-point methods, HybridKKT and LiftedKKT.
   Both reformulate the challenging KKT systems into symmetric positive-definite systems, more amenable for GPU parallelization using Cholesky factorization.
   Although condensed KKT systems are more prone to ill-conditioning than indefinite KKT systems, they exhibit structured ill-conditioning that mitigates the loss of accuracy.

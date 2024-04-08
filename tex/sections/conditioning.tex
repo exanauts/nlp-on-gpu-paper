@@ -1,5 +1,5 @@
 \section{Conditioning of the condensed KKT system}
-The condensed matrix $K$ appearing in \eqref{eq:kkt:condensed} is known to be increasingly ill-conditioned as the primal-dual iterate approaches to the local solution with active inequalities.
+The condensed matrix $K$ appearing in \eqref{eq:kkt:condensed} is known to be increasingly ill-conditioned as the primal-dual iterates approach to the local solution with active inequalities.
 This behavior is amplified for the matrices $K_\gamma$ and $K_\tau$,
 as the implementation of these methods requires the use of
 respectively large $\gamma$ and small $\tau$. In this section, we analyze the
@@ -36,7 +36,7 @@ matrix $K_\gamma$, which incorporates both equality and inequality
 constraints. The results extend directly to $K_\tau$ (by letting the number of equalities to be zero).
 
 To ease the notation, we suppose that the primal variable
-$x$ is unconstrained, leaving only the slack $s$ with bounded values in \eqref{eq:slack_problem}.
+$x$ is unconstrained, leaving only a bounded slack variable $s$ in \eqref{eq:slack_problem}.
 This is equivalent to include the bounds on the variable $x$ in the inequality constraints,
 as $\bar{h}(x) \leq 0$ with $\bar{h}(x) := (h(x), -x)$.
 
@@ -65,7 +65,7 @@ that the solution $p^\star$ is regular and satisfies the following assumptions.
 We denote $\delta(p, v) = \| (p, v) - (p^\star, v^\star) \|$ the Euclidean distance to the
 primal-dual stationary point $(p^\star, v^\star)$.
 From \cite[Theorem 2.2]{wright2001effects}, if Assumption~\ref{hyp:ipm}
-holds at $p^\star$ and $v^\star > 0$,
+holds at $p^\star$ and $v > 0$,
 \begin{equation}
   \delta(p, v) = \Theta\left( \left\Vert \begin{bmatrix}
       \nabla_p L(p, v) \\ \min(v, s)
@@ -76,7 +76,7 @@ For feasible iterate $(s, v) > 0$, we define the \emph{duality measure} $\Xi(s, 
 \begin{equation}
   \Xi(s, v) = s^\top v / m_i \; , % Sungho: m_i not defined here. Also, I'd suggest explaining a bit of context on the duality measure.
 \end{equation}
-whre $m_i$ is the number of inequality constraints.
+where $m_i$ is the number of inequality constraints.
 The duality measure encodes the current satisfaction of the complementarity
 constraints. For a solution $(p^\star, v^\star)$, we have $\Xi(s^\star, v^\star) = 0$.
 The duality measure is sometimes used to define the barrier parameter in IPM.
@@ -141,6 +141,10 @@ and define $\ell := m_e + m_a$.
 To establish the structured ill-conditioning of $K_\gamma$ by
 modifying the approach outlined in \cite[Theorem 3.2]{wright1998ill} to account for the additional
 term $\gamma G^\top G$ arising from the equality constraints.
+We show that the matrix $K_\gamma$ has two invariant subspaces,
+associated respectively to the range of the transposed active Jacobian
+(\emph{large space}) and to the null space of the active Jacobian (\emph{small space}).
+
 \begin{theorem}[Properties of $K_\gamma$]
   \label{thm:cond}
   Suppose the condensed matrix is evaluated at a primal-dual
@@ -235,7 +239,7 @@ term $\gamma G^\top G$ arising from the equality constraints.
   The condensed matrix $K_\gamma$ can be decomposed as
   \begin{equation}
     \label{eq:cond:svd}
-    K_\gamma = \begin{bmatrix} U_L & U_S \end{bmatrix}
+    K_\gamma = U \Sigma U^\top = \begin{bmatrix} U_L & U_S \end{bmatrix}
     \begin{bmatrix}
       \Sigma_L & 0 \\ 0 & \Sigma_S
     \end{bmatrix}
@@ -254,7 +258,9 @@ term $\gamma G^\top G$ arising from the equality constraints.
     \frac{\sigma_1}{\sigma_\ell} \ll \frac{\sigma_1}{\sigma_n} \; , \quad
     \frac{\sigma_{\ell +1}}{\sigma_{n}} \ll \frac{\sigma_1}{\sigma_n} \; .
   \end{equation}
-  For suitably chosen $Y$ and $Z$, % Sungho: maybe we should remind reader that $Y$ and $Z$ are the row and null spaces of constraint Jacobian.
+  For suitably chosen basis $Y$ and $Z$,
+  spanning respectively the row space and the null space of
+  the active Jacobian $A$, we get
   \begin{equation}
     \label{eq:cond:invariantsubpsace}
     U_L - Y = O(\underline{\sigma}^{-1}) \; , \quad
@@ -262,8 +268,7 @@ term $\gamma G^\top G$ arising from the equality constraints.
   \end{equation}
 \end{corollary}
 \begin{proof}
-  Using
-  the spectral theorem, we obtain the decomposition as \eqref{eq:cond:svd}.
+  Using the spectral theorem, we obtain the decomposition as \eqref{eq:cond:svd}.
   According to Theorem~\ref{thm:cond}, the $\ell$ largest eigenvalues of $K_\gamma$ are large
   and well separated from the $n - \ell$ smallest eigenvalues,
   establishing \eqref{eq:cond:svddiag}.
@@ -273,7 +278,7 @@ term $\gamma G^\top G$ arising from the equality constraints.
 Corollary~\ref{corr:cond:illstructured} gives us a deeper insight into the structure
 of the condensed matrix $K_\gamma$.
 Using equation~\eqref{eq:cond:invariantsubpsace}, we observe
-we can assimilate the large-space of $K_\gamma$ with $\rangespace(A^\top)$
+we can assimilate the large space of $K_\gamma$ with $\rangespace(A^\top)$
 and the small space with $\nullspace(A)$.
 The decomposition~\eqref{eq:cond:svd} leads to the following relations
 \begin{equation}
@@ -285,7 +290,7 @@ The decomposition~\eqref{eq:cond:svd} leads to the following relations
   \Sigma_S = \Theta(1) \, .
   \end{aligned}
 \end{equation}
-The condition of $\Sigma_L$ depends on $\cond(A)$, $\cond(V)$
+The condition of $\Sigma_L$ depends on $\cond(A)$
 and the ratio $\frac{s_{max}}{s_{min}} = O(\Xi \overline{\sigma})$.
 The condition of $\Sigma_S$ reflects the condition of the reduced Hessian $Z^\top W Z$.
 
@@ -304,7 +309,8 @@ In floating-point arithmetic, the condensed matrix $K_\gamma$ is evaluated as
   + (H_{\cinactive} + \Delta H_{\cinactive})^\top S_{\cinactive}^{-1} V_{\cinactive} (H_{\cinactive} + \Delta H_{\cinactive}) \; ,
 \end{multline*}
 with $\Delta W = O(\epstol)$, $\Delta H_{\cinactive}  = O(\epstol)$, $ \Delta A  = \Theta(\epstol)$,
-$\Delta D_\gamma = O(\epstol \overline{\sigma})$.
+$\Delta D_\gamma = O(\epstol \overline{\sigma})$: most
+of the errors arise because of the ill-conditioned diagonal terms in $D_\gamma$.
 % We deduce that the perturbation $\Delta K_\gamma$ is bounded by $O(\epstol \overline{\sigma})$. % Sungho: Here, we should elaborate more; I do not see this immediately.
 \begin{proposition}
   \label{prop:cond:boundcondensedmatrix}
@@ -344,15 +350,16 @@ bounded below by $\underline{\sigma}$ if the perturbation
 is itself much smaller than the eigenvalue $\eta_\ell$:
 \begin{equation}
   \label{eq:cond:perturbationbound}
-  \| \Delta K_\gamma \| \ll \eta_\ell  \; .
+  \| \Delta K_\gamma \| \ll \eta_\ell = \Omega(\underline{\sigma})  \; .
 \end{equation}
 However, the bound given in Proposition~\ref{prop:cond:boundcondensedmatrix} is too loose
-for \eqref{eq:cond:perturbationbound} to hold without any further assumption.
-As $\eta_\ell = \Omega(\underline{\sigma})$, we deduce $\frac{\|K_\gamma \|}{\eta_\ell}
-= O(\overline{\sigma}\underline{\sigma}^{-1})$.
-If we suppose in addition the ratio $\overline{\sigma}\underline{\sigma}^{-1}$ is close to $1$,
-then $\|\Delta K_\gamma\| = O(\epstol \overline{\sigma})$ can be replaced by
-$\| \Delta K_\gamma\|= O(\epstol \underline{\sigma})$ which in turns implies \eqref{eq:cond:perturbationbound}.
+for \eqref{eq:cond:perturbationbound} to hold without any further assumption,
+as we have only $\underline{\sigma} \leq \overline{\sigma}$.
+We note that for some constant $C > 0$, $\Delta K_\gamma \leq C \epstol \overline{\sigma}$,
+implying $\Delta K_\gamma / \underline{\sigma} \leq C \epstol \overline{\sigma} / \underline{\sigma}$.
+Hence, if we suppose in addition the ratio $\overline{\sigma}/\underline{\sigma}$ is close to $1$,
+then $\|\Delta K_\gamma\| = O(\epstol \overline{\sigma})$ can be replaced instead by
+$\| \Delta K_\gamma\|= O(\epstol \underline{\sigma})$, ensuring \eqref{eq:cond:perturbationbound} holds.
 
 \subsubsection{Numerical solution of the condensed system}
 We are interested in estimating the relative error
@@ -474,8 +481,8 @@ U_L \Sigma_L^{-1} \Gamma_L \Sigma_L^{-1}U_L^\top  +
   U_S \Sigma_S^{-1} \Gamma_S \Sigma_S^{-1}U_S^\top  \;.
 \end{equation}
 Using \eqref{eq:cond:perturbationbound} and $(\Gamma_L, \Gamma_S)= O( \Xi^{-1}\epstol)$,
-we deduce that the error made in the large-space is $O(\Xi\epstol)$ whereas
-the error in the small-space is $O(\Xi^{-1}\epstol )$.
+we deduce that the error made in the large space is $O(\Xi\epstol)$ whereas
+the error in the small space is $O(\Xi^{-1}\epstol )$.
 
 \subsection{Solution of the condensed KKT system}
 We use the relations~\eqref{eq:cond:rhserror} and \eqref{eq:cond:inversecondensederror}
@@ -537,7 +544,7 @@ $\widehat{r}_\gamma :=\widehat{G} \widehat{K}_\gamma^{-1} (\bar{r}_1 + \gamma \w
 \end{equation}
 We denote $\widehat{s}_\gamma = \bar{r}_1 + \gamma \widehat{G}^\top \bar{r}_2 =
 Y \widehat{s}_Y + Z \widehat{s}_Z$.
-The error decomposes as $\Delta s_\gamma = Y \Delta s_Y Y + Z \Delta s_Z
+The error decomposes as $\Delta s_\gamma = Y \Delta s_Y  + Z \Delta s_Z
 = U_L \Delta s_L + U_S \Delta s_S$.
 Using \eqref{eq:cond:boundderivationhykkt},
 we have $\Delta s_Y = O(\Xi^{-1} \epstol)$ and $\Delta s_Z = O(\epstol)$.
@@ -551,7 +558,7 @@ that the error in the large space $\Delta s_L$ annihilates in the backsolve:
   K_\gamma^{-1} \Delta s_\gamma = U_L \Sigma_L^{-1} \Delta s_L + U_S \Sigma_S^{-1} \Delta s_S  = O(\epstol)
   \; .
 \end{equation}
-Using \eqref{eq:cond:invperturbed}, we get
+Finally, using \eqref{eq:cond:invperturbed}, we get
 \begin{equation}
   \widehat{G} \widehat{K}_\gamma^{-1} \Delta s_\gamma \approx
   \widehat{G} (I - K_\gamma^{-1}\Delta K_\gamma) K_\gamma^{-1} \Delta s_\gamma \; .
@@ -636,8 +643,8 @@ $\widehat{S}_\gamma$ in floating-point arithmetic.
 G U_L \Sigma_L^{-1} \Gamma_L \Sigma_L^{-1}U_L^\top G^\top  +
 G U_S \Sigma_S^{-1} \Gamma_S \Sigma_S^{-1}U_S^\top  G^\top \;.
   \end{equation*}
-  Using \eqref{eq:cond:invariantsubpsace}, we have $G U_S = O(\Xi)$,
-  and as $\Sigma_S^{-1} = \Theta(1)$ and $\Gamma_S = O(\Xi^{-1} \epstol)$, we
+  Using \eqref{eq:cond:invariantsubpsace}, we have $G U_S = O(\Xi)$.
+  As $\Sigma_S^{-1} = \Theta(1)$ and $\Gamma_S = O(\Xi^{-1} \epstol)$, we
   get
   $G U_S \Sigma_S^{-1} \Gamma_S \Sigma_S^{-1}U_S^\top  G^\top = O(\Xi \epstol)$.
   Finally, as $\Sigma_L^{-1} = \Theta(\Xi)$ and $G U_L = GY + O(\Xi)$,
@@ -658,20 +665,17 @@ arithmetic.
 \subsubsection{Solution with Lifted KKT system}
 The sparse-condensed KKT system has removed the equality
 constraints from the optimization problems, simplifying
-the solution of the condensed KKT system to
-\begin{equation}
-  \label{eq:cond:sckktstep}
-  K d_x = -r_1 + H^\top (D_s r_4 - r_2) \; .
-\end{equation}
-Hence, the active Jacobian $A$ reduces to the active inequalities $A = H_{\cactive}$.
-Using a similar analysis than in \eqref{eq:cond:boundderivationhykkt},
+the solution of the condensed KKT system to \eqref{eq:liftedkkt}.
+The analysis is similar than in \cite{wright1998ill},
+and the active Jacobian $A$ reduces to the active inequalities $A = H_{\cactive}$.
+Using the similar arguments than in \eqref{eq:cond:boundderivationhykkt},
 the error in the right-hand-side is $O(\Xi^{-1} \epstol)$ and is in the
 range space of the active Jacobian $A$. Using \eqref{eq:cond:inversecondensed},
-we can show that the absolute error on $\widehat{d}_x$ is bounded by $O(\|d_x\| \epstol)
-= O(\Xi \epstol)$. That implies the descent direction $\widehat{d}_x$ retains
+we can show that the absolute error on $\widehat{d}_x$ is bounded by
+$O(\Xi \epstol)$. That implies the descent direction $\widehat{d}_x$ retains
 full relative precision close to optimality.
 In other words, we can refine the solution returned by the Cholesky solver accurately using
-iterative refinement.
+Richardson iterations.
 
 \subsubsection{Summary}
 Numerically, the primal-dual step $(\widehat{d}_x, \widehat{d}_y)$
@@ -703,7 +707,7 @@ so is not trivial as we are approaching the optimum. For example,
 solving the condensed system with a very good tolerance $\varepsilon_K = 10^{-12}$
 would only ensure that the absolute error is bounded by $10^{-4}$ if $\Xi = 10^{-8}$
 (as it is typical in primal-dual IPM). The impact remains limited if we
-have only a few active inequality constraints.
+have only few active inequality constraints.
 
 
 %%% Local Variables:

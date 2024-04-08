@@ -1,14 +1,14 @@
 \section{Introduction}
 Graphics processing units (GPUs) are driving the advancement of scientific computing, their most remarkable success being the capabilities to train and utilize large artificial intelligence (AI) models.
-GPUs offer several practical advantages: (1) massive parallel computing capability for applications that can exploit coarse-grain parallelism and high-memory bandwidth and (2) power efficiency due to requiring fewer transistors to process multiple tasks in parallel via implementing ``single instruction, multiple data'' (SIMD) parallelism.
+GPUs offer several practical advantages: (1) massive parallel computing capability for applications that can exploit coarse-grain parallelism and high-memory bandwidth and (2) power efficiency due to requiring fewer transistors to process multiple tasks in parallel utilizing ``single instruction, multiple data'' (SIMD) parallelism.
 
 While GPUs have made significant strides in enhancing machine learning applications, their adoption in the mathematical programming community has been relatively limited.
 This limitation stems primarily from the fact that most optimization solvers were developed in the 1990s and are heavily optimized for CPU architectures.
 Additionally, the utilization of GPUs has been impeded by the challenges associated with sparse matrix factorization routines, which are inherently difficult to parallelize on SIMD architectures. Nevertheless, recent years have witnessed notable advancements that are reshaping this landscape.
 \begin{enumerate}
   \item \textbf{Improved sparse matrix operations}: The performance of sparse matrix operations has seen substantial improvements in the CUDA library, largely attributed to the integration of novel tensor cores in recent GPUs~\cite{markidis2018nvidia}.
-  \item \textbf{Interest in batch optimization}: There is a growing interest in solving optimization problems in batch mode, for problems sharing the same structure but with different parameters~\cite{amos2017optnet,pineda2022theseus}.
-  \item \textbf{Advancements in automatic differentiation}: GPUs offer unparalleled performance for automatic differentiation, benefiting both machine learning ~\cite{jax2018github} and scientific computing applications \cite{enzyme2021}. Engineering problems often exhibit recurring patterns throughout the model. Once these patterns are identified, they can be evaluated in parallel within a SIMD framework, enabling near speed-of-light performance~\cite{shin2023accelerating}.
+  \item \textbf{Interest in batch optimization}: There is a growing interest in solving parametric optimization problems in batch mode, for problems sharing the same structure but with different parameters~\cite{amos2017optnet,pineda2022theseus}.
+  \item \textbf{Advancements in automatic differentiation}: GPUs offer unparalleled performance for automatic differentiation, benefiting both machine learning~\cite{jax2018github} and scientific computing applications \cite{enzyme2021}. Engineering problems often exhibit recurring patterns throughout the model. Once these patterns are identified, they can be evaluated in parallel within a SIMD framework, enabling near speed-of-light performance~\cite{shin2023accelerating}.
   \item \textbf{Role in exascale computing}: With the emergence of new exascale supercomputers (e.g., Frontier and Aurora), the capabilities to run on GPUs have become even more important for supercomputing.
 \end{enumerate}
 
@@ -25,7 +25,7 @@ First-order algorithms depend mostly on (sparse) matrix-vector operations that r
 very efficiently on modern GPUs. Hence, we can counterbalance
 the relative inaccuracy of the first-order method by running more
 iterations of the algorithm.
-A recent breakthrough~\cite{lu2023cupdlp,lu2023cupdlp2} based on the primal-dual hybrid gradient method demonstrates
+A recent breakthrough~\cite{lu2023cupdlp,lu2023cupdlp2} based on the primal-dual hybrid gradient method has demonstrated
 that a first-order algorithm can surpass the performance of Gurobi, a
 commercial solver, in tackling large-scale linear programs. This
 performance gain is made possible by executing the first-order
@@ -40,9 +40,8 @@ for the training algorithm to be
 efficient~\cite{amos2017optnet,pineda2022theseus}.  This has led to
 the development of prototype code solving thousands of (small)
 optimization problems in parallel on the GPU.
-Furthermore, the batched solution method on GPUs has been also exploited to
-solve a large number of problems with same structure within a temporal
-decomposition algorithm \cite{kimLeveragingGPUBatching2021}.
+Furthermore, batched optimization solvers can be leveraged
+in decomposition algorithms, when the subproblems share the same structure~\cite{kimLeveragingGPUBatching2021}.
 However, it is not trivial to adapt such code to solve large-scale optimization problems,
 as the previous prototypes are reliant on dense linear solvers to
 compute the descent directions.
@@ -81,7 +80,7 @@ On the one hand, iterative and Krylov methods rely only on matrix-vector product
 They often require non-trivial reformulation or
 specialized preconditioning of the KKT systems to mitigate the
 inherent ill-conditioning of the KKT matrices, which has limited their
-use within the interior-point algorithms
+use within the interior-point methods
 \cite{curtisNoteImplementationInteriorpoint2012,rodriguezScalablePreconditioningBlockstructured2020}.
 New results are giving promising outlooks for convex problems~\cite{ghannad2022linear},
 but nonconvex problems often require an Augmented Lagrangian reformulation
@@ -124,7 +123,7 @@ However, performance outcomes on the COPS benchmark exhibit more variability.
 By default, the norm $\|\cdot\|$ refers to the 2-norm.
 We define the conditioning of a matrix $A$ as
 $\cond(A) = \| A \| \|A^{-1} \|$. % Sungho: I wonder if subscript 2 is necessary in that it is clear from the context that we're connsidering 2 norm.
-For any real number $x$, we denote $\widehat{x}$ as its floating
+For any real number $x$, we denote by $\widehat{x}$ its floating
 point representation.
 We denote $\epstol$ as the smallest positive number such that
 $\widehat{x} \leq (1 + \tau) x$ for $|\tau| < \epstol$.

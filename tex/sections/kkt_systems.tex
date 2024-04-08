@@ -2,13 +2,13 @@
 The GPU has emerged as a new prominent computing hardware not only for graphics-related but also for general-purpose computing.
 GPUs employ a SIMD formalism that yields excellent throughput for parallelizing small-scale operations.
 However, their utility remains limited when computational algorithms require global communication.
-Sparse factorization algorithms, which heavily rely on numerical pivoting, pose significant challenges for implementation on GPUs due to this limitation. Previous research has demonstrated that GPU-based linear solvers significantly lag behind their CPU counterparts \cite{tasseff2019exploring,swirydowicz2021linear}.
-One emerging strategy is to utilize sparse factorization techniques that do not necessitate numerical pivoting \cite{regev2023hykkt,shin2023accelerating},
+Sparse factorization algorithms, which heavily rely on numerical pivoting, pose significant challenges for implementation on GPUs. Previous research has demonstrated that GPU-based linear solvers significantly lag behind their CPU counterparts \cite{tasseff2019exploring,swirydowicz2021linear}.
+One emerging strategy is to utilize sparse factorization techniques that do not necessitate numerical pivoting \cite{regev2023hykkt,shin2023accelerating}
 by leveraging the structure of the condensed KKT system \eqref{eq:kkt:condensed}.
 We present two alternative methods to solve \eqref{eq:kkt:condensed}.
 On the one hand, HyKKT is introduced in \S\ref{sec:kkt:golubgreif} and uses the hybrid
-strategy of Golub \& Greif.
-On the other hand, LiftedKKT uses an equality relaxation strategy and
+strategy of Golub \& Greif~\cite{golub2003solving,regev2023hykkt}.
+On the other hand, LiftedKKT~\cite{shin2023accelerating} uses an equality relaxation strategy and
 is presented in \S\ref{sec:kkt:sckkt}.
 
 \subsection{Golub \& Greif strategy}
@@ -38,7 +38,7 @@ where we have introduced the regularized matrix $K_\gamma := K + \gamma G^\top G
 We note by $Z$ a basis of the null-space of the Jacobian $G$.
 Using a classical result from~\cite{debreu1952definite},
 if $G$ is full row-rank then there
-exists a a threshold value $\underline{\gamma}$ such that
+exists a threshold value $\underline{\gamma}$ such that
 for all $\gamma > \underline{\gamma}$, the reduced Hessian $Z^\top K Z$
 is positive definite if and only if $K_\gamma$ is positive definite.
 Using the Sylvester's law of inertia stated in \eqref{eq:ipm:inertia}, we deduce
@@ -55,7 +55,7 @@ of $K_\gamma$ increases linearly with $\gamma$.
 \end{proposition}
 
 The linear solver HyKKT~\cite{regev2023hykkt}
-leverages the positive definiteness of $K_\gamma$ and solves
+leverages the positive definiteness of $K_\gamma$ to solve
 \eqref{eq:kkt:hykkt} using a hybrid direct-iterative method
 that uses the following steps:
 \begin{enumerate}
@@ -79,20 +79,21 @@ Fortunately, the eigenvalues of the Schur-complement $S_\gamma := G K_\gamma^{-1
 all converge to $\frac{1}{\gamma}$ as we increase the regularization parameter
 $\gamma$ \cite[Theorem 4]{regev2023hykkt}, implying that $\lim_{\gamma \to \infty} \cond(S_\gamma) = 1$.
 Because the convergence of the \CG method depends on the number of distinct eigenvalues of $S_{\gamma}$,
-the \CG algorithm in \eqref{eq:kkt:schurcomplhykkt} converges in fewer iterations
-as we increase $\gamma$.
+the larger the $\gamma$, the faster the convergence of
+the \CG algorithm in \eqref{eq:kkt:schurcomplhykkt}.
 \CR \cite{hestenes-stiefel-1952} and \CAR \cite{montoison-orban-saunders-2023} can also be used as an alternative to \CG.
 Although we observe similar performance, these methods ensure a monotonic decrease in the residual norm of \eqref{eq:kkt:schurcomplhykkt} at each iteration.
 
 \subsection{Equality relaxation strategy}
 \label{sec:kkt:sckkt}
 
-We observe that the system \eqref{eq:kkt:condensed} becomes
-a $n\times n$ system if we have only inequality constraints in the problem.
+If the initial problem~\eqref{eq:problem} has only inequality constraints,
+we keep only the $(1,1)$ block in the system \eqref{eq:kkt:condensed}.
 Using the relation~\eqref{eq:ipm:inertia}, the system
-is s guaranteed to be positive definite if the primal regularization parameter $\delta_x$ is adequately large.
-Furthermore, this parameter can be chosen dynamically using the inertia information of the system in \eqref{eq:kkt:condensed}. This motivates the Lifted KKT System strategy: we approximate the equalities with lifted inequalities.
-For a small relaxation parameter $\tau > 0$ (chosen based on the numerical tolerance of the optimization solver), we solve the relaxed problem
+is guaranteed to be positive definite if the primal regularization parameter $\delta_x$ is adequately large.
+Furthermore, the parameter $\delta_x$ is chosen dynamically using the inertia information of the system in \eqref{eq:kkt:condensed}. This motivates the Lifted KKT System strategy: we approximate the equalities with lifted inequalities.
+For a small relaxation parameter $\tau > 0$ (chosen based on the numerical tolerance of the optimization solver
+$\varepsilon_{tol}$), we solve the relaxed problem
 \begin{equation}
   \label{eq:problemrelaxation}
     \min_{x \in \mathbb{R}^n} \;  f(x)
@@ -105,11 +106,10 @@ The problem~\eqref{eq:problemrelaxation} has only inequality constraints. After 
   \label{eq:liftedkkt}
     K_\tau \,d_x = - r_1 - H_\tau^\top(D_H r_4 - C r_2) \; .
 \end{equation}
-Using the standard inertia correction procedure, the parameter $\delta_x$ is set to a value high enough to ensure that  $K_\tau$ is positive definite. Therefore, $K_\tau$ can be factorized with a Cholesky decomposition, satisfying the key requirement of stable pivoting for the implementation on the GPU. The relaxation causes error in the final solution, but the error is in the same order of the solver tolerance, and thus, do not significantly deteriorates the solution quality.
+Using the standard inertia correction procedure, the parameter $\delta_x$ is set to a value high enough to ensure that  $K_\tau$ is positive definite. Therefore, $K_\tau$ can be factorized with a Cholesky decomposition, satisfying the key requirement of stable pivoting for the implementation on the GPU. The relaxation causes error in the final solution, but the error is in the same order of the solver tolerance, and thus, do not significantly deteriorates the solution quality for small $\varepsilon_{tol}$.
 
 While this method can be implemented with small modification in the optimization solver, the presence of tight inequality in \eqref{eq:problemrelaxation} causes severe ill-conditioning throughout the IPM iterations. Thus,
-choosing the solver tolerance appropriately is necessary to get a reliable convergence behavior.
-
+using an accurate iterative refinement algorithm is necessary to get a reliable convergence behavior.
 
 \subsection{Discussion}
 We have introduced two algorithms to solve
@@ -119,7 +119,7 @@ system and use instead alternate reformulations based on the condensed KKT
 system~\eqref{eq:kkt:condensed}. Both strategies
 rely on a Cholesky factorization: HyKKT factorizes a positive
 definite matrix $K_\gamma$ obtained with an Augmented Lagrangian strategy
-whereas Lifted KKT factorized a positive definite matrix $K_\tau$
+whereas Lifted KKT factorizes a positive definite matrix $K_\tau$
 after using an equality relaxation strategy.
 We will see in the next section that the ill-conditioned matrices $K_\gamma$ and $K_\tau$
 have a specific structure that limits the loss of accuracy in IPM.
