@@ -33,7 +33,7 @@ We solve the KKT systems assembled within MadNLP using various sparse linear sol
   \item {\tt HSL MA27/MA57}: Implement the \lblt factorization on the CPU~\cite{duff1983multifrontal}.
     It solves the augmented KKT system~\eqref{eq:kkt:augmented}.
     This solver serves as the reference when running on the CPU.
-  \item {\tt CHOLMOD}: Implements the Cholesky factorization on the CPU % Sungho: Maybe LDLFactorizations.jl instead, once the results are updated.
+  \item {\tt CHOLMOD}: Implements the Cholesky and \ldlt factorizations on the CPU % Sungho: Maybe LDLFactorizations.jl instead, once the results are updated.
     (using the AMD ordering \cite{amestoy-david-duff-2004} by default).
     It factorizes the condensed matrices $K_\gamma$ and $K_\tau$ appearing
     resp. in \eqref{eq:kkt:hykkt} and in \eqref{eq:liftedkkt}.
@@ -186,7 +186,7 @@ in IPM).
 
 We compare in Table~\ref{tab:sckkt:performance} the performance obtained by LiftedKKT
 as we decrease the IPM tolerance $\varepsilon_{tol}$.
-We display both the runtimes on the CPU (using LDLFactorizations) and on the GPU (using {\tt cuDSS}-\ldlt).
+We display both the runtimes on the CPU (using CHOLMOD-\ldlt) and on the GPU (using {\tt cuDSS}-\ldlt).
 The slacks associated with the relaxed equality constraints are converging to a value below $2 \tau$,
 leading to highly ill-conditioned terms in the diagonal matrices $\Sigma_s$.
 As a consequence, the conditioning of the matrix $K_\tau$ in \eqref{eq:liftedkkt} can increase
@@ -200,24 +200,37 @@ the problem to optimality in $\approx 20s$, a time comparable with HyKKT (see Fi
 \begin{table}[!ht]
   \centering
   \resizebox{.7\textwidth}{!}{
-  \begin{tabular}{|l|rr|rr|r|}
+  % \begin{tabular}{|l|rr|rr|rr|r|}
+  %   \hline
+  %   & \multicolumn{2}{c|}{\bf CHOLMOD-\ldlt (CPU)} & \multicolumn{2}{c|}{\bf LDLFactorizations (CPU)} & \multicolumn{2}{c|}{\bf cuDSS-\ldlt (CUDA)}& \\
+  %   \hline
+  %   $\varepsilon_{tol}$ & \#it & time (s)& \#it & time (s) & \#it & time (s) & accuracy \\
+  %   \hline
+  %   $10^{-4}$& 115 & 268.2  &220& 358.8& 114 & 19.9& $1.2 \times 10^{-2}$\\
+  %   $10^{-5}$ & 210 & 777.8 & 120&  683.1& 113 & 30.4&$1.2 \times 10^{-3}$ \\
+  %   $10^{-6}$ & 102 & 337.5 & 109&  328.7& 109 & 25.0&$1.2 \times 10^{-4}$  \\
+  %   $10^{-7}$ &108 & 352.9 & 108&  272.9& 104 & 20.1&$1.2 \times 10^{-5}$ \\
+  %   $10^{-8}$ & - &  - &- &  - & 105 & 20.3&$1.2 \times 10^{-6}$  \\
+  %   \hline
+  % \end{tabular}
+  \begin{tabular}{|l|rr|rr|rr|}
     \hline
-    & \multicolumn{2}{c|}{\bf LDLFactorizations (CPU)} & \multicolumn{2}{c|}{\bf cuDSS-\ldlt (CUDA)}& \\
+    & \multicolumn{2}{c|}{\bf CHOLMOD-\ldlt (CPU)} & \multicolumn{2}{c|}{\bf cuDSS-\ldlt (CUDA)}& \\
     \hline
-    $\varepsilon_{tol}$ & \#it & time (s) & \#it & time (s) & accuracy \\
+    $\varepsilon_{tol}$ & \#it & time (s)&  \#it & time (s) & accuracy \\
     \hline
-    $10^{-4}$ &220& 358.8& 114 & 19.9& $1.2 \times 10^{-2}$\\
-    $10^{-5}$ &120&  683.1& 113 & 30.4&$1.2 \times 10^{-3}$ \\
-    $10^{-6}$ &109&  328.7& 109 & 25.0&$1.2 \times 10^{-4}$  \\
-    $10^{-7}$ &108&  272.9& 104 & 20.1&$1.2 \times 10^{-5}$ \\
-    $10^{-8}$ & - &  - & 105 & 20.3&$1.2 \times 10^{-6}$  \\
+    $10^{-4}$ & 115 & 268.2 & 114 & 19.9 & $1.2 \times 10^{-2}$ \\
+    $10^{-5}$ & 210 & 777.8 & 113 & 30.4 & $1.2 \times 10^{-3}$ \\
+    $10^{-6}$ & 102 & 337.5 & 109 & 25.0 & $1.2 \times 10^{-4}$ \\
+    $10^{-7}$ & 108 & 352.9 & 104 & 20.1 & $1.2 \times 10^{-5}$ \\
+    $10^{-8}$ & -   & -     & 105 & 20.3 & $1.2 \times 10^{-6}$ \\
     \hline
   \end{tabular}
   }
   \label{tab:sckkt:performance}
   \caption{Performance of the equality-relaxation
     strategy as we decrease the IPM tolerance $\varepsilon_{tol}$.
-    The table displays the wall time on the CPU (using LDLFactorizations)
+    The table displays the wall time on the CPU (using CHOLMOD-\ldlt)
     and on the GPU (using cuDSS-\ldlt).
   }
 \end{table}
