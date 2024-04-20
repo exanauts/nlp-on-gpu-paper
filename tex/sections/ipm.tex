@@ -217,13 +217,12 @@ $d_v = - S^{-1}(V d_s + S v - \mu e)$.
 Note that we have added additional regularization terms $\delta_w \geq 0 $
 and $\delta_c \geq 0$ in \eqref{eq:kkt:augmented}, to ensure the
 matrix is invertible.
-The augmented matrix \eqref{eq:kkt:augmented} is non-singular
-if and only if the Jacobian $J = \begin{bmatrix} G & 0 \\ H & I \end{bmatrix}$
+Without the regularization terms in \eqref{eq:kkt:augmented}, the augmented KKT system is non-singular
+if and only if the Jacobian $J = \begin{bmatrix} G \; &\; 0 \\ H \;&\; I \end{bmatrix}$
 is full row-rank and the matrix $\begin{bmatrix} W + D_x & 0 \\ 0 & D_s \end{bmatrix}$
 projected onto the null-space of the Jacobian $J$ is positive-definite~\cite{benzi2005numerical}.
-The condition is satisfied if the inertia of the matrix is $(n + m_i, m_i + m_e, 0)$
-(here the inertia is defined as the respective numbers of positive, negative and
-null eigenvalues).
+The condition is satisfied if the inertia of the matrix is $(n + m_i, m_i + m_e, 0)$.
+The inertia is defined as the respective numbers of positive, negative and zero eigenvalues.
 We use the inertia-controlling method introduced in \cite{wachter2006implementation}
 to regularize the augmented matrix by adding multiple of the identity
 on the diagonal of \eqref{eq:kkt:augmented} if the inertia is not $(n+m_i, m_e+m_i, 0)$.
