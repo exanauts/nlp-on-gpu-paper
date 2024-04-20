@@ -248,8 +248,8 @@ The resulting system is called the \emph{condensed KKT system}:
   \tag{$K_1$}
   \setlength\arraycolsep{3pt}
   \begin{bmatrix}
-    K & G^\top \\
-    G & -\delta_c I \phantom{^\top}
+    K & \phantom{-} G^\top \\
+    G & -\delta_c I
   \end{bmatrix}
   \begin{bmatrix}
     d_x \\ d_y
@@ -273,7 +273,7 @@ and the two diagonal matrices
 \end{equation}
 Using the solution of the system~\eqref{eq:kkt:condensed},
 we recover the updates on the slacks and inequality multipliers with
-$d_z = -C r_2 + D_H(H d_x + r_4)$ and $d_s = -(D_s + \delta_w I)^{-1}(r_2 - d_z)$.
+$d_z = -C r_2 + D_H(H d_x + r_4)$ and $d_s = -(D_s + \delta_w I)^{-1}(r_2 + d_z)$.
 Using Sylvester's law of inertia, we can prove that
 \begin{equation}
   \label{eq:ipm:inertia}
