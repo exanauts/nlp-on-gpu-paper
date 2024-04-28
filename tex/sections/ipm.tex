@@ -143,12 +143,12 @@ By writing out all the blocks, the system in~\eqref{eq:newton_step} expands as t
   \setlength\arraycolsep{5pt}
   \tag{$K_3$}
   \begin{bmatrix}
-    W_k & 0 & G_k^\top           & H_k^\top           & -I           & \phantom{-}0 \\
-    0 & 0 & 0\phantom{^\top} & I\phantom{^\top} & \phantom{-}0 & -I           \\
-    G_k & 0 & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0 & \phantom{-}0 \\
-    H_k & I & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0 & \phantom{-}0 \\
-    U_k & 0 & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}X_k & \phantom{-}0 \\
-    0 & V_k & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0 & \phantom{-}S_k
+    W_k & 0   & G_k^\top         & H_k^\top         & -I             & \phantom{-}0 \\
+    0   & 0   & 0\phantom{^\top} & I\phantom{^\top} & \phantom{-}0   & -I           \\
+    G_k & 0   & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0   & \phantom{-}0 \\
+    H_k & I   & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0   & \phantom{-}0 \\
+    U_k & 0   & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}X_k & \phantom{-}0 \\
+    0   & V_k & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0   & \phantom{-}S_k
   \end{bmatrix}
   \begin{bmatrix}
     d_x \\
@@ -206,24 +206,23 @@ $4 \times 4$ symmetric system, called the \emph{augmented KKT system}:
 \end{equation}
 with the diagonal matrices $D_x := X^{-1} U$ and $D_s := S^{-1} V$.
 The vectors forming the right-hand-sides are given respectively by
-$r_1 := \nabla f(x) + \nabla g(x)^\top y + \nabla h(x)^\top z + \mu X^{-1} e$,
-$r_2 := z + \mu S^{-1} e$,
+$r_1 := \nabla f(x) + \nabla g(x)^\top y + \nabla h(x)^\top z - \mu X^{-1} e$,
+$r_2 := z - \mu S^{-1} e$,
 $r_3 := g(x)$,
 $r_4 := h(x) + s$.
 Once \eqref{eq:kkt:augmented} solved, we recover the updates on bound multipliers with
-$d_u = - X^{-1}(U d_x + X u - \mu e)$ and
-$d_v = - S^{-1}(V d_s + S v - \mu e)$.
+$d_u = - X^{-1}(U d_x - \mu e) - u$ and
+$d_v = - S^{-1}(V d_s - \mu e) - v$.
 
 Note that we have added additional regularization terms $\delta_w \geq 0 $
 and $\delta_c \geq 0$ in \eqref{eq:kkt:augmented}, to ensure the
 matrix is invertible.
-The augmented matrix \eqref{eq:kkt:augmented} is non-singular
-if and only if the Jacobian $J = \begin{bmatrix} G & 0 \\ H & I \end{bmatrix}$
+Without the regularization terms in \eqref{eq:kkt:augmented}, the augmented KKT system is non-singular
+if and only if the Jacobian $J = \begin{bmatrix} G \; &\; 0 \\ H \;&\; I \end{bmatrix}$
 is full row-rank and the matrix $\begin{bmatrix} W + D_x & 0 \\ 0 & D_s \end{bmatrix}$
 projected onto the null-space of the Jacobian $J$ is positive-definite~\cite{benzi2005numerical}.
-The condition is satisfied if the inertia of the matrix is $(n + m_i, m_i + m_e, 0)$
-(here the inertia is defined as the respective numbers of positive, negative and
-null eigenvalues).
+The condition is satisfied if the inertia of the matrix is $(n + m_i, m_i + m_e, 0)$.
+The inertia is defined as the respective numbers of positive, negative and zero eigenvalues.
 We use the inertia-controlling method introduced in \cite{wachter2006implementation}
 to regularize the augmented matrix by adding multiple of the identity
 on the diagonal of \eqref{eq:kkt:augmented} if the inertia is not $(n+m_i, m_e+m_i, 0)$.
@@ -236,7 +235,7 @@ ill-conditioned near the solution. Their use in IPM has been limited in
 linear and convex quadratic programming \cite{gondzio-2012} (when paired
 with a suitable preconditioner). We also refer to \cite{cao-seth-laird-2016}
 for an efficient implementation of a preconditioned conjugate gradient
-on GPU, for solving the Newton step arising in an Augmented-Lagrangian Interior-Point
+on GPU, for solving the Newton step arising in an augmented Lagrangian interior-point
 approach.
 
 \paragraph{Condensed KKT system.}
@@ -249,8 +248,8 @@ The resulting system is called the \emph{condensed KKT system}:
   \tag{$K_1$}
   \setlength\arraycolsep{3pt}
   \begin{bmatrix}
-    K & G^\top \\
-    G & -\delta_c I \phantom{^\top}
+    K & \phantom{-} G^\top \\
+    G & -\delta_c I
   \end{bmatrix}
   \begin{bmatrix}
     d_x \\ d_y
@@ -274,7 +273,7 @@ and the two diagonal matrices
 \end{equation}
 Using the solution of the system~\eqref{eq:kkt:condensed},
 we recover the updates on the slacks and inequality multipliers with
-$d_z = -C r_2 + D_H(H d_x + r_4)$ and $d_s = -(D_s + \delta_w I)^{-1}(r_2 - d_z)$.
+$d_z = -C r_2 + D_H(H d_x + r_4)$ and $d_s = -(D_s + \delta_w I)^{-1}(r_2 + d_z)$.
 Using Sylvester's law of inertia, we can prove that
 \begin{equation}
   \label{eq:ipm:inertia}
