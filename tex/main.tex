@@ -35,7 +35,7 @@
 \DeclareMathOperator{\inertia}{inertia}
 \newcommand{\ldlt}{$\mathrm{LDL^T}$\xspace}
 \newcommand{\lblt}{$\mathrm{LBL^T}$\xspace}
-\newcommand{\llt}{$\mathrm{LL^T}$\xspace}
+\newcommand{\llt}{\text{Cholesky}\xspace}
 \newcommand{\lu}{$\mathrm{LU}$\xspace}
 \newcommand{\CG}{\textsc{Cg}\xspace}
 \newcommand{\CR}{\textsc{Cr}\xspace}
@@ -74,7 +74,6 @@ Mihai Anitescu
 
 % \tableofcontents
 
-
 \input{sections/introduction.tex}
 \input{sections/ipm.tex}
 \input{sections/kkt_systems.tex}
@@ -94,15 +93,14 @@ Compared to the state-of-the-art HSL linear solvers, we achieve a 10x speed-up o
 Looking ahead, our future plans involve enhancing the robustness of the two condensed KKT methods, particularly focusing on stabilizing convergence for small tolerances (below $10^{-8}$).
 It is worth noting that the sparse Cholesky solver can be further customized to meet the specific requirements of the interior-point method~\cite{wright1999modified}.
 % Add a sentence about NCL on GPU?
-Enhancing the two methods on the GPU would enable the resolution of large-scale problems that are currently intractable on classical CPU architectures.
-Examples include multiperiod and security-constrained OPF problems, particularly when combined with a Schur-complement approach.
+Enhancing the two methods on the GPU would enable the resolution of large-scale problems that are currently intractable on classical CPU architectures such as multiperiod and security-constrained OPF problems.
 
 \small
 \bibliographystyle{spmpsci}
 \bibliography{biblio.bib}
 \normalsize
 \section{Acknowledgements}
-This research used resources of the Argonne Leadership Computing Facility, a U.S. Department of Energy (DOE) Office of Science user facility at Argonne National Laboratory and is based on research supported by the U.S. DOE Office of Science-Advanced Scientific Computing Research Program, under Contract No. DE-AC02-06CH11357. 
+This research used resources of the Argonne Leadership Computing Facility, a U.S. Department of Energy (DOE) Office of Science user facility at Argonne National Laboratory and is based on research supported by the U.S. DOE Office of Science-Advanced Scientific Computing Research Program, under Contract No. DE-AC02-06CH11357.
 \end{document}
 
 %%% Local Variables:

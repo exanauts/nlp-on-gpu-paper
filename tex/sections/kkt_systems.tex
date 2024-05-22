@@ -2,7 +2,7 @@
 The GPU has emerged as a new prominent computing hardware not only for graphics-related but also for general-purpose computing.
 GPUs employ a SIMD formalism that yields excellent throughput for parallelizing small-scale operations.
 However, their utility remains limited when computational algorithms require global communication.
-Sparse factorization algorithms, which heavily rely on numerical pivoting, pose significant challenges for implementation on GPUs. Previous research has demonstrated that GPU-based linear solvers significantly lag behind their CPU counterparts \cite{tasseff2019exploring,swirydowicz2021linear}.
+Sparse factorization algorithms, which heavily rely on numerical pivoting, pose significant challenges for implementation on GPUs. Previous research has demonstrated that GPU-based linear solvers significantly lag behind their CPU counterparts \cite{swirydowicz2021linear,tasseff2019exploring}.
 One emerging strategy is to utilize sparse factorization techniques that do not necessitate numerical pivoting \cite{regev2023hykkt,shin2023accelerating}
 by leveraging the structure of the condensed KKT system \eqref{eq:kkt:condensed}.
 We present two alternative methods to solve \eqref{eq:kkt:condensed}.
@@ -11,7 +11,7 @@ strategy of Golub \& Greif~\cite{golub2003solving,regev2023hykkt}.
 On the other hand, LiftedKKT~\cite{shin2023accelerating} uses an equality relaxation strategy and
 is presented in \S\ref{sec:kkt:sckkt}.
 
-\subsection{Golub \& Greif strategy}
+\subsection{Golub \& Greif strategy: HyKKT}
 \label{sec:kkt:golubgreif}
 The Golub \& Greif~\cite{golub2003solving} strategy reformulates the KKT system
 using an Augmented Lagrangian formulation.
@@ -42,17 +42,8 @@ exists a threshold value $\underline{\gamma}$ such that
 for all $\gamma > \underline{\gamma}$, the reduced Hessian $Z^\top K Z$
 is positive definite if and only if $K_\gamma$ is positive definite.
 Using the Sylvester's law of inertia stated in \eqref{eq:ipm:inertia}, we deduce
-that for $\gamma > \underline{\gamma}$, $\inertia(K_2) = (n + m_i, m_e +m_i, 0)$
-implies that $K_\gamma$ is positive definite.
-
-If $\gamma$ is large enough, we can prove that the conditioning
-of $K_\gamma$ increases linearly with $\gamma$.
-\begin{proposition}[\cite{regev2023hykkt}, Theorem 2, p.7]
-  \label{prop:kkt:hykkt:cond}
-  We suppose $G$ is full row rank. Then there exists $\overline{\gamma}
-  \geq \underline{\gamma}$ such that for all $\gamma \geq \overline{\gamma}$,
-  $\cond(K_\gamma)$ increases linearly with $\gamma$.
-\end{proposition}
+that for $\gamma > \underline{\gamma}$, if $\inertia(K_2) = (n + m_i, m_e +m_i, 0)$
+then $K_\gamma$ is positive definite.
 
 The linear solver HyKKT~\cite{regev2023hykkt}
 leverages the positive definiteness of $K_\gamma$ to solve
@@ -73,7 +64,7 @@ The method uses a sparse Cholesky factorization along with the conjugate gradien
 The sparse Cholesky factorization has the advantage of being stable without
 numerical pivoting, rendering the algorithm tractable on a GPU.
 Each \CG iteration requires the application of sparse triangular solves with the
-factors of $K_\gamma$, operations that can be numerically demanding. For that reason,
+factors of $K_\gamma$. For that reason,
 HyKKT is efficient only if the \CG solver converges in a small number of iterations.
 Fortunately, the eigenvalues of the Schur-complement $S_\gamma := G K_\gamma^{-1} G^\top$
 all converge to $\frac{1}{\gamma}$ as we increase the regularization parameter
@@ -84,29 +75,31 @@ the \CG algorithm in \eqref{eq:kkt:schurcomplhykkt}.
 \CR \cite{hestenes-stiefel-1952} and \CAR \cite{montoison-orban-saunders-2023} can also be used as an alternative to \CG.
 Although we observe similar performance, these methods ensure a monotonic decrease in the residual norm of \eqref{eq:kkt:schurcomplhykkt} at each iteration.
 
-\subsection{Equality relaxation strategy}
+\subsection{Equality relaxation strategy: LiftedKKT}
 \label{sec:kkt:sckkt}
 
-If the initial problem~\eqref{eq:problem} has only inequality constraints,
-we keep only the $(1,1)$ block in the system \eqref{eq:kkt:condensed}.
-Using the relation~\eqref{eq:ipm:inertia}, the system
-is guaranteed to be positive definite if the primal regularization parameter $\delta_x$ is adequately large.
-Furthermore, the parameter $\delta_x$ is chosen dynamically using the inertia information of the system in \eqref{eq:kkt:condensed}. This motivates the Lifted KKT System strategy: we approximate the equalities with lifted inequalities.
 For a small relaxation parameter $\tau > 0$ (chosen based on the numerical tolerance of the optimization solver
-$\varepsilon_{tol}$), we solve the relaxed problem
+$\varepsilon_{tol}$), the equality relaxation strategy~\cite{shin2023accelerating} approximates
+the equalities with lifted inequalities:
 \begin{equation}
   \label{eq:problemrelaxation}
     \min_{x \in \mathbb{R}^n} \;  f(x)
 \quad \text{subject to}\quad
      - \tau \leq g(x) \leq \tau \;,~  h(x) \leq 0  \; .
 \end{equation}
-The problem~\eqref{eq:problemrelaxation} has only inequality constraints. After introducing slack variables, the condensed KKT system
-\eqref{eq:kkt:condensed} reduces to
+The problem~\eqref{eq:problemrelaxation} has only inequality constraints.
+After introducing slack variables, the condensed KKT system \eqref{eq:kkt:condensed} reduces to
 \begin{equation}
   \label{eq:liftedkkt}
-    K_\tau \,d_x = - r_1 - H_\tau^\top(D_H r_4 - C r_2) \; .
+    K_\tau \,d_x = - r_1 - H_\tau^\top(D_H r_4 - C r_2) \; ,
 \end{equation}
-Using the standard inertia correction procedure, the parameter $\delta_x$ is set to a value high enough to ensure that  $K_\tau$ is positive definite. Therefore, $K_\tau$ can be factorized with a Cholesky decomposition, satisfying the key requirement of stable pivoting for the implementation on the GPU. The relaxation causes error in the final solution, but the error is in the same order of the solver tolerance, and thus, do not significantly deteriorates the solution quality for small $\varepsilon_{tol}$.
+with $H_\tau = \big(G^\top ~ H^\top \big)^\top$ and
+$K_\tau := W + D_x + \delta_w I + H_\tau^\top D_H H_\tau$.
+Using the relation~\eqref{eq:ipm:inertia}, the matrix $K_\tau$
+is guaranteed to be positive definite if the primal regularization parameter $\delta_w$ is adequately large.
+As such, the parameter $\delta_w$ is chosen dynamically using the inertia information of the system in \eqref{eq:kkt:condensed}.
+Therefore, $K_\tau$ can be factorized with a Cholesky decomposition, satisfying the key requirement of stable pivoting for the implementation on the GPU. The relaxation causes error in the final solution.
+Fortunately, the error is in the same order of the solver tolerance, thus it does not significantly deteriorate the solution quality for small $\varepsilon_{tol}$.
 
 While this method can be implemented with small modification in the optimization solver, the presence of tight inequality in \eqref{eq:problemrelaxation} causes severe ill-conditioning throughout the IPM iterations. Thus,
 using an accurate iterative refinement algorithm is necessary to get a reliable convergence behavior.

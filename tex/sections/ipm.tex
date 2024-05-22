@@ -48,12 +48,12 @@ into the equivalent formulation
 In~\eqref{eq:slack_problem}, the inequality constraints
 are encoded inside the variable bounds.
 
-We denote by $y \in \mathbb{R}^{m_e}$ the multipliers associated
-to the equality constraints and $z \in \mathbb{R}^{m_i}$ the multipliers
-associated to the inequality constraints. Similarly, we denote
+We denote by $y \in \mathbb{R}^{m_e}$ and $z \in \mathbb{R}^{m_i}$ the multipliers associated
+resp. to the equality constraints and the inequality constraints.
+Similarly, we denote
 by $(u, v) \in \mathbb{R}^{n + m_i}$ the multipliers associated
-respectively to $x \geq 0$ and $s \geq 0$.
-Using the multipliers $(y, z, u, v)$, we define the Lagrangian of \eqref{eq:slack_problem} as
+respectively to the bounds $x \geq 0$ and $s \geq 0$.
+Using the dual variable $(y, z, u, v)$, we define the Lagrangian of \eqref{eq:slack_problem} as
 \begin{equation}
   \label{eq:lagrangian}
   L(x, s, y, z, u, v) = f(x) + y^\top g(x) + z^\top \big(h(x) +s\big)
@@ -221,11 +221,11 @@ Without the regularization terms in \eqref{eq:kkt:augmented}, the augmented KKT 
 if and only if the Jacobian $J = \begin{bmatrix} G \; &\; 0 \\ H \;&\; I \end{bmatrix}$
 is full row-rank and the matrix $\begin{bmatrix} W + D_x & 0 \\ 0 & D_s \end{bmatrix}$
 projected onto the null-space of the Jacobian $J$ is positive-definite~\cite{benzi2005numerical}.
-The condition is satisfied if the inertia of the matrix is $(n + m_i, m_i + m_e, 0)$.
-The inertia is defined as the respective numbers of positive, negative and zero eigenvalues.
+The condition is satisfied if the inertia (defined as the respective numbers
+of positive, negative and zero eigenvalues) of the matrix~\eqref{eq:kkt:augmented} is $(n + m_i, m_i + m_e, 0)$.
 We use the inertia-controlling method introduced in \cite{wachter2006implementation}
 to regularize the augmented matrix by adding multiple of the identity
-on the diagonal of \eqref{eq:kkt:augmented} if the inertia is not $(n+m_i, m_e+m_i, 0)$.
+on the diagonal of \eqref{eq:kkt:augmented} if the inertia is not equal to $(n+m_i, m_e+m_i, 0)$.
 
 As a consequence, the system \eqref{eq:kkt:augmented} is usually factorized using
 an inertia-revealing \lblt factorization~\cite{duff1983multifrontal}.
@@ -233,7 +233,7 @@ Krylov methods are often not competitive when solving~\eqref{eq:kkt:augmented},
 as the block diagonal terms $D_x$ and $D_s$ are getting increasingly
 ill-conditioned near the solution. Their use in IPM has been limited in
 linear and convex quadratic programming \cite{gondzio-2012} (when paired
-with a suitable preconditioner). We also refer to \cite{cao-seth-laird-2016}
+with a suitable preconditioner). We also refer to \cite{cao2016augmented}
 for an efficient implementation of a preconditioned conjugate gradient
 on GPU, for solving the Newton step arising in an augmented Lagrangian interior-point
 approach.
@@ -308,7 +308,7 @@ than \eqref{eq:kkt:augmented} (implying less accurate solutions).
 Additionally, condensation may result in increased fill-in within the condensed system \eqref{eq:kkt:condensed}~\cite[Section 19.3, p.571]{nocedal_numerical_2006}.
 In the worst cases \eqref{eq:kkt:condensed} itself may become fully dense if an inequality row is completely dense (fortunately, a case rarer than in the normal equations used in linear programming).
 Consequently, condensation methods are not commonly utilized in practical optimization settings.
-To the best our knowledge, Knitro~\cite{waltz2006interior} is the only solver that supports computing the descent direction with \eqref{eq:kkt:condensed}.
+To the best of our knowledge, Artelys Knitro~\cite{waltz2006interior} is the only solver that supports computing the descent direction with \eqref{eq:kkt:condensed}.
 
 %%% Local Variables:
 %%% mode: latex

@@ -1,12 +1,11 @@
 \section{Numerical results}
-We implement LiftedKKT and HyKKT on the GPU. For comparison,
-we use HSL MA27 and MA57 as a baseline.
-First, we detail in \S\ref{sec:num:pprof} the respective performance of the two hybrid solvers
-on a large-scale OPF instance. Then, we present in \S\ref{sec:num:opf}
-the results reported on the PGLIB OPF benchmark, complemented in \S\ref{sec:num:cops} by
-the COPS benchmark.
+We have implemented LiftedKKT and HyKKT on the GPU.
+First, we detail in \S\ref{sec:num:implementation}
+our implementation and assess in \S\ref{sec:num:pprof} the performance on the GPU of the two hybrid solvers
+Then, we present in \S\ref{sec:num:opf} the results reported on the PGLIB OPF benchmark, complemented in \S\ref{sec:num:cops} by the COPS benchmark.
 
 \subsection{Implementation}
+\label{sec:num:implementation}
 All our implementation uses the Julia language \cite{bezanson-edelman-karpinski-shah-2017}.
 We have used our local workstation to generate the results on the CPU, here equipped
 with an AMD EPYC 7443 processor (3.2GHz).
@@ -46,7 +45,7 @@ We solve the KKT systems assembled within MadNLP using various sparse linear sol
 \end{itemize}
 CHOLMOD \cite{chen-davis-hager-rajamanickam-2008} is shipped with Julia.
 For the HSL linear solvers, we utilize libHSL \cite{fowkes-lister-montoison-orban-2024} with the Julia interface HSL.jl \cite{montoison-orban-hsl-2021}.
-HSL MA57 and CHOLMOD are both compiled with OpenBLAS \cite{openblas}, a multithreaded version of BLAS and LAPACK.
+HSL MA57 and CHOLMOD are both compiled with OpenBLAS, a multithreaded version of BLAS and LAPACK.
 The Julia package Krylov.jl~\cite{montoison2023krylov} contains a collection of Krylov methods with a polymorphic implementation that can be used on both CPU and GPU architectures.
 % Should we provide the version of the linear solvers?
 
@@ -67,7 +66,7 @@ We compare the times to perform the symbolic analysis,
 the factorization and the triangular solves with those reported in CHOLMOD.
 
 The results are displayed in Table~\ref{tab:linsol:time}.
-We benchmark the three decompositions implemented in cuDSS (\llt, \ldlt, \lu), and assess the accuracy of the solution by computing the infinity norm of the residual.
+We benchmark the three decompositions implemented in cuDSS (\llt, \ldlt, \lu), and assess the absolve accuracy of the solution by computing the infinity norm of the residual $\|K_\gamma x - b \|_\infty$.
 % The accuracy of the solution depends of on more factors than the backsolve.
 % The main error comes from the factorization.
 We observe that the analysis phase is four times slower for cuDSS compared to CHOLMOD.
@@ -105,7 +104,7 @@ In terms of accuracy, the quality of the solution remains on par with CHOLMOD, e
   \resizebox{\textwidth}{!}{
   \begin{tabular}{|lrrrr|}
   \hline
-  linear solver & analysis (s) & factorization (s) & backsolve (s) & accuracy \\
+  linear solver & analysis (s) & factorization (s) & backsolve (s) & abs. accuracy \\
   \hline
     CHOLMOD     & 1.18  & $8.57 \times 10^{-1}$ & $1.27 \times 10^{-1}$ & $3.60\times 10^{-13}$\\
     cuDSS-\llt   & 4.52  & $3.75 \times 10^{-2}$ & $1.32 \times 10^{-2}$ & $2.64\times 10^{-13}$\\ % Sungho: not Cholesky? it would be better to use consistent term. I'd recommend Cholesky instead of LL^T.
@@ -118,7 +117,6 @@ In terms of accuracy, the quality of the solution remains on par with CHOLMOD, e
     The matrix $K_\gamma$ is symmetric positive definite, with
     a size $n = 674,562$. The matrix is extremely sparse, with only $7,342,680$ non-zero entries ($0.002$\%).
     \label{tab:linsol:time}
-    (A100 GPU)
   }
 \end{table}
 
@@ -132,8 +130,8 @@ On the algorithmic side, we observe that the higher the regularization $\gamma$,
 the faster the \CG algorithm: we decrease the total number of iterations
 spent in \CG by a factor of 10. However, we have to pay a price in term
 of accuracy: for $\gamma > 10^8$ the solution returned by the linear solver
-is not accurate enough and the IPM algorithm has to proceed to more
-primal-dual regularization, leading to an increase in the total number of iterations.
+is not accurate enough and the IPM algorithm has to proceed to additional
+primal-dual regularizations.
 
 On the numerical side, the table in Figure~\ref{fig:hybrid:gamma} compares
 the time spent in the IPM solver on the CPU (using CHOLMOD) and on the GPU
@@ -147,7 +145,7 @@ on the GPU, with a reduction in the assembly time from $\approx 8s$ on the CPU t
   \resizebox{\textwidth}{!}{
   \begin{tabular}{|r|rrrr >{\bfseries}r|rrrr >{\bfseries}r|}
   \hline
-  & \multicolumn{5}{c|}{\bf CHOLMOD (CPU)} & \multicolumn{5}{c|}{\bf cuDSS-\ldlt (CUDA)} \\
+  & \multicolumn{5}{c|}{\bf CHOLMOD-\ldlt (CPU)} & \multicolumn{5}{c|}{\bf cuDSS-\ldlt (CUDA)} \\
   \hline
   $\gamma$ & \# it & cond. (s) & \CG (s) & linsol (s) & IPM (s) & \# it & cond. (s) & \CG (s) & linsol (s) & IPM (s) \\
   \hline
@@ -188,10 +186,10 @@ We compare in Table~\ref{tab:sckkt:performance} the performance obtained by Lift
 as we decrease the IPM tolerance $\varepsilon_{tol}$.
 We display both the runtimes on the CPU (using CHOLMOD-\ldlt) and on the GPU (using {\tt cuDSS}-\ldlt).
 The slacks associated with the relaxed equality constraints are converging to a value below $2 \tau$,
-leading to highly ill-conditioned terms in the diagonal matrices $\Sigma_s$.
+leading to highly ill-conditioned terms in the diagonal matrices $D_s$.
 As a consequence, the conditioning of the matrix $K_\tau$ in \eqref{eq:liftedkkt} can increase
 above $10^{18}$, leading to a nearly singular linear system.
-We observe {\tt cuDSS}-\ldlt is more stable: the factorization
+We observe {\tt cuDSS}-\ldlt is more stable than CHOLMOD: the factorization
 succeeds, and the loss of accuracy caused by the ill-conditioning is tamed by the multiple
 Richardson iterations that reduces the relative accuracy in the residual down to an acceptable level.
 As a result, {\tt cuDSS} can solve
@@ -213,7 +211,7 @@ the problem to optimality in $\approx 20s$, a time comparable with HyKKT (see Fi
   %   $10^{-8}$ & - &  - &- &  - & 105 & 20.3&$1.2 \times 10^{-6}$  \\
   %   \hline
   % \end{tabular}
-  \begin{tabular}{|l|rr|rr|rr|}
+  \begin{tabular}{|l|rr|rr|r|}
     \hline
     & \multicolumn{2}{c|}{\bf CHOLMOD-\ldlt (CPU)} & \multicolumn{2}{c|}{\bf cuDSS-\ldlt (CUDA)}& \\
     \hline
@@ -237,7 +235,13 @@ the problem to optimality in $\approx 20s$, a time comparable with HyKKT (see Fi
 
 \subsubsection{Breakdown of the time spent in one IPM iteration}
 We decompose the time spent in a single
-IPM iteration for all the available KKT solvers (HSL MA27, LiftedKKT, and HyKKT).
+IPM iteration for LiftedKKT and HyKKT.
+As a reference running on the CPU, we show the time spent in the solver HSL MA27.
+We observe that HSL MA57 is slower
+than HSL MA27, as the OPF instances are super-sparse.
+Hence, the block elimination algorithm implemented in HSL MA57 is not beneficial there
+\footnote{Personal communication with Iain Duff.}.
+
 When solving the KKT system, the time can be decomposed into: (1) assembling the
 KKT system, (2) factorizing the KKT system, and (3) computing the descent direction with triangular solves.
 As depicted in Figure~\ref{fig:timebreakdown}, we observe
@@ -246,7 +250,8 @@ to the factorization and the triangular solves. Using {\tt cuDSS}-\ldlt, we obse
 30x and 15x in the factorization compared to MA27 and CHOLMOD running on the CPU.
 Once the KKT system is factorized, computing the descent direction with LiftedKKT is faster than with HyKKT
 (0.04s compared to 0.13s) as HyKKT has to run a \CG algorithm to solve the Schur complement
-system~\eqref{eq:kkt:schurcomplhykkt}.
+system~\eqref{eq:kkt:schurcomplhykkt}, leading to additional backsolves
+in the linear solver.
 
 \begin{figure}[!ht]
   \centering
@@ -275,20 +280,16 @@ system~\eqref{eq:kkt:schurcomplhykkt}.
 \label{sec:num:opf}
 We run a benchmark on difficult OPF instances taken
 from the PGLIB benchmark~\cite{babaeinejadsarookolaee2019power}.
-We compare our two condensed-space methods with HSL MA27 running
-on the CPU. The results are displayed in Table~\ref{tab:opf:benchmark},
+We compare LiftedKKT and HyKKT with HSL MA27.
+The results are displayed in Table~\ref{tab:opf:benchmark},
 for an IPM tolerance set to $10^{-6}$.
 Regarding HyKKT, we set $\gamma = 10^7$ following the analysis in \S\ref{sec:num:tuninghykkt}.
 The table displays the time spent in the initialization, the time spent in the linear solver and the total
 solving time.
 We complement the table with a Dolan \& Moré performance profile~\cite{dolan2002benchmarking} displayed
 in Figure~\ref{fig:opf:pprof}.
-
 Overall, the performance of HSL MA27 on the CPU is consistent with what was reported
-in \cite{babaeinejadsarookolaee2019power}: We observe that HSL MA57 is slower
-than HSL MA27, as the OPF instances are super-sparse.
-Hence, the block elimination algorithm implemented in HSL MA57 is not beneficial there
-\footnote{Personal communication with Iain Duff.}.
+in \cite{babaeinejadsarookolaee2019power}.
 
 On the GPU, LiftedKKT+cuDSS is faster than HyKKT+cuDSS on small and medium instances: indeed, the algorithm
 does not have to run a \CG algorithm at each IPM iteration, limiting the number
@@ -302,13 +303,13 @@ with almost an 8x speed-up compared to the reference HSL MA27.
 
 The benchmark presented in Table~\ref{tab:opf:benchmark} has been generated using a
 NVIDIA A100 GPUs (current selling price: \$10k). We have also compared the performance
-with cheaper GPUs: a NVIDIA A1000 (a laptop-based GPU, 4GB memory, price: \$150) and a NVIDIA A30
+with cheaper GPUs: a NVIDIA A1000 (a laptop-based GPU, 4GB memory) and a NVIDIA A30
 (24GB memory, price: \$5k).
 As a comparison, the selling price of the AMD EPYC
 7443 processor we used for the benchmark on the CPU is \$1.2k. The results are
 displayed in Figure~\ref{fig:gpubench}. We observe that the performance of the A30
 and the A100 are relatively similar. The cheaper A1000 GPU is already faster
-than the GPU, but is not able to solve the largest instance as it is running out of memory.
+than HSL MA27 running on the CPU, but is not able to solve the largest instance as it is running out of memory.
 
 \begin{table}[!ht]
   \centering
@@ -384,11 +385,9 @@ We have observed in the previous section that both LiftedKKT
 and HyKKT outperforms HSL MA27 when running on the GPU.
 However, the OPF instances are specific nonlinear instances.
 For that reason, we complement our analysis by looking
-at the performance of LiftedKKT and HyKKT on the COPS benchmark,
-which gathers generic nonlinear programs~\cite{dolan2004benchmarking}.
-We look at the performance we get on the particular COPS instances used in
-the Mittelmann benchmark, used to benchmark nonlinear optimization
-solvers~\cite{mittelmann2002benchmark}.
+at the performance of LiftedKKT and HyKKT on large-scale COPS instances~\cite{dolan2004benchmarking}.
+We look at the performance we get on the COPS instances used in
+the Mittelmann benchmark~\cite{mittelmann2002benchmark}.
 To illustrate the heterogeneity of the COPS instances,
 we display in Figure~\ref{fig:cops:nnz} the sparsity pattern of the
 condensed matrices $K_\gamma$ \eqref{eq:kkt:hykkt} for one OPF instance and for multiple
@@ -399,7 +398,7 @@ highly sparse and can be reordered efficiently using AMD ordering~\cite{amestoy-
 
 The results of the COPS benchmark are displayed in Table~\ref{tab:cops:benchmark}.
 HSL MA57 gives better results than HSL MA27 for the COPS benchmark, and
-for that reason we have decided to use HSL MA57 as the reference.  As expected,
+for that reason we have decided to replace HSL MA27 by HSL MA57. As expected,
 the results are different than on the OPF benchmark.
 We observe that LiftedKKT+cuDSS and HyKKT+cuDSS outperform HSL MA57 on the dense instance {\tt elec}
 (20x speed-up) and {\tt bearing}  --- an instance whose sparsity pattern
@@ -413,7 +412,7 @@ on par with HSL MA57 and sometimes even slightly slower ({\tt rocket} and {\tt p
   \caption{Sparsity patterns for one OPF instance and for various
     COPS problems. The first row displays the sparsity pattern
     of $K_\gamma$, after AMD reordering. The second row displays
-    the sparsity pattern of the triangular factor computed by CHOLMOD.
+    the sparsity pattern of $K_\gamma$ after Metis reordering.
     \label{fig:cops:nnz}
   }
 \end{figure}
@@ -453,7 +452,7 @@ on par with HSL MA57 and sometimes even slightly slower ({\tt rocket} and {\tt p
       \hline
     \end{tabular}
   }
-  \caption{COPS benchmark , solved with a tolerance {\tt tol=1e-6}\label{tab:cops:benchmark} (A100 GPU)}
+  \caption{COPS benchmark , solved with a tolerance {\tt tol=1e-6}\label{tab:cops:benchmark}}
 \end{table}
 
 
