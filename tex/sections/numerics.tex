@@ -157,7 +157,7 @@ on the GPU, with a reduction in the assembly time from $\approx 8s$ on the CPU t
   \hline
   \end{tabular}
   }
-  \includegraphics[width=\textwidth]{../figures/hybrid-gamma.pdf}
+  \includegraphics[width=\textwidth]{figures/hybrid-gamma.pdf}
   \caption{
     Above: Decomposition of IPM solution time across
     (a) condensation time (cond.), (b) \CG time, (c) total time
@@ -268,7 +268,7 @@ in the linear solver.
       \hline
     \end{tabular}
   }
-  \includegraphics[width=.7\textwidth]{../figures/breakdown.pdf}
+  \includegraphics[width=.7\textwidth]{figures/breakdown.pdf}
   \caption{Breakdown of the time spent in one IPM iteration
     for different linear solvers, when solving {\tt 78484epigrids} (A30 GPU)
   \label{fig:timebreakdown}}
@@ -364,7 +364,7 @@ than HSL MA27 running on the CPU, but is not able to solve the largest instance 
 
 \begin{figure}[!ht]
   \centering
-  \includegraphics[width=.6\textwidth]{../figures/pprof-cuda.pdf}
+  \includegraphics[width=.6\textwidth]{figures/pprof-cuda.pdf}
   \caption{Performance profile for the PGLIB OPF benchmark, solved
     with a tolerance {\tt tol=1e-6}.
   \label{fig:opf:pprof}}
@@ -372,9 +372,10 @@ than HSL MA27 running on the CPU, but is not able to solve the largest instance 
 
 \begin{figure}[!ht]
   \centering
-  \includegraphics[width=.6\textwidth]{../figures/benchmark_gpus.pdf}
+  \includegraphics[width=.6\textwidth]{figures/benchmark_gpus.pdf}
   \caption{Comparing the performance obtained with various GPUs
-    on three different OPF instances.
+    on three different OPF instances. We have used HyKKT to generate
+    the results.
   \label{fig:gpubench}}
 \end{figure}
 
@@ -408,7 +409,7 @@ on par with HSL MA57 and sometimes even slightly slower ({\tt rocket} and {\tt p
 
 \begin{figure}[!ht]
   \centering
-  \includegraphics[width=.9\textwidth]{../figures/sparsity_pattern.png}
+  \includegraphics[width=.9\textwidth]{figures/sparsity_pattern.png}
   \caption{Sparsity patterns for one OPF instance and for various
     COPS problems. The first row displays the sparsity pattern
     of $K_\gamma$, after AMD reordering. The second row displays
