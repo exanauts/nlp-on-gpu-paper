@@ -48,17 +48,7 @@ Mihai Anitescu
 \maketitle
 
 \begin{abstract}
-  This paper explores two condensed-space interior-point methods to efficiently solve large-scale nonlinear programs on graphics processing units (GPUs).
-  The interior-point method solves a sequence of symmetric indefinite linear systems, or Karush-Kuhn-Tucker (KKT) systems,
-  which become increasingly ill-conditioned as we approach the solution.
-  Solving a KKT system with traditional sparse factorization methods involve numerical pivoting, making parallelization difficult.
-  A solution is to condense the KKT system into a symmetric positive-definite matrix and solve it with a Cholesky factorization, stable without pivoting.
-  Although condensed KKT systems are more prone to ill-conditioning than the original ones, they exhibit structured ill-conditioning that mitigates the loss of accuracy.
-  This paper compares the benefits of two recent condensed-space interior-point methods, HyKKT and LiftedKKT.
-  We implement the two methods on GPUs using MadNLP.jl, an optimization solver interfaced with the NVIDIA sparse linear solver cuDSS
-  and with the GPU-accelerated modeler ExaModels.jl.
-  Our experiments on the PGLIB and the COPS benchmarks reveal that GPUs can attain up to a tenfold
-  speed increase compared to CPUs when solving large-scale instances.
+  This paper explores two condensed-space interior-point methods to efficiently solve large-scale nonlinear programs on graphics processing units (GPUs). The interior-point method solves a sequence of symmetric indefinite linear systems, or Karush-Kuhn-Tucker (KKT) systems, which become increasingly ill-conditioned as we approach the solution. Solving a KKT system with traditional sparse factorization methods involve numerical pivoting, making parallelization difficult. A solution is to condense the KKT system into a symmetric positive-definite matrix and solve it with a Cholesky factorization, stable without pivoting. Although condensed KKT systems are more prone to ill-conditioning than the original ones, they exhibit structured ill-conditioning that mitigates the loss of accuracy. This paper compares the benefits of two recent condensed-space interior-point methods, HyKKT and LiftedKKT. We implement the two methods on GPUs using MadNLP.jl, an optimization solver interfaced with the NVIDIA sparse linear solver cuDSS and with the GPU-accelerated modeler ExaModels.jl. Our experiments on the PGLIB and the COPS benchmarks reveal that GPUs can attain up to a tenfold speed increase compared to CPUs when solving large-scale instances.
 \end{abstract}
 
 
@@ -85,12 +75,13 @@ It is worth noting that the sparse Cholesky solver can be further customized to 
 % Add a sentence about NCL on GPU?
 Enhancing the two methods on the GPU would enable the resolution of large-scale problems that are currently intractable on classical CPU architectures such as multiperiod and security-constrained OPF problems.
 
-\small
-\bibliographystyle{spmpsci}
-\bibliography{biblio.bib}
-\normalsize
 \section{Acknowledgements}
 This research used resources of the Argonne Leadership Computing Facility, a U.S. Department of Energy (DOE) Office of Science user facility at Argonne National Laboratory and is based on research supported by the U.S. DOE Office of Science-Advanced Scientific Computing Research Program, under Contract No. DE-AC02-06CH11357.
+
+\small
+
+\bibliographystyle{spmpsci}
+\bibliography{biblio.bib}
 \end{document}
 
 %%% Local Variables:
