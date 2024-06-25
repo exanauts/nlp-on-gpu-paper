@@ -17,7 +17,7 @@ the Polaris testbed at Argonne National Laboratory
 We have implemented the two condensed-space methods in our nonlinear IPM solver MadNLP~\cite{shin2021graph}.
 This implementation utilizes the abstraction {\tt AbstractKKTSystem}
 in MadNLP to represent the various formulations of the KKT linear systems.
-MadNLP can deport most of the IPM algorithm to the GPU, except for basic IPM operations used for the coordination (e.g., the filter line-search algorithm).
+MadNLP can push most of the IPM algorithm to the GPU, except for basic IPM operations used for the coordination (e.g., the filter line-search algorithm).
 In particular, any operation that involves the manipulation of array entries is performed by GPU kernels without transferring data to host memory.
 We refer to \cite{shin2023accelerating} for a detailed description of the GPU implementation in MadNLP.
 
@@ -383,7 +383,7 @@ than HSL MA27 running on the CPU, but is not able to solve the largest instance 
 \subsection{Benchmark on COPS instances}
 \label{sec:num:cops}
 We have observed in the previous section that both LiftedKKT
-and HyKKT outperforms HSL MA27 when running on the GPU.
+and HyKKT outperform HSL MA27 when running on the GPU.
 However, the OPF instances are specific nonlinear instances.
 For that reason, we complement our analysis by looking
 at the performance of LiftedKKT and HyKKT on large-scale COPS instances~\cite{dolan2004benchmarking}.

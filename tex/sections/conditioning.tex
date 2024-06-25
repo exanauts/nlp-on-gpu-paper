@@ -31,28 +31,29 @@ We will see that we can tighten the bounds in \eqref{eq:cond:defaultbond}
 by exploiting the structured ill-conditioning of the condensed matrix $K$.
 We base our analysis on \cite{wright1998ill}, where
 the author has put a particular emphasis on the condensed KKT
-system~\eqref{eq:kkt:condensed} without equality constraints. We generalize her results to the
+system~\eqref{eq:kkt:condensed} without equality constraints. We generalize their results to the
 matrix $K_\gamma$, which incorporates both equality and inequality
 constraints. The results extend directly to $K_\tau$ (by letting the number of equalities to be zero).
 
-To ease the notation, we suppose that the primal variable
-$x$ is unconstrained, leaving only a bounded slack variable $s$ in \eqref{eq:slack_problem}.
+To simplify the notation, we suppose that the primal variable
+$x$ is unconstrained \ma{Not sure why we needed bound constraints on $x$ in the first place}, leaving only a bounded slack variable $s$ in \eqref{eq:slack_problem}.
 This is equivalent to include the bounds on the variable $x$ in the inequality constraints,
 as $\bar{h}(x) \leq 0$ with $\bar{h}(x) := (h(x), -x)$.
 
 \subsection{Centrality conditions}
-We start the discussion by recalling important results porting
-on the iterates of the interior-point algorithm.
-Let $p = (x, s, y, z)$ the current primal-dual iterate (the bound multiplier $v$ is considered apart),
-and $p^\star$ a solution of the KKT conditions~\eqref{eq:kktconditions}. We suppose
+We start the discussion by recalling important results about the iterates of the interior-point algorithm.
+Let $p = (x, s, y, z)$ be the current primal-dual iterate (the bound multiplier $v$ is considered apart),
+and $p^\star$ be a solution of the KKT conditions~\eqref{eq:kktconditions}. We suppose
 that the solution $p^\star$ is regular and satisfies the following assumptions.
-We denote $\cactive = \cactive(x^\star)$ the active-set at the optimal solution $x^\star$,
+We denote $\cactive = \cactive(x^\star)$ the active-set at the optimal solution $x^\star$, 
+\ma{As I noted in the beginning; it does not make sense to denote the active set as you did unless you have no inequality constraints on $x$. Maybe you want to define the active set here since here is where you use it; after you make the assumption you have no ineq constraints on $x$}
 and $\cinactive = \cinactive(x^\star)$ the inactive set.
 
 % Sungho: not sure if this should be introduced here.
 \begin{assumption}
   \label{hyp:ipm}
   Let $p^\star = (x^\star, s^\star, y^\star, z^\star)$ be a primal-dual solution
+  \ma{Most people would include the $v^\star$ in the primal dual solution}
   satisfying the KKT conditions~\eqref{eq:kktconditions}. Let the following hold:
   \begin{itemize}
   \item Continuity: The Hessian $\nabla^2_{x x} L(\cdot)$ is Lipschitz continuous
@@ -67,7 +68,7 @@ and $\cinactive = \cinactive(x^\star)$ the inactive set.
 We denote $\delta(p, v) = \| (p, v) - (p^\star, v^\star) \|$ the Euclidean distance to the
 primal-dual stationary point $(p^\star, v^\star)$.
 From \cite[Theorem 2.2]{wright2001effects}, if Assumption~\ref{hyp:ipm}
-holds at $p^\star$ and $v > 0$,
+holds at $p^\star$ and $v > 0$ \ma{Pretty sure that is true only locally},
 \begin{equation}
   \delta(p, v) = \Theta\left( \left\Vert \begin{bmatrix}
       \nabla_p L(p, v) \\ \min(v, s)
@@ -93,9 +94,9 @@ We suppose the iterates $(p, v)$ satisfy the \emph{centrality conditions}
   \end{align}
 \end{subequations}
 for some constants $C > 0$ and $\alpha \in (0, 1)$.
-Conditions~\eqref{eq:centralitycond:complement} ensures that the products
+Conditions~\eqref{eq:centralitycond:complement} ensure that the products
 $s_i v_i$ are not too disparate in the diagonal term $D_s$.
-This condition is satisfied (despite rather loosely)
+This condition is satisfied (even if rather loosely)
 in the solver Ipopt (see \cite[Equation (16)]{wachter2006implementation}).
 
 \begin{proposition}[\cite{wright2001effects}, Lemma 3.2 and Theorem 3.3]
@@ -136,10 +137,10 @@ We define the minimum and maximum active slack values as
   s_{min} = \min_{i \in \cactive} s_i \; , \quad
   s_{max} = \max_{i \in \cactive} s_i \; .
 \end{equation}
-We remind that $m_e$ is the number of equality constraints,
+We recall that $m_e$ is the number of equality constraints,
 and define $\ell := m_e + m_a$.
 
-We explicit the structured ill-conditioning of $K_\gamma$ by
+We express the structured ill-conditioning of $K_\gamma$ by
 modifying the approach outlined in \cite[Theorem 3.2]{wright1998ill} to account for the additional
 term $\gamma G^\top G$ arising from the equality constraints.
 We show that the matrix $K_\gamma$ has two invariant subspaces

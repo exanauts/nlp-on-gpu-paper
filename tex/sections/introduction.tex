@@ -3,7 +3,7 @@ Graphics processing units (GPUs) are driving the advancement of scientific compu
 GPUs offer two practical advantages: (1) massive parallel computing capability for applications that can exploit coarse-grain parallelism and high-memory bandwidth and (2) power efficiency due to requiring fewer transistors to process multiple tasks in parallel utilizing ``single instruction, multiple data'' (SIMD) parallelism.
 
 While GPUs have made significant strides in enhancing machine learning applications, their adoption in the mathematical programming community has been relatively limited.
-This limitation stems primarily from the fact that most optimization solvers were developed in the 1990s and are heavily optimized for CPU architectures.
+This limitation stems primarily from the fact that most second-order optimization methods for constrained optimization solve a form of Newton's method using direct linear algebra as finding good iterative solvers for the Newton direction has proved elusive. 
 Additionally, the utilization of GPUs has been impeded by the challenges associated with sparse matrix factorization routines, which are inherently difficult to parallelize on SIMD architectures. Nevertheless, recent years have witnessed notable advancements that are reshaping this landscape.
 \begin{enumerate}
   \item \textbf{Improved sparse matrix operations}: The performance of sparse matrix operations has seen substantial improvements in the CUDA library, largely attributed to the integration of novel tensor cores in recent GPUs~\cite{markidis2018nvidia}.
@@ -13,7 +13,7 @@ Additionally, the utilization of GPUs has been impeded by the challenges associa
 \end{enumerate}
 
 \subsection{Solving optimization problems on GPU: current state-of-the-art}
-For all the reasons listed before, there is an increasing interest to solve optimization problems on GPUs.
+For all the reasons listed before, there is an increased interest for solving optimization problems on GPUs.
 We now summarize the previous work on solving classical---large-scale, sparse, constrained---mathematical programs on GPUs.
 
 \paragraph{GPU for mathematical programming.}
@@ -49,7 +49,7 @@ compute the descent directions.
 \paragraph{GPU for nonlinear programming.}
 The success of first-order algorithms in classical mathematical programming
 relies on the convexity of the problem. Thus, this approach is nontrivial to replicate
-in nonlinear programming: Most engineering problems encode complex
+in general nonlinear programming: Most engineering problems encode complex
 physical equations that are likely to break any convex structure in the problem.
 Previous experiments on the alternating current (AC) optimal power flow (OPF) problem have shown that even a simple
 algorithm as the alternating direction method of multipliers (ADMM) has trouble converging as soon as the convergence
@@ -68,7 +68,7 @@ Our benchmark results indicate that {\tt cuDSS} is significantly faster than the
 % SS: removed due to irrelevance.
 % The new NVIDIA Grace CPU architecture could also be a game changer in the future of sparse linear solvers, thanks to fast communication between the CPU and GPU.
 Furthermore, variants of interior point methods have been proposed
-that does not depend on numerical pivoting in the linear solves,
+that do not depend on numerical pivoting in the linear solves,
 opening the door to parallelized sparse solvers.
 Coupled with a GPU-accelerated automatic differentiation library and a
 sparse Cholesky solver, these nonlinear programming solvers can solve
@@ -90,7 +90,7 @@ hybrid method~\cite{golub2003solving} to solve the KKT systems arising in
 the interior-point methods, with promising results on the GPU.
 On the other hand, null-space methods (also known as reduced Hessian methods)
 reduce the KKT system down to a dense matrix, a setting also favorable for GPUs.
-Our previous research has shown that the method plays nicely with the interior-point
+Our previous research has shown that the approach is suitable for  interior-point
 methods if the number of degrees of freedom in the problem remains relatively small~\cite{pacaud2022condensed}.
 
 
