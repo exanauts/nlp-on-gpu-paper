@@ -94,7 +94,7 @@ After introducing slack variables, the condensed KKT system \eqref{eq:kkt:conden
     K_\tau \,d_x = - r_1 - H_\tau^\top(D_H r_4 - C r_2) \; ,
 \end{equation}
 with $H_\tau = \big(G^\top ~ H^\top \big)^\top$ and
-$K_\tau := W + D_x + \delta_w I + H_\tau^\top D_H H_\tau$.
+$K_\tau := W + \delta_w I + H_\tau^\top D_H H_\tau$.
 Using the relation~\eqref{eq:ipm:inertia}, the matrix $K_\tau$
 is guaranteed to be positive definite if the primal regularization parameter $\delta_w$ is adequately large.
 As such, the parameter $\delta_w$ is chosen dynamically using the inertia information of the system in \eqref{eq:kkt:condensed}.

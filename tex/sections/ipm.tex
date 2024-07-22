@@ -17,18 +17,12 @@ We are interested in solving the following nonlinear program:
   \label{eq:problem}
     \min_{x \in \mathbb{R}^n} \;  f(x)
 \quad \text{subject to}\quad
-\left\{
-  \begin{aligned}
-    & g(x) = 0 \; , ~ h(x) \leq 0 \; , \\
-      & x \geq 0  \; ,
-  \end{aligned}
-\right.
+     g(x) = 0 \; , ~ h(x) \leq 0 \; ,
 \end{equation}
 with $f:\mathbb{R}^n \to \mathbb{R}$ a real-valued function
 encoding the objective, $g: \mathbb{R}^n \to \mathbb{R}^{m_e}$
 encoding the equality constraints, and $h: \mathbb{R}^{n} \to
 \mathbb{R}^{m_i}$ encoding the inequality constraints.
-In addition, the variable $x$ is subject to simple bounds $x \geq 0$.
 In what follows, we suppose that the functions $f, g, h$ are smooth
 and twice differentiable.
 
@@ -41,42 +35,40 @@ into the equivalent formulation
     \left\{
   \begin{aligned}
     & g(x) = 0 \; , ~ h(x) + s = 0 \; , \\
-      & x \geq 0  \; , ~ s \geq 0  \; .
+      &  s \geq 0  \; .
   \end{aligned}
   \right.
 \end{equation}
 In~\eqref{eq:slack_problem}, the inequality constraints
-are encoded inside the variable bounds.
+are encoded inside the variable bounds on the slack variables.
 
 We denote by $y \in \mathbb{R}^{m_e}$ and $z \in \mathbb{R}^{m_i}$ the multipliers associated
 resp. to the equality constraints and the inequality constraints.
 Similarly, we denote
-by $(u, v) \in \mathbb{R}^{n + m_i}$ the multipliers associated
-respectively to the bounds $x \geq 0$ and $s \geq 0$.
-Using the dual variable $(y, z, u, v)$, we define the Lagrangian of \eqref{eq:slack_problem} as
+by $v \in \mathbb{R}^{m_i}$ the multipliers associated
+to the bounds $s \geq 0$.
+Using the dual variable $(y, z, v)$, we define the Lagrangian of \eqref{eq:slack_problem} as
 \begin{equation}
   \label{eq:lagrangian}
-  L(x, s, y, z, u, v) = f(x) + y^\top g(x) + z^\top \big(h(x) +s\big)
-  - u^\top x - v^\top s \; .
+  L(x, s, y, z, v) = f(x) + y^\top g(x) + z^\top \big(h(x) +s\big)
+  - v^\top s \; .
 \end{equation}
 The KKT conditions of \eqref{eq:slack_problem} are:
 \begin{subequations}
   \label{eq:kktconditions}
     \begin{align}
-      & \nabla f(x) + \nabla g(x)^\top y + \nabla h(x)^\top z - u = 0 \; , \\
+      & \nabla f(x) + \nabla g(x)^\top y + \nabla h(x)^\top z  = 0 \; , \\
       & z - v = 0 \; , \\
       & g(x) = 0 \; , \\
       & h(x) + s = 0 \; , \\
-      \label{eq:kktconditions:compx}
-      & 0 \leq x \perp u \geq 0 \; , \\
       \label{eq:kktconditions:comps}
       & 0 \leq s \perp v \geq 0 \; .
     \end{align}
 \end{subequations}
-The notation $x \perp u$ is a shorthand for the complementarity
-condition $x_i u_i = 0$ (for all $i=1,\cdots, n$).
+The notation $s \perp v$ is a shorthand for the complementarity
+condition $s_i v_i = 0$ (for all $i=1,\cdots, n$).
 
-The set of active constraints at a point $x$ is denoted by \ma{This is odd. Don't you need to worry about the activity of $x$ itself?}
+The set of active constraints at a point $x$ is denoted by
 \begin{equation}
   \mathcal{B}(x) := \{ i \in\{ 1, \cdots, m_i\} \; | \; h_i(x) = 0 \} \; .
 \end{equation}
@@ -89,22 +81,21 @@ The active Jacobian is defined as $A(x) := \begin{bmatrix} \nabla g(x) \\ \nabla
 \label{sec:ipm:kkt}
 The interior-point method aims at finding a stationary point
 satisfying the KKT conditions~\eqref{eq:kktconditions}.
-The complementarity constraints \eqref{eq:kktconditions:compx}-\eqref{eq:kktconditions:comps}
+The complementarity constraints \eqref{eq:kktconditions:comps}
 render the KKT conditions non-smooth, complicating the solution of
 the whole system~\eqref{eq:kktconditions}.
 IPM uses a homotopy continuation method to solve a simplified
 version of \eqref{eq:kktconditions}, parameterized by a barrier
 parameter $\mu > 0$~\cite[Chapter 19]{nocedal_numerical_2006}.
-For positive $(x, s, u, v) > 0$, we solve the system
+For positive $(x, s, v) > 0$, we solve the system
 \begin{equation}
   \label{eq:kkt_ipm}
-  F_\mu(x, s, y, z, u, v) =
+  F_\mu(x, s, y, z, v) =
   \begin{bmatrix}
-       \nabla f(x) + \nabla g(x)^\top y + \nabla h(x)^\top z - u  \\
+       \nabla f(x) + \nabla g(x)^\top y + \nabla h(x)^\top z   \\
        z - v  \\
        g(x)  \\
        h(x) + s  \\
-       X u - \mu e  \\
        S v - \mu e
   \end{bmatrix} = 0
    \; .
@@ -112,13 +103,13 @@ For positive $(x, s, u, v) > 0$, we solve the system
 We introduce in \eqref{eq:kkt_ipm} the diagonal matrices $X = \diag(x_1, \cdots, x_n)$
 and $S = \diag(s_1, \cdots, s_{m_i})$, along with the vector of ones $e$.
 As we drive the barrier parameter $\mu$ to $0$, the solution of the
-system $F_\mu(x, s, y, z, u, v) = 0$ tends to the solution of the
+system $F_\mu(x, s, y, z, v) = 0$ tends to the solution of the
 KKT conditions~\eqref{eq:kktconditions}.
 
 We note that at a fixed parameter $\mu$, the function $F_\mu(\cdot)$
 is smooth. Hence, the system \eqref{eq:kkt_ipm} can be solved iteratively
 using a regular Newton method. For a primal-dual iterate
-$w_k := (x_k, s_k, y_k, z_k, u_k, v_k)$, the next iterate is computed as
+$w_k := (x_k, s_k, y_k, z_k, v_k)$, the next iterate is computed as
 $w_{k+1} = w_k + \alpha_k d_k$, where $d_k$ is a descent
 direction computed by solving the linear system
 \begin{equation}
@@ -127,7 +118,7 @@ direction computed by solving the linear system
 \end{equation}
 The step $\alpha_k$ is computed using a line-search algorithm, in a way
 that ensures that the bounded variables remain positive
-at the next primal-dual iterate: $(x_{k+1}, s_{k+1}, u_{k+1}, v_{k+1}) > 0$.
+at the next primal-dual iterate: $(x_{k+1}, s_{k+1}, v_{k+1}) > 0$.
 Once the iterates are sufficiently close to the central path,
 the IPM decreases the barrier parameter $\mu$ to find a solution closer to
 the original KKT conditions~\eqref{eq:kktconditions}.
@@ -143,19 +134,17 @@ By writing out all the blocks, the system in~\eqref{eq:newton_step} expands as t
   \setlength\arraycolsep{5pt}
   \tag{$K_3$}
   \begin{bmatrix}
-    W_k & 0   & G_k^\top         & H_k^\top         & -I             & \phantom{-}0 \\
-    0   & 0   & 0\phantom{^\top} & I\phantom{^\top} & \phantom{-}0   & -I           \\
-    G_k & 0   & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0   & \phantom{-}0 \\
-    H_k & I   & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0   & \phantom{-}0 \\
-    U_k & 0   & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}X_k & \phantom{-}0 \\
-    0   & V_k & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0   & \phantom{-}S_k
+    W_k & 0   & G_k^\top         & H_k^\top         & \phantom{-}0 \\
+    0   & 0   & 0\phantom{^\top} & I\phantom{^\top} & -I           \\
+    G_k & 0   & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0 \\
+    H_k & I   & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}0 \\
+    0   & V_k & 0\phantom{^\top} & 0\phantom{^\top} & \phantom{-}S_k
   \end{bmatrix}
   \begin{bmatrix}
     d_x \\
     d_s \\
     d_y \\
     d_z \\
-    d_u \\
     d_v
   \end{bmatrix}
   % = -F_\mu(w_k) \; .
@@ -165,7 +154,6 @@ By writing out all the blocks, the system in~\eqref{eq:newton_step} expands as t
        z_k - v_k  \\
        g(x_k)  \\
        h(x_k) + s_k  \\
-       X_k u_k - \mu e  \\
        S_k v_k - \mu e
   \end{bmatrix} \; ,
 \end{equation}
@@ -178,14 +166,14 @@ In what follows, we will omit the index $k$ to simplify the notations.
 
 \paragraph{Augmented KKT system.}
 It is usual to remove in \eqref{eq:kkt:unreduced} the blocks associated
-to the bound multipliers $(u, v)$ and solve instead the regularized
+to the bound multipliers $v$ and solve instead the regularized
 $4 \times 4$ symmetric system, called the \emph{augmented KKT system}:
 \begin{equation}
   \label{eq:kkt:augmented}
   \tag{$K_2$}
   \setlength\arraycolsep{3pt}
   \begin{bmatrix}
-    W + D_x + \delta_w I & 0   & \phantom{-}G^\top           & \phantom{-}H^\top           \\
+    W + \delta_w I & 0   & \phantom{-}G^\top           & \phantom{-}H^\top           \\
       0       & D_s + \delta_w I  & \phantom{-}0\phantom{^\top} & \phantom{-}I\phantom{^\top} \\
       G       & 0   & -\delta_c I  & \phantom{-}0\phantom{^\top} \\
     H       & I   & \phantom{-}0\phantom{^\top} & -\delta_c I
@@ -204,14 +192,13 @@ $4 \times 4$ symmetric system, called the \emph{augmented KKT system}:
        % h(x_k) + s_k
   \end{bmatrix} \; ,
 \end{equation}
-with the diagonal matrices $D_x := X^{-1} U$ and $D_s := S^{-1} V$.
+with the diagonal matrix $D_s := S^{-1} V$.
 The vectors forming the right-hand-sides are given respectively by
-$r_1 := \nabla f(x) + \nabla g(x)^\top y + \nabla h(x)^\top z - \mu X^{-1} e$,
+$r_1 := \nabla f(x) + \nabla g(x)^\top y + \nabla h(x)^\top z$,
 $r_2 := z - \mu S^{-1} e$,
 $r_3 := g(x)$,
 $r_4 := h(x) + s$.
 Once \eqref{eq:kkt:augmented} is solved, we recover the updates on bound multipliers with
-$d_u = - X^{-1}(U d_x - \mu e) - u$ and
 $d_v = - S^{-1}(V d_s - \mu e) - v$.
 
 Note that we have added additional regularization terms $\delta_w \geq 0 $
@@ -219,9 +206,8 @@ and $\delta_c \geq 0$ in \eqref{eq:kkt:augmented}, to ensure the
 matrix is invertible.
 Without the regularization terms in \eqref{eq:kkt:augmented}, the augmented KKT system is non-singular
 if and only if the Jacobian $J = \begin{bmatrix} G \; &\; 0 \\ H \;&\; I \end{bmatrix}$
-is full row-rank and the matrix $\begin{bmatrix} W + D_x & 0 \\ 0 & D_s \end{bmatrix}$
-projected onto the null-space of the Jacobian $J$ is positive-definite~\cite{benzi2005numerical}.
-\ma{I do not think that is an if and only if conditions. The Jacobian needs to be full rank. but the other matrix need not be positive definite in the projection for the system to be nonsingular}
+is full row-rank and the matrix $\begin{bmatrix} W  & 0 \\ 0 & D_s \end{bmatrix}$
+projected onto the null-space of the Jacobian $J$ is definite~\cite{benzi2005numerical}.
 The condition is satisfied if the inertia (defined as the respective numbers
 of positive, negative and zero eigenvalues) of the matrix~\eqref{eq:kkt:augmented} is $(n + m_i, m_i + m_e, 0)$.
 We use the inertia-controlling method introduced in \cite{wachter2006implementation}
@@ -231,7 +217,7 @@ on the diagonal of \eqref{eq:kkt:augmented} if the inertia is not equal to $(n+m
 As a consequence, the system \eqref{eq:kkt:augmented} is usually factorized using
 an inertia-revealing \lblt factorization~\cite{duff1983multifrontal}.
 Krylov methods are often not competitive when solving~\eqref{eq:kkt:augmented},
-as the block diagonal terms $D_x$ and $D_s$ are getting increasingly
+as the block diagonal terms $D_s$ are getting increasingly
 ill-conditioned near the solution. Their use in IPM has been limited to
 linear and convex quadratic programming \cite{gondzio-2012} (when paired
 with a suitable preconditioner). We also refer to \cite{cao2016augmented}
@@ -266,7 +252,7 @@ The resulting system is called the \emph{condensed KKT system}:
   \end{bmatrix}
    \; ,
 \end{equation}
-where we have introduced the \emph{condensed matrix} $K := W + D_x + \delta_w I  + H^\top D_H H$
+where we have introduced the \emph{condensed matrix} $K := W + \delta_w I  + H^\top D_H H$
 and the two diagonal matrices
 \begin{equation}
   C := \big(I + \delta_c(D_s + \delta_w I)\big)^{-1} \; , \quad
@@ -284,7 +270,7 @@ Using Sylvester's law of inertia, we can prove that
 
 \paragraph{Iterative refinement.}
 Compared to \eqref{eq:kkt:unreduced},
-the diagonal matrices $D_x$ and $D_s$ introduce
+the diagonal matrix $D_s$ introduces
 an additional ill-conditioning in \eqref{eq:kkt:augmented}, amplified
 in the condensed form~\eqref{eq:kkt:condensed}:
 the elements in the diagonal tend to infinity if a variable converges to its bound,
@@ -307,7 +293,7 @@ The condensed KKT system~\eqref{eq:kkt:condensed} is often discarded,
 as its conditioning is worse
 than \eqref{eq:kkt:augmented} (implying less accurate solutions).
 Additionally, condensation may result in increased fill-in within the condensed system \eqref{eq:kkt:condensed}~\cite[Section 19.3, p.571]{nocedal_numerical_2006}.
-In the worst cases \eqref{eq:kkt:condensed} itself may become fully dense if an inequality row is completely dense (fortunately, a case rarer than in the normal equations used in linear programming \ma{Do you really mean normal equations as in regression or do you mean equations commonly encountered in linear programming?}).
+In the worst cases \eqref{eq:kkt:condensed} itself may become fully dense if an inequality row is completely dense (fortunately, a case rarer than in the normal equations commonly encountered in linear programming).
 Consequently, condensation methods are not commonly utilized in practical optimization settings.
 To the best of our knowledge, Artelys Knitro~\cite{waltz2006interior} is the only solver that supports computing the descent direction with \eqref{eq:kkt:condensed}.
 

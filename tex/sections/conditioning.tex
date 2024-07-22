@@ -35,25 +35,21 @@ system~\eqref{eq:kkt:condensed} without equality constraints. We generalize thei
 matrix $K_\gamma$, which incorporates both equality and inequality
 constraints. The results extend directly to $K_\tau$ (by letting the number of equalities to be zero).
 
-To simplify the notation, we suppose that the primal variable
-$x$ is unconstrained \ma{Not sure why we needed bound constraints on $x$ in the first place}, leaving only a bounded slack variable $s$ in \eqref{eq:slack_problem}.
-This is equivalent to include the bounds on the variable $x$ in the inequality constraints,
-as $\bar{h}(x) \leq 0$ with $\bar{h}(x) := (h(x), -x)$.
-
 \subsection{Centrality conditions}
 We start the discussion by recalling important results about the iterates of the interior-point algorithm.
-Let $p = (x, s, y, z)$ be the current primal-dual iterate (the bound multiplier $v$ is considered apart),
-and $p^\star$ be a solution of the KKT conditions~\eqref{eq:kktconditions}. We suppose
-that the solution $p^\star$ is regular and satisfies the following assumptions.
-We denote $\cactive = \cactive(x^\star)$ the active-set at the optimal solution $x^\star$, 
-\ma{As I noted in the beginning; it does not make sense to denote the active set as you did unless you have no inequality constraints on $x$. Maybe you want to define the active set here since here is where you use it; after you make the assumption you have no ineq constraints on $x$}
+For $p := (x, s, y, z)$, we denote by
+$(p, v)$ the current primal-dual iterate,
+and $(p^\star, v^\star)$ a solution of the KKT conditions~\eqref{eq:kktconditions}.
+We denote $\cactive = \cactive(x^\star)$ the active-set at the optimal solution $x^\star$,
 and $\cinactive = \cinactive(x^\star)$ the inactive set.
+In this section, we are interested in the \emph{local} convergence behavior of the
+primal-dual iterate, and we suppose $(p, v)$ is close enough to the solution
+$(p^\star, v^\star)$.
 
 % Sungho: not sure if this should be introduced here.
 \begin{assumption}
   \label{hyp:ipm}
-  Let $p^\star = (x^\star, s^\star, y^\star, z^\star)$ be a primal-dual solution
-  \ma{Most people would include the $v^\star$ in the primal dual solution}
+  Let $(p^\star, v^\star)$ be a primal-dual solution
   satisfying the KKT conditions~\eqref{eq:kktconditions}. Let the following hold:
   \begin{itemize}
   \item Continuity: The Hessian $\nabla^2_{x x} L(\cdot)$ is Lipschitz continuous
@@ -68,7 +64,7 @@ and $\cinactive = \cinactive(x^\star)$ the inactive set.
 We denote $\delta(p, v) = \| (p, v) - (p^\star, v^\star) \|$ the Euclidean distance to the
 primal-dual stationary point $(p^\star, v^\star)$.
 From \cite[Theorem 2.2]{wright2001effects}, if Assumption~\ref{hyp:ipm}
-holds at $p^\star$ and $v > 0$ \ma{Pretty sure that is true only locally},
+holds at $p^\star$ and $v > 0$,
 \begin{equation}
   \delta(p, v) = \Theta\left( \left\Vert \begin{bmatrix}
       \nabla_p L(p, v) \\ \min(v, s)
