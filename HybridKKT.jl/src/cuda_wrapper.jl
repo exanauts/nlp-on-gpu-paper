@@ -5,14 +5,14 @@
 
 function MadNLP.compress_hessian!(kkt::HybridCondensedKKTSystem{T, VT, MT}) where {T, VT, MT<:CUDA.CUSPARSE.CuSparseMatrixCSC{T, Int32}}
     fill!(kkt.hess_com.nzVal, zero(T))
-    MadNLPGPU._transfer!(CUDABackend())(kkt.hess_com.nzVal, kkt.ext.hess_com_ptr, kkt.ext.hess_com_ptrptr, kkt.hess_raw.V; ndrange = length(kkt.ext.hess_com_ptrptr)-1)
+    MadNLPGPU._transfer_to_csc_kernel!(CUDABackend())(kkt.hess_com.nzVal, kkt.ext.hess_com_ptr, kkt.ext.hess_com_ptrptr, kkt.hess_raw.V; ndrange = length(kkt.ext.hess_com_ptrptr)-1)
     KernelAbstractions.synchronize(CUDABackend())
 end
 
 function MadNLP.compress_jacobian!(kkt::HybridCondensedKKTSystem{T, VT, MT}) where {T, VT, MT<:CUDA.CUSOLVER.CuSparseMatrixCSC{T, Int32}}
     fill!(kkt.jt_csc.nzVal, zero(T))
     if length(kkt.ext.jt_csc_ptrptr) > 1 # otherwise error is thrown
-        MadNLPGPU._transfer!(CUDABackend())(kkt.jt_csc.nzVal, kkt.ext.jt_csc_ptr, kkt.ext.jt_csc_ptrptr, kkt.jt_coo.V; ndrange = length(kkt.ext.jt_csc_ptrptr)-1)
+        MadNLPGPU._transfer_to_csc_kernel!(CUDABackend())(kkt.jt_csc.nzVal, kkt.ext.jt_csc_ptr, kkt.ext.jt_csc_ptrptr, kkt.jt_coo.V; ndrange = length(kkt.ext.jt_csc_ptrptr)-1)
     end
     KernelAbstractions.synchronize(CUDABackend())
     if length(kkt.ind_eq) > 0
@@ -49,7 +49,7 @@ function LinearAlgebra.mul!(
     mul!(wx, kkt.hess_com , xx, alpha, beta)
     mul!(wx, kkt.hess_com', xx, alpha, one(T))
     mul!(wx, kkt.jt_csc,  xz, alpha, one(T))
-    MadNLPGPU.diag_operation(CUDABackend())(
+    MadNLPGPU._diag_operation_kernel!(CUDABackend())(
         wx, kkt.hess_com.nzVal, xx, alpha,
         kkt.ext.diag_map_to,
         kkt.ext.diag_map_fr;
