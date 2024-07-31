@@ -194,7 +194,7 @@ end
             use_gpu=true,
             tol=tol,
             linear_solver=MadNLPGPU.CUDSSSolver,
-            cudss_algorithm=MadNLP.BUNCHKAUFMAN,
+            cudss_algorithm=MadNLP.LDL,
             print_level=print_level,
         )
         output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-sckkt-cudss-ldl.csv")
@@ -211,7 +211,7 @@ end
             use_gpu=true,
             tol=tol,
             linear_solver=MadNLPGPU.CUDSSSolver,
-            cudss_algorithm=MadNLP.BUNCHKAUFMAN,
+            cudss_algorithm=MadNLP.LDL,
             print_level=print_level,
         )
         output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-hckkt-cudss-ldl.csv")

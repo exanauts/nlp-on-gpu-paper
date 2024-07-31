@@ -28,7 +28,6 @@ FULL_BENCHMARK = [
     "pglib_opf_case2000_goc.m",
     "pglib_opf_case20758_epigrids.m",
     "pglib_opf_case2312_goc.m",
-    # "pglib_opf_case24464_goc.m",
     "pglib_opf_case2742_goc.m",
     "pglib_opf_case2869_pegase.m",
     "pglib_opf_case30000_goc.m",
@@ -285,7 +284,7 @@ end
             use_gpu=true,
             tol=tol,
             linear_solver=MadNLPGPU.CUDSSSolver,
-            cudss_algorithm=MadNLP.BUNCHKAUFMAN,
+            cudss_algorithm=MadNLP.LDL,
             print_level=print_level,
         )
         output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-sckkt-cudss-ldl.csv")
@@ -302,7 +301,7 @@ end
             use_gpu=true,
             tol=tol,
             linear_solver=MadNLPGPU.CUDSSSolver,
-            cudss_algorithm=MadNLP.BUNCHKAUFMAN,
+            cudss_algorithm=MadNLP.LDL,
             print_level=print_level,
         )
         output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hckkt-cudss-ldl-$(gamma_).csv")

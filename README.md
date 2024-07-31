@@ -1,57 +1,20 @@
 # nlp-on-gpu-paper
 
-Make it a review paper comparing different methods for implementing a nonlinear sparse, large-scale optimization solver on the GPU. We will focus on methods, not the implementation. For numerical comparison, we will use MadNLP. We will compare:
-  - HyKKT method
-  - condensed space inequality relaxation
-  - condensed then reduce
+This repository is an artifact storing the tex sources and the Julia scripts
+used to generate the results in the manuscript "Condensed-space methods for nonlinear programming on GPUs",
+available on [arxiv](https://arxiv.org/abs/2405.14236).
 
-  For sparse solver, we compare two options:
-  - CUDSS
-  - CUSOLVERRF
+- The directory `HybridKKT.jl/` stores the Julia implementation of the method presented in the paper.
+- The directory `tex/` stores the tex sources.
+- The directory `scripts/` stores script files to generate the plots presented in the paper using `matplotlib`.
 
-  Portability (not our primary focus, but if we want to say something)
-  - https://github.com/ORNL/ReSolve/blob/v0.99.1/resolve/LinSolverDirectRocSolverRf.cpp
+To cite the paper, please use the following bibtex reference:
+```tex
+@article{pacaud2024condensed,
+  title={Condensed-space methods for nonlinear programming on {GPU}s},
+  author={Pacaud, Fran{\c{c}}ois and Shin, Sungho and Montoison, Alexis and Schanen, Michel and Anitescu, Mihai},
+  journal={arXiv preprint arXiv:2405.14236},
+  year={2024}
+}
+```
 
-# Friday, January 19th
-
-* Goal of the optimization paper
-
-Assess the capabilities of three linear solvers to solve nonlinear optimization problem on the GPU:
-- Null-space method (aka reduced Hessian, Argos)
-- Hybrid-condensed KKT solver (HyKKT)
-- Sparse-condensed KKT with equality relaxation strategy
-
-The two last methods require efficient sparse Cholesky available on the GPU.
-
-
-* Latests developments (https://github.com/exanauts/nlp-on-gpu-paper/tree/main/scripts)
-
-- Implementation of HyKKT in MadNLP, now gives correct result.
-    * works on the GPU
-    * no iterative refinement (yet): limited precision
-    * solve OPF problems with tol=1e-3
-    * it looks like CG is the bottleneck in the algorithm
-- Full integration of cuDSS into MadNLP for sparse-Cholesky
-- Integration of CHOLMOD on the CPU for comparison
-
-
-* To discuss
-
-- Improve the HyKKT implementation
-    * Implement iterative refinement on the GPU @FP
-    * double check the accuracy of the linear solve (and its interplay with CG convergence) @FP
-    * identify the computation bottleneck and address them @FP
-    * Implement AMD ordering for sparse Cholesky @AM
-    * scaling of the problem (use KrylovPreconditioner?) @AM
-        ^ Implement symmetric scaling on the GPU
-- Decide what we want to showcase exactly
-    * go deeper into the LA aspect
-    * Benchmark on OPF and SCOPF instances?
-    * Include additional benchmarks?
-        ^ COPS benchmark in ExaModels? Have a look at the Goddard problem
-        ^ PDE-constrained optimization?
-- NCL ? Can we finish the implementation in a reasonable time?
-
-
-
-*
