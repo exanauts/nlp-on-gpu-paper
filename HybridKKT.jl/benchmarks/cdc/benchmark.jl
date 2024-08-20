@@ -79,8 +79,6 @@ end
     flag = quick ? "short" : "full"
     print_level = verbose ? MadNLP.INFO : MadNLP.ERROR
 
-    # if quick
-
     if solver == "all" || solver == "ma27"
         @info "[CPU] Benchmark SparseKKTSystem+ma27"
         results = run_benchmark(
@@ -162,7 +160,7 @@ end
             use_gpu=true,
             tol=tol,
             linear_solver=MadNLPGPU.CUDSSSolver,
-            cudss_algorithm=MadNLP.BUNCHKAUFMAN,
+            cudss_algorithm=MadNLP.LDL,
             print_level=print_level,
         )
         output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-hckkt-cudss-ldl.csv")
