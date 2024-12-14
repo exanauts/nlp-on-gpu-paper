@@ -1,5 +1,5 @@
 
-using Comonicon
+import Comonicon
 using COPSBenchmark
 
 include(joinpath(@__DIR__, "..", "common.jl"))
@@ -60,7 +60,7 @@ function run_benchmark(bench_solver, ntrials; gamma=1e7, use_gpu=false, options.
     return [depth results]
 end
 
-@main function main(;
+Comonicon.@main function main(;
     solver="all",
     verbose::Bool=false,
     quick::Bool=false,
@@ -131,6 +131,20 @@ end
             print_level=print_level,
         )
         output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-hckkt-cholmod.csv")
+        writedlm(output_file, results)
+    end
+
+    if (solver == "all" || solver == "cudss") && CUDA.has_cuda()
+        @info "[CUDA] Benchmark SparseKKTSystem+CUDSS"
+        results = run_benchmark(
+            build_cudss_solver,
+            ntrials;
+            maxit=max_iter,
+            use_gpu=false,
+            tol=tol,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-cudss-lu.csv")
         writedlm(output_file, results)
     end
 

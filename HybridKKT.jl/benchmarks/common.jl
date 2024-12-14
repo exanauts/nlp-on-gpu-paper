@@ -41,6 +41,18 @@ function build_ma57_solver(nlp; options...)
     )
 end
 
+function build_cudss_solver(nlp; options...)
+    return MadNLPSolver(
+        nlp;
+        linear_solver=MadNLPGPU.CUDSSSolver,
+        kkt_system=MadNLP.SparseKKTSystem,
+        cudss_algorithm=MadNLP.LU,
+        equality_treatment=MadNLP.EnforceEquality,
+        fixed_variable_treatment=MadNLP.MakeParameter,
+        options...,
+    )
+end
+
 function build_sckkt_solver(nlp; options...)
     solver = MadNLP.MadNLPSolver(
         nlp;

@@ -1,5 +1,5 @@
 
-using Comonicon
+import Comonicon
 using COPSBenchmark
 
 include(joinpath(@__DIR__, "..", "common.jl"))
@@ -100,7 +100,7 @@ function run_benchmark(bench_solver, instances, ntrials; use_gpu=false, options.
     return results
 end
 
-@main function main(;
+Comonicon.@main function main(;
     solver="all",
     verbose::Bool=false,
     quick::Bool=false,

@@ -1,5 +1,5 @@
 
-using Comonicon
+import Comonicon
 
 include(joinpath(@__DIR__, "..", "common.jl"))
 include(joinpath(@__DIR__, "model.jl"))
@@ -7,7 +7,7 @@ include(joinpath(@__DIR__, "model.jl"))
 const PGLIB_PATH = joinpath(artifact"PGLib_opf", "pglib-opf-23.07")
 const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "condensed")
 
-@main function main(; verbose::Bool=false, case="pglib_opf_case78484_epigrids.m")
+Comonicon.@main function main(; verbose::Bool=false, case="pglib_opf_case78484_epigrids.m")
     if !isdir(RESULTS_DIR)
         mkpath(RESULTS_DIR)
     end

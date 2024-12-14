@@ -1,6 +1,6 @@
 
 
-using Comonicon
+import Comonicon
 
 include(joinpath(@__DIR__, "..", "common.jl"))
 include(joinpath(@__DIR__, "model.jl"))
@@ -213,7 +213,7 @@ function run_benchmark(benchmark, cases, ntrials; use_gpu=false, options...)
     return results
 end
 
-@main function main(;
+Comonicon.@main function main(;
     solver="all",
     verbose::Bool=false,
     quick::Bool=false,

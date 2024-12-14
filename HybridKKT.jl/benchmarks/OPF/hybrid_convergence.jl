@@ -1,5 +1,5 @@
 
-using Comonicon
+import Comonicon
 
 include(joinpath(@__DIR__, "..", "common.jl"))
 include(joinpath(@__DIR__, "model.jl"))
@@ -31,7 +31,7 @@ function solve_hybrid(nlp, gamma; options...)
     )
 end
 
-@main function main(; solver="all", case="pglib_opf_case78484_epigrids.m", tol=1e-4)
+Comonicon.@main function main(; solver="all", case="pglib_opf_case78484_epigrids.m", tol=1e-4)
     if !isdir(RESULTS_DIR)
         mkpath(RESULTS_DIR)
     end

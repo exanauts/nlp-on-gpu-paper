@@ -1,5 +1,5 @@
 
-using Comonicon
+import Comonicon
 
 include(joinpath(@__DIR__, "..", "common.jl"))
 include(joinpath(@__DIR__, "model.jl"))
@@ -84,7 +84,7 @@ function benchmark_cholmod(K, ntrials)
     )
 end
 
-@main function main(;
+Comonicon.@main function main(;
     case="pglib_opf_case78484_epigrids.m",
     ntrials::Int=10,
     gamma::Float64=1e7
