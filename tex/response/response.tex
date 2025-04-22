@@ -1,0 +1,206 @@
+\documentclass[10pt,a4paper]{article}
+%\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{eurosym}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{framed}
+
+\newenvironment{reviewer}
+{\begin{framed}\begin{minipage}{0.9\textwidth}\textbf{\reviewername.}\newline \it }%
+    {\end{minipage}\end{framed}}
+
+\newenvironment{quotereviewer}{\vspace{.5cm}{\underline\reviewername} ``\it\footnotesize}{''}
+% {\begin{framed}\begin{minipage}{.9\textwidth}\textbf{\reviewername.}\newline ``\it}%
+%     {''\end{minipage}\end{framed}}
+
+\newcommand{\answer}{\vspace{1mm}\underline{Answer.} }
+
+% improved to work inside math
+\newcommand{\nb}[3]{
+    {\colorbox{#2}{\bfseries\sffamily\tiny\textcolor{white}{#1}}}
+    {\textcolor{#2}{\text{$\blacktriangleright$}{\textcolor{#2}{#3}}\text{$\blacktriangleleft$}}}}
+
+
+\setlength{\parindent}{0pt}
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\newcommand{\todo}{\noindent\red{TODO: }}
+
+\newcommand{\adrian}[1]{{\color{blue} #1}}
+
+\begin{document}
+
+\title{\textbf{Answers to Reviewers}\\
+}
+%\author{}
+% \date{}
+\maketitle
+
+\section*{Introduction}
+We thank the two reviewers for their comprehensive comments.
+The comments were relevant, and pointed to several limitations
+in the first version of the paper. We have revised the paper
+accordingly, and we believe that this new version addresses
+the major shortcomings pointed before by the reviewers.
+
+We have addressed one by one the comments made by the reviewers in
+the following sections.
+
+\section{Reviewer 1}
+\def\reviewername{Reviewer~\#1}
+\bigskip
+
+\begin{quotereviewer}
+The GPU linear solver is an extremely optimized piece of software, developed specifically to fit the characteristics of the hardware by the manufacturer itself. To obtain a fair comparison, the CPU tests should be performed in similar circumstances.
+\end{quotereviewer}
+
+\answer
+TODO
+
+\begin{quotereviewer}
+The Authors use older linear solvers like MA27/57 instead of more recent ones like MA86/87 or Pardiso. In my experience, the latter have a considerable performance advantage in many cases. Consider that MA57 is not inherently parallel, but only exploits the parallelism coming from BLAS. MA27 even predates BLAS and so effectively it is not a parallel code. Comparing a serial code with a massively parallel one, like cuDSS, does not seem fair.
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+I understand that the Authors want to compare with a common situation in nonlinear programming (i.e. MA57 with OpenBLAS), but the use of a better linear solver and a better BLAS library may have a large effect on the CPU performance. It may even be that the best performance on a CPU is comparable with the speed up observed on the GPU, in some cases.
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+The condensed KKT system is denser than the original Hessian $W$ and could potentially be much denser. It is not clear why the Authors say that this phenomenon is ``rarer that in the normal equations commonly encountered in LP' (page 8). For the purpose of using IPMs on GPUs, this approach makes sense because it avoids pivoting. However, the issues mentioned for approach $K_1$ remain valid, limiting the applicability of the technique. This is even more problematic when the term $G^TG$ is added as well.
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+It is not clear how the regularization terms $\delta_c$ and $\delta_w$ are chosen. Page 10 mentions that they are chosen dynamically, but they cannot be chosen during the factorization, as this is done with a black-box solver. So what exactly does this mean? Also, choosing the minimum regularization that makes the matrix positive definite may not be enough to guarantee that Cholesky does not break down, since IPM matrices are extremely ill conditioned. What kind of safeguards are in place?
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+It is not completely clear how to choose the parameter $\gamma$. It should be large enough for numerical reasons, but it risks hiding important information coming from the IPM in the linear system. The theoretical results assume that $\gamma$ is proportional to the reciprocal of the duality gap $\Xi^{-1}$; in practice, $\gamma$ seems to be fixed to a large number. Is there the risk that this produces inaccurate solutions of the linear system in the early stage of the algorithm?
+\end{quotereviewer}
+
+\begin{quotereviewer}
+Page 23, table 1. Why is the accuracy so much worse when using cuDSS-LDLT? Also, why is the analyse phase so expensive compared to the factorise phase? Does it include the assembly of the matrix as well?
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+On the same page, section 5.2.2: ``the IPM algorithm has to proceed to additional primal-dual regularizations'. It is not clear what this means.
+\end{quotereviewer}
+
+\begin{quotereviewer}
+Page 24, table 2. Why does it take fewer IPM iterations to solve the problem to a better accuracy?
+Also, what does the last column represent? The accuracy of what? Similar question for Figure 2. Why is the accuracy so much worse when using HyKKT?
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+Page 27, Figure 3. From the performance profile, it looks like MA27 is able to solve a larger number of problems.
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+Overall, the issue of accuracy (which is thoroughly discussed theoretically) should be discussed better for the numerical results. This is a crucial aspect for the usability of an interior point solver.
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+Cholmod seems to perform well in Figure 2, better than MA27. Why are the rest of the tests performed only with MA27 then? It would make a lot of sense to compare to Cholmod as well, since it is not doing pivoting.
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+Page 28: the pictures of the sparsity patterns do not provide enough information about the matrices used. Please show also the data about the density of the matrices involved and the extra density arising from the condensed approach.
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+For the OPF instances, MA27 outperforms MA57, as mentioned in Page 25. This is quite telling of the unusual characteristics of these problems. The claims about large speed-ups (e.g. in abstract and introduction) should highlight that this has been observed for very specific structures of the problem.
+\end{quotereviewer}
+
+
+\section{Reviewer 3}
+\def\reviewername{Reviewer~\#3}
+\bigskip
+
+
+\begin{quotereviewer}
+1. One major concern is that the experiments are limited to speciﬁc classes of problems, such as
+ACOPF, COPS, and PGLIB. While these are certainly important classes of NLP problems,
+they are not suﬃciently representative to draw generalized conclusions for all NLP problems.
+If the authors wish to make claims for NLP in general, a broader set of experiments involving
+benchmarks like CUTEst and Mittelmann is required.
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+2.a. The use of condensed-space IPM with GPU acceleration for OPF has already been
+studied in the authors’ previous work [37]. It is unclear how the contributions of this
+paper diﬀer signiﬁcantly from that prior work.
+\end{quotereviewer}
+
+\begin{quotereviewer}
+2.b. The results presented in Table 4 for a limited number of COPS instances do not paint
+a consistent picture, making it unclear what the central message is. Is the claim that
+cuDSS or GPU does not oﬀer clear advantages over CPU-based methods for general
+\end{quotereviewer}
+
+\begin{quotereviewer}
+2.c. The observation that GPU performance depends signiﬁcantly on the sparsity pattern of
+the matrix is expected. However, the scientiﬁc contribution of this observation is not
+apparent and needs further justiﬁcation.
+\end{quotereviewer}
+
+\begin{quotereviewer}
+3. In the context of NLP interior-point methods, the evaluation of Hessian and gradient information often represents a signiﬁcant portion of the overall runtime. However, this aspect is
+not discussed in the paper, despite the general claims made about NLP.
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+1. The title "Condensed-space methods for nonlinear programming on GPUs" is too broad.
+The title should reﬂect the speciﬁc scope of the experiments, and explicitly mention that it
+concerns interior-point methods, and also the claim for NLP is too broad with the scientiﬁc
+ﬁndings in the paper as stated above.
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+2. The condition number analysis in Section 4 is fairly standard. It would be helpful for the
+authors to clarify how this analysis contributes to the novelty of the paper.
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+3. The meaning of each column in Tables 1-4 requires more detailed explanations. For example,
+what do "it", "init", and "lin" mean in Table 4? What does "analysis" refer to in Table 1
+(e.g., is it the ordering step)? And many others.
+\end{quotereviewer}
+
+
+\begin{quotereviewer}
+4. The ﬁrst sentence of the contributions section, "In this article, we assess the current capabilities of modern GPUs to solve large-scale nonconvex nonlinear programs to optimality,"
+overstates the scope of the paper.
+\end{quotereviewer}
+
+\begin{quotereviewer}
+5. HyKKT and LiftedKKT have been proposed in previous work. The authors should clearly
+articulate what new insights or conclusions this study provides that were not known before.
+\end{quotereviewer}
+
+\begin{quotereviewer}
+6. Solvers like IPOPT and Knitro should be compared with to understand the scope and performance of these new GPU-based interior-point methods.
+\end{quotereviewer}
+
+
+\bibliographystyle{siam}
+\bibliography{../tex/biblio.bib}
+
+\end{document}

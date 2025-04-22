@@ -1,0 +1,64 @@
+Review Report for
+“Condensed-space methods for nonlinear programming on
+GPUs”
+
+Summary
+This paper presents numerical experiments comparing diﬀerent linear solvers in the context of an
+interior-point method (IPM) applied to a few nonlinear programming (NLP) instances, including
+ACOPF, PGLIB and COPS. Speciﬁcally, it evaluates the performance of HSL MA27, a CPUbased linear solver for the original KKT system, against cuDSS, a GPU-based linear solver for
+the condensed-space approaches (LiftedKKT and HyKKT). While the results on ACOPF instances
+suggest some advantages for cuDSS on condensed-space methods, the results on several COPS
+instances are inconsistent.
+
+Evaluation
+I had high expectations upon reading the title and abstract of the paper. However, upon further
+reading, I found that the numerical results fall short of providing suﬃcient evidence and justiﬁcations for the claims made in the paper. One potential path towards a successful submission is
+to rerun experiments with the standard benchmark set of nonlinear programming, i.e., CUTEst
+benchmark set and Mittelmann benchmark set, and draw the conclusion from a comprehensive numerical test. Given that such an expansion would lead to a fundamentally diﬀerent paper, I must
+recommend a rejection in the current form.
+
+Major Comments
+1. One major concern is that the experiments are limited to speciﬁc classes of problems, such as
+ACOPF, COPS, and PGLIB. While these are certainly important classes of NLP problems,
+they are not suﬃciently representative to draw generalized conclusions for all NLP problems.
+If the authors wish to make claims for NLP in general, a broader set of experiments involving
+benchmarks like CUTEst and Mittelmann is required.
+2. The key claim of the paper, as stated in the contributions, is that "The ﬁndings reveal that
+the condensed-space IPM enables a remarkable ten-fold speedup in solving large-scale OPF
+instances using the GPU. However, performance on the COPS benchmark exhibits more
+variability." There are several issues with this claim:
+
+1
+
+(a) The use of condensed-space IPM with GPU acceleration for OPF has already been
+studied in the authors’ previous work [37]. It is unclear how the contributions of this
+paper diﬀer signiﬁcantly from that prior work.
+(b) The results presented in Table 4 for a limited number of COPS instances do not paint
+a consistent picture, making it unclear what the central message is. Is the claim that
+cuDSS or GPU does not oﬀer clear advantages over CPU-based methods for general
+problems?
+(c) The observation that GPU performance depends signiﬁcantly on the sparsity pattern of
+the matrix is expected. However, the scientiﬁc contribution of this observation is not
+apparent and needs further justiﬁcation.
+3. In the context of NLP interior-point methods, the evaluation of Hessian and gradient information often represents a signiﬁcant portion of the overall runtime. However, this aspect is
+not discussed in the paper, despite the general claims made about NLP.
+
+Minor Comments
+1. The title "Condensed-space methods for nonlinear programming on GPUs" is too broad.
+The title should reﬂect the speciﬁc scope of the experiments, and explicitly mention that it
+concerns interior-point methods, and also the claim for NLP is too broad with the scientiﬁc
+ﬁndings in the paper as stated above.
+2. The condition number analysis in Section 4 is fairly standard. It would be helpful for the
+authors to clarify how this analysis contributes to the novelty of the paper.
+3. The meaning of each column in Tables 1-4 requires more detailed explanations. For example,
+what do "it", "init", and "lin" mean in Table 4? What does "analysis" refer to in Table 1
+(e.g., is it the ordering step)? And many others.
+4. The ﬁrst sentence of the contributions section, "In this article, we assess the current capabilities of modern GPUs to solve large-scale nonconvex nonlinear programs to optimality,"
+overstates the scope of the paper.
+5. HyKKT and LiftedKKT have been proposed in previous work. The authors should clearly
+articulate what new insights or conclusions this study provides that were not known before.
+6. Solvers like IPOPT and Knitro should be compared with to understand the scope and performance of these new GPU-based interior-point methods.
+
+2
+
+

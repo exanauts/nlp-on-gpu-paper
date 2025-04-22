@@ -1,0 +1,53 @@
+
+The paper deals with techniques to make recent GPU-based linear solvers suitable for linear systems arising in interior point methods. In particular, the Authors propose a technique to guarantee that the solution of the linear systems does not require pivoting. It is interesting to see how GPUs can be used for such tasks and the different approaches that need to be used for them. The Authors do a good job at justifying the use of GPUs for optimization, and present the proposed technique with great theoretical accuracy. However, I believe that some of the claims made in the paper are exaggerated and stem from some misleading choices. The impressive results should be presented better, giving a more accurate picture for the reader.
+
+My main concern is the following:
+\begin{itemize}
+\item The GPU linear solver is an extremely optimized piece of software, developed specifically to fit the characteristics of the hardware by the manufacturer itself. To obtain a fair comparison, the CPU tests should be performed in similar circumstances.
+
+The Authors use older linear solvers like MA27/57 instead of more recent ones like MA86/87 or Pardiso. In my experience, the latter have a considerable performance advantage in many cases. Consider that MA57 is not inherently parallel, but only exploits the parallelism coming from BLAS. MA27 even predates BLAS and so effectively it is not a parallel code. Comparing a serial code with a massively parallel one, like cuDSS, does not seem fair.
+
+The Authors use OpenBLAS for BLAS and LAPACK; in my experience, using a native version of BLAS, developed on purpose by the hardware manufacturer, can have a considerable performance gain.
+
+I understand that the Authors want to compare with a common situation in nonlinear programming (i.e. MA57 with OpenBLAS), but the use of a better linear solver and a better BLAS library may have a large effect on the CPU performance. It may even be that the best performance on a CPU is comparable with the speed up observed on the GPU, in some cases.
+
+This issue is too important to overlook and the Authors should discuss it and properly inform the reader.
+\end{itemize}
+
+Other important comments:
+\begin{itemize}
+
+\item The condensed KKT system is denser than the original Hessian $W$ and could potentially be much denser. It is not clear why the Authors say that this phenomenon is ``rarer that in the normal equations commonly encountered in LP' (page 8). For the purpose of using IPMs on GPUs, this approach makes sense because it avoids pivoting. However, the issues mentioned for approach $K_1$ remain valid, limiting the applicability of the technique. This is even more problematic when the term $G^TG$ is added as well.
+
+\item It is not clear how the regularization terms $\delta_c$ and $\delta_w$ are chosen. Page 10 mentions that they are chosen dynamically, but they cannot be chosen during the factorization, as this is done with a black-box solver. So what exactly does this mean? Also, choosing the minimum regularization that makes the matrix positive definite may not be enough to guarantee that Cholesky does not break down, since IPM matrices are extremely ill conditioned. What kind of safeguards are in place?
+
+\item It is not completely clear how to choose the parameter $\gamma$. It should be large enough for numerical reasons, but it risks hiding important information coming from the IPM in the linear system. The theoretical results assume that $\gamma$ is proportional to the reciprocal of the duality gap $\Xi^{-1}$; in practice, $\gamma$ seems to be fixed to a large number. Is there the risk that this produces inaccurate solutions of the linear system in the early stage of the algorithm?
+
+\item Page 23, table 1. Why is the accuracy so much worse when using cuDSS-LDLT? Also, why is the analyse phase so expensive compared to the factorise phase? Does it include the assembly of the matrix as well?
+
+On the same page, section 5.2.2: ``the IPM algorithm has to proceed to additional primal-dual regularizations'. It is not clear what this means.
+
+Page 24, table 2. Why does it take fewer IPM iterations to solve the problem to a better accuracy?
+
+Also, what does the last column represent? The accuracy of what? Similar question for Figure 2. Why is the accuracy so much worse when using HyKKT?
+
+Page 27, Figure 3. From the performance profile, it looks like MA27 is able to solve a larger number of problems.
+
+Overall, the issue of accuracy (which is thoroughly discussed theoretically) should be discussed better for the numerical results. This is a crucial aspect for the usability of an interior point solver.
+
+\item Cholmod seems to perform well in Figure 2, better than MA27. Why are the rest of the tests performed only with MA27 then? It would make a lot of sense to compare to Cholmod as well, since it is not doing pivoting.
+
+\item Page 28: the pictures of the sparsity patterns do not provide enough information about the matrices used. Please show also the data about the density of the matrices involved and the extra density arising from the condensed approach.
+
+\item For the OPF instances, MA27 outperforms MA57, as mentioned in Page 25. This is quite telling of the unusual characteristics of these problems. The claims about large speed-ups (e.g. in abstract and introduction) should highlight that this has been observed for very specific structures of the problem.
+
+\end{itemize}
+
+
+Minor comments and misprints:
+\begin{itemize}
+\item Page 7, the system is $5\times5$ and not $6\times 6$.
+\item Page 16, below Assumption 3. There may be a typo, since both smin and smax are proportional to $\Xi$.
+\item Page 28: specify clearly which instance is the OPF one in Figure 5.
+\item Page 28: given that sometimes the number of IPM iterations changes considerably, it would be useful to see the average time per iteration for the three approaches.
+\end{itemize}
