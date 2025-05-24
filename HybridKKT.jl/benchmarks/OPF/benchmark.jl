@@ -12,7 +12,9 @@ const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "opf")
 CUDA.allowscalar(false)
 
 N_COLUMNS = Dict{Symbol, Int}(
-    :benchmark_hsl => 7,
+    :benchmark_madnlp => 7,
+    :benchmark_ipopt => 4,
+    :benchmark_knitro => 7,
     :benchmark_sparse_condensed => 7,
     :benchmark_hybrid => 11,
 )
@@ -50,9 +52,9 @@ FULL_BENCHMARK = [
 ]
 
 
-function benchmark_hsl(nlp, ntrials; options...)
+function benchmark_madnlp(nlp, ntrials; options...)
     ## Warm-up
-    solver = MadNLP.MadNLPSolver(nlp; linear_solver=Ma27Solver, max_iter=1, options...)
+    solver = MadNLP.MadNLPSolver(nlp; max_iter=1, options...)
     MadNLP.solve!(solver)
 
     t_init, t_total, t_callbacks, t_linear_solver = (0.0, 0.0, 0.0, 0.0)
@@ -61,7 +63,7 @@ function benchmark_hsl(nlp, ntrials; options...)
     ## Benchmark
     for _ in 1:ntrials
         t_init += CUDA.@elapsed begin
-            solver = MadNLP.MadNLPSolver(nlp; linear_solver=Ma27Solver, options...)
+            solver = MadNLP.MadNLPSolver(nlp; options...)
         end
         results = MadNLP.solve!(solver)
 
@@ -83,6 +85,31 @@ function benchmark_hsl(nlp, ntrials; options...)
         t_init / ntrials,
         t_callbacks / ntrials,
         t_linear_solver / ntrials,
+    )
+end
+
+function benchmark_ipopt(nlp, ntrials; options...)
+    t_init, t_total, t_callbacks, t_linear_solver = (0.0, 0.0, 0.0, 0.0)
+    n_it, obj = 0, 0.0
+    status = 0
+    t_init = 0.0
+    ## Benchmark
+    for _ in 1:ntrials
+        results = ipopt(nlp; options...)
+
+        status += get_ipopt_status(results.status)
+        t_total += results.elapsed_time
+        n_it += results.iter
+        obj += results.objective
+        # Clean memory
+        refresh_memory()
+    end
+
+    return (
+        status / ntrials,
+        n_it / ntrials,
+        obj / ntrials,
+        t_total / ntrials,
     )
 end
 
@@ -239,10 +266,60 @@ Comonicon.@main function main(;
         FULL_BENCHMARK
     end
 
-    if solver == "all" || solver == "hsl"
-        @info "[CPU] Benchmark SparseKKTSystem+HSL"
-        results = run_benchmark(benchmark_hsl, cases, ntrials; tol=tol, print_level=print_level)
+    if solver == "all" || solver == "ipopt"
+        @info "[CPU] Benchmark Ipopt+HSL+ma27"
+        results = run_benchmark(
+            benchmark_ipopt,
+            cases,
+            ntrials;
+            tol=tol,
+            hsllib=HSL_jll.libhsl_path,
+            linear_solver="ma27",
+            print_level=0,
+        )
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-ipopt-hsl-ma27.csv")
+        writedlm(output_file, [cases results])
+    end
+
+    if solver == "all" || solver == "hsl-ma27"
+        @info "[CPU] Benchmark SparseKKTSystem+HSL+ma27"
+        results = run_benchmark(
+            benchmark_madnlp,
+            cases,
+            ntrials;
+            tol=tol,
+            linear_solver=Ma27Solver,
+            print_level=print_level,
+        )
         output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hsl-ma27.csv")
+        writedlm(output_file, [cases results])
+    end
+
+    if solver == "all" || solver == "hsl-ma57"
+        @info "[CPU] Benchmark SparseKKTSystem+HSL+ma57"
+        results = run_benchmark(
+            benchmark_madnlp,
+            cases,
+            ntrials;
+            tol=tol,
+            linear_solver=Ma57Solver,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hsl-ma57.csv")
+        writedlm(output_file, [cases results])
+    end
+
+    if solver == "all" || solver == "hsl-ma86"
+        @info "[CPU] Benchmark SparseKKTSystem+HSL+ma86"
+        results = run_benchmark(
+            benchmark_madnlp,
+            cases,
+            ntrials;
+            tol=tol,
+            linear_solver=Ma86Solver,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hsl-ma86.csv")
         writedlm(output_file, [cases results])
     end
 

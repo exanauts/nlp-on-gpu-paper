@@ -10,8 +10,13 @@ using CUDSS
 using MadNLP
 using MadNLPHSL
 using MadNLPGPU
+using MadNLPTests
 using HybridKKT
 using ExaModels
+
+using NLPModelsIpopt
+
+using HSL_jll
 
 import SuiteSparse: CHOLMOD
 
@@ -25,19 +30,48 @@ function refresh_memory()
     return
 end
 
-function build_ma27_solver(nlp; options...)
-    return MadNLPSolver(
-        nlp;
-        linear_solver=Ma27Solver,
-        options...,
+function get_ipopt_status(code::Symbol)
+    if code == :first_order
+        return 1
+    elseif code == :acceptable
+        return 2
+    else
+        return 3
+    end
+end
+
+function solve_ipopt(nlp; gamma=1e7, options...)
+    results = ipopt(nlp; options...)
+    return (
+        status=get_ipopt_status(results.status),
+        time_init=0.0,
+        total_time=results.elapsed_time,
+        time_callbacks=0.0,
+        time_linear_solver=0.0,
+        iter=results.iter,
+        objective=results.objective,
     )
 end
 
-function build_ma57_solver(nlp; options...)
+function build_hsl_solver(nlp; options...)
     return MadNLPSolver(
         nlp;
-        linear_solver=Ma57Solver,
         options...,
+    )
+end
+function solve_madnlp_hsl(nlp; options...)
+    t_init = CUDA.@elapsed begin
+        solver = build_hsl_solver(nlp; options...)
+    end
+    results = MadNLP.solve!(solver)
+    return (
+        status=Int(results.status),
+        time_init=t_init,
+        total_time=solver.cnt.total_time,
+        time_callbacks=solver.cnt.eval_function_time,
+        time_linear_solver=solver.cnt.linear_solver_time,
+        iter=solver.cnt.k,
+        objective=results.objective,
     )
 end
 
@@ -63,6 +97,21 @@ function build_sckkt_solver(nlp; options...)
         options...,
     )
 end
+function solve_madnlp_sckkt(nlp; options...)
+    t_init = CUDA.@elapsed begin
+        solver = build_sckkt_solver(nlp; options...)
+    end
+    results = MadNLP.solve!(solver)
+    return (
+        status=Int(results.status),
+        time_init=t_init,
+        total_time=solver.cnt.total_time,
+        time_callbacks=solver.cnt.eval_function_time,
+        time_linear_solver=solver.cnt.linear_solver_time,
+        iter=solver.cnt.k,
+        objective=results.objective,
+    )
+end
 
 function build_hckkt_solver(nlp; gamma=1e7, options...)
     solver = MadNLP.MadNLPSolver(
@@ -75,4 +124,18 @@ function build_hckkt_solver(nlp; gamma=1e7, options...)
     solver.kkt.gamma[] = gamma
     return solver
 end
-
+function solve_madnlp_hykkt(nlp; options...)
+    t_init = CUDA.@elapsed begin
+        solver = build_hckkt_solver(nlp; options...)
+    end
+    results = MadNLP.solve!(solver)
+    return (
+        status=Int(results.status),
+        time_init=t_init,
+        total_time=solver.cnt.total_time,
+        time_callbacks=solver.cnt.eval_function_time,
+        time_linear_solver=solver.cnt.linear_solver_time,
+        iter=solver.cnt.k,
+        objective=results.objective,
+    )
+end

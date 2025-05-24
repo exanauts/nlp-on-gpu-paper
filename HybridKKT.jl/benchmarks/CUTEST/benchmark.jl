@@ -1,52 +1,37 @@
 
 import Comonicon
-using COPSBenchmark
+using CUTEst
 
 include(joinpath(@__DIR__, "..", "common.jl"))
 
-const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "cops")
+const RESULTS_DIR = joinpath(@__DIR__, "..", "..", "results", "cutest")
 
 # Instances
-const COPS_INSTANCES_QUICK = [
-    (COPSBenchmark.bearing_model, (50, 50), 1e6),
-    (COPSBenchmark.camshape_model, (1000,), 1e6),
-    (COPSBenchmark.elec_model, (50,), 1e6),
-    (COPSBenchmark.gasoil_model, (100,), 1e6),
-    (COPSBenchmark.marine_model, (100,), 1e6),
-    (COPSBenchmark.pinene_model, (100,), 1e5),
-    (COPSBenchmark.robot_model, (200,), 1e9),
-    (COPSBenchmark.steering_model, (200,), 1e6),
+const CUTEST_INSTANCES_QUICK = CUTEst.select_sif_problems(; min_var=100, max_var=200, min_con=1)
+const CUTEST_INSTANCES_FULL = CUTEst.select_sif_problems(; min_var=1000, min_con=1)
+
+EXCLUDE = [
+    # MadNLP running into error
+    # Ipopt running into error
+    "EG3", # lfact blows up
+    # Problems that are hopelessly large
+    "TAX213322",
+    "TAXR213322",
+    "TAX53322",
+    "TAXR53322",
+    "YATP1LS",
+    "YATP2LS",
+    "YATP1CLS",
+    "YATP2CLS",
+    "CYCLOOCT",
+    "CYCLOOCF",
+    "LIPPERT1",
+    "GAUSSELM",
+    "BA-L52LS",
+    "BA-L73LS",
+    "BA-L21LS",
 ]
 
-const COPS_INSTANCES_FULL = [
-    # Mittelmann instances
-    (COPSBenchmark.bearing_model, (400, 400), 1e6),
-    (COPSBenchmark.camshape_model, (6400,), 1e6),
-    (COPSBenchmark.elec_model, (400,), 1e6),
-    (COPSBenchmark.gasoil_model, (3200,), 1e6),
-    (COPSBenchmark.marine_model, (1600,), 1e6),
-    (COPSBenchmark.pinene_model, (3200,), 1e5),
-    (COPSBenchmark.robot_model, (1600,), 1e9),
-    (COPSBenchmark.rocket_model, (12800,), 1e9),
-    (COPSBenchmark.steering_model, (12800,), 1e10),
-    # Large-scale instances
-    (COPSBenchmark.bearing_model, (800, 800), 1e6),
-    (COPSBenchmark.camshape_model, (12800,), 1e6),
-    (COPSBenchmark.elec_model, (800,), 1e6),
-    (COPSBenchmark.gasoil_model, (12800,), 1e6),
-    (COPSBenchmark.marine_model, (12800,), 1e6),
-    (COPSBenchmark.pinene_model, (12800,), 1e5),
-    (COPSBenchmark.robot_model, (12800,), 1e9),
-    (COPSBenchmark.rocket_model, (51200,), 1e11),
-    (COPSBenchmark.steering_model, (51200,), 1e9),
-]
-
-function parse_name(cops_instance)
-    func, params = cops_instance
-    id = split(string(func), '_')[1]
-    k = prod(params)
-    return "$(id)_$(k)"
-end
 
 function benchmark_solver(bench_solver, nlp, ntrials; gamma=1e7, maxit=1000, options...)
     ## Warm-up
@@ -84,15 +69,14 @@ end
 function run_benchmark(bench_solver, instances, ntrials; use_gpu=false, options...)
     n, m = length(instances), 7
     results = zeros(n, m)
-    for (k, (instance, params, gamma)) in enumerate(instances)
-        @info "Benchmark $(parse_name((instance, params)))"
-        model = instance(params...)
-        nlp = if use_gpu
-            ExaModels.ExaModel(model; backend=CUDABackend())
-        else
-            ExaModels.ExaModel(model)
+    for (k, instance) in enumerate(instances)
+        @info "Benchmark $(instance)"
+        nlp = CUTEst.CUTEstModel(instance)
+        if use_gpu
+            nlp = MadNLPTests.SparseWrapperModel(CuArray, nlp)
         end
-        results[k, :] .= benchmark_solver(bench_solver, nlp, ntrials; gamma=gamma, options...)
+
+        results[k, :] .= benchmark_solver(bench_solver, nlp, ntrials; options...)
     end
     return results
 end
@@ -117,11 +101,15 @@ Comonicon.@main function main(;
 
     # if quick
     instances = if quick
-        COPS_INSTANCES_QUICK
+        CUTEST_INSTANCES_QUICK
     else
-        COPS_INSTANCES_FULL
+        CUTEST_INSTANCES_FULL
     end
-    index = [parse_name(it) for it in instances]
+
+    filter!(e->!(e in EXCLUDE), instances)
+    instances = instances[1:10]
+
+    index = instances[1:10]
 
     if solver == "all" || solver == "ipopt"
         @info "[CPU] Benchmark Ipopt+ma57"
@@ -135,7 +123,7 @@ Comonicon.@main function main(;
             tol=tol,
             print_level=0,
         )
-        output_file = joinpath(RESULTS_DIR, "cops-$(flag)-ipopt-hsl-ma57.csv")
+        output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-ipopt-hsl-ma57.csv")
         writedlm(output_file, [index results])
     end
 
@@ -150,7 +138,7 @@ Comonicon.@main function main(;
             tol=tol,
             print_level=print_level,
         )
-        output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-hsl-ma27.csv")
+        output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-hsl-ma27.csv")
         writedlm(output_file, [index results])
     end
 
@@ -165,7 +153,7 @@ Comonicon.@main function main(;
             tol=tol,
             print_level=print_level,
         )
-        output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-hsl-ma57.csv")
+        output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-hsl-ma57.csv")
         writedlm(output_file, [index results])
     end
 
@@ -180,7 +168,7 @@ Comonicon.@main function main(;
             tol=tol,
             print_level=print_level,
         )
-        output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-hsl-ma86.csv")
+        output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-hsl-ma86.csv")
         writedlm(output_file, [index results])
     end
 
@@ -195,7 +183,7 @@ Comonicon.@main function main(;
             linear_solver=HybridKKT.CHOLMODSolver,
             print_level=print_level,
         )
-        output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-sckkt-cholmod.csv")
+        output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-sckkt-cholmod.csv")
         writedlm(output_file, [index results])
     end
 
@@ -210,7 +198,7 @@ Comonicon.@main function main(;
             linear_solver=HybridKKT.CHOLMODSolver,
             print_level=print_level,
         )
-        output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-hckkt-cholmod.csv")
+        output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-hckkt-cholmod.csv")
         writedlm(output_file, [index results])
     end
 
@@ -227,7 +215,7 @@ Comonicon.@main function main(;
             cudss_algorithm=MadNLP.LDL,
             print_level=print_level,
         )
-        output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-sckkt-cudss-ldl.csv")
+        output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-sckkt-cudss-ldl.csv")
         writedlm(output_file, [index results])
     end
 
@@ -244,7 +232,7 @@ Comonicon.@main function main(;
             cudss_algorithm=MadNLP.LDL,
             print_level=print_level,
         )
-        output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-hckkt-cudss-ldl.csv")
+        output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-hckkt-cudss-ldl.csv")
         writedlm(output_file, [index results])
     end
 end
