@@ -1,0 +1,46 @@
+\section{Implementation}
+\label{sec:num:implementation}
+All our implementation uses the Julia language \cite{bezanson-edelman-karpinski-shah-2017}.
+We have used our local workstation to generate the results on the CPU, here equipped
+with an AMD EPYC 7443 processor (3.2GHz).
+For the results on the GPU, we have used an NVIDIA A100 GPU (with CUDA 12.3) on
+the Polaris testbed at Argonne National Laboratory
+\footnote{\url{https://www.alcf.anl.gov/polaris}}.
+
+\paragraph{IPM solver.}
+We have implemented the two condensed-space methods in our nonlinear IPM solver MadNLP~\cite{shin2021graph}.
+This implementation utilizes the abstraction {\tt AbstractKKTSystem}
+in MadNLP to represent the various formulations of the KKT linear systems.
+MadNLP can push most of the IPM algorithm to the GPU.
+In particular, any operation that involves the manipulation of array entries is performed by GPU kernels without transferring data to host memory.
+We refer to \cite{shin2023accelerating} for a detailed description of the GPU implementation in MadNLP.
+
+\paragraph{Evaluation of the nonlinear models.}
+For fast evaluation of the derivatives on the GPU,
+we use the ExaModels.jl modeling tool~\cite{shin2023accelerating} to implement all the nonlinear programs utilized in our benchmark.
+ExaModels.jl harnesses the sparsity structure and provides custom derivative kernels for repetitive algebraic subexpressions of the constraints and objective functions to compute first and second-order derivatives on the GPU in parallel~\cite{bischof1991exploiting,enzyme2021}.
+This approach caters to the SIMD architecture of the GPU by assigning each expression to multiple threads responsible for computing derivatives for different values.
+
+\paragraph{Linear solvers.}
+We solve the KKT systems assembled within MadNLP using various sparse linear solvers, chosen based on the KKT formulation (\eqref{eq:kkt:condensed}, \eqref{eq:kkt:augmented}, \eqref{eq:kkt:unreduced}) and the device (CPU, GPU) being utilized. We utilize the following solvers:
+\begin{itemize}
+  \item {\tt HSL MA27}: Implement the multifrontal \lblt factorization on the CPU~\cite{duff1983multifrontal}.
+  \item {\tt HSL MA57}: Implement the multifrontal \lblt factorization on the CPU~\cite{duff1983multifrontal},
+    using multithreaded BLAS kernels in the elimination algorithm.
+  \item \add{{\tt HSL MA86}: Implement a fine grained multicore parallel supernodal \lblt factorization on the CPU.}
+  \item \add{{\tt Panua Pardiso}: Implement a shared-memory parallel supernodal Cholesky, \ldlt and \lblt factorization on the CPU.}
+  \item {\tt CHOLMOD}: Implements the Cholesky and \ldlt factorizations on the CPU % Sungho: Maybe LDLFactorizations.jl instead, once the results are updated.
+    (using the AMD ordering \cite{amestoy-david-duff-2004} by default).
+    It factorizes the condensed matrices $K_\gamma$ and $K_\tau$ appearing
+    resp. in \eqref{eq:kkt:hykkt} and in \eqref{eq:liftedkkt}.
+    This solver is used to assess the performance of the hybrid solvers when running on the CPU.
+  \item {\tt cuDSS}: Implement \llt, \ldlt and \lu decompositions on an NVIDIA GPU.
+    We use the \ldlt factorization to factorize the ill-conditioned condensed matrices $K_\gamma$ on GPU,
+    as \ldlt is more robust than the Cholesky factorization.
+  \item {\tt Krylov.jl}: Contains the \CG method
+    used in the Golub \& Greif strategy to solve \eqref{eq:kkt:schurcomplhykkt} on both CPU and GPU architectures.
+\end{itemize}
+CHOLMOD \cite{chen-davis-hager-rajamanickam-2008} is shipped with Julia.
+For the HSL linear solvers, we utilize libHSL \cite{fowkes-lister-montoison-orban-2024} with the Julia interface HSL.jl \cite{montoison-orban-hsl-2021}.
+HSL MA57 and CHOLMOD are both compiled with OpenBLAS, a multithreaded version of BLAS and LAPACK.
+The Julia package Krylov.jl~\cite{montoison2023krylov} contains a collection of Krylov methods with a polymorphic implementation that can be used on both CPU and GPU architectures.

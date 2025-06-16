@@ -1,53 +1,8 @@
 \section{Numerical results}
 We have implemented LiftedKKT and HyKKT on the GPU.
-First, we detail in \S\ref{sec:num:implementation}
-our implementation and assess in \S\ref{sec:num:pprof} the performance on the GPU of the two hybrid solvers
-Then, we present in \S\ref{sec:num:opf} the results reported on the PGLIB OPF benchmark, complemented in \S\ref{sec:num:cops} by the COPS benchmark.
+First, we assess in \S\ref{sec:num:pprof} the performance on the GPU of the two hybrid solvers, compared to an equivalent CPU implementation.
+Then, we present in \S\ref{sec:num:opf} the results reported on the PGLIB OPF benchmark, complemented in \S\ref{sec:num:cutest} by the CUTEst benchmark.
 
-\subsection{Implementation}
-\label{sec:num:implementation}
-All our implementation uses the Julia language \cite{bezanson-edelman-karpinski-shah-2017}.
-We have used our local workstation to generate the results on the CPU, here equipped
-with an AMD EPYC 7443 processor (3.2GHz).
-For the results on the GPU, we have used an NVIDIA A100 GPU (with CUDA 12.3) on
-the Polaris testbed at Argonne National Laboratory
-\footnote{\url{https://www.alcf.anl.gov/polaris}}.
-
-\paragraph{IPM solver.}
-We have implemented the two condensed-space methods in our nonlinear IPM solver MadNLP~\cite{shin2021graph}.
-This implementation utilizes the abstraction {\tt AbstractKKTSystem}
-in MadNLP to represent the various formulations of the KKT linear systems.
-MadNLP can push most of the IPM algorithm to the GPU, except for basic IPM operations used for the coordination (e.g., the filter line-search algorithm).
-In particular, any operation that involves the manipulation of array entries is performed by GPU kernels without transferring data to host memory.
-We refer to \cite{shin2023accelerating} for a detailed description of the GPU implementation in MadNLP.
-
-\paragraph{Evaluation of the nonlinear models.}
-We use the ExaModels.jl modeling tool~\cite{shin2023accelerating} to implement all the nonlinear programs utilized in our benchmark.
-ExaModels.jl harnesses the sparsity structure and provides custom derivative kernels for repetitive algebraic subexpressions of the constraints and objective functions to compute first and second-order derivatives on the GPU in parallel~\cite{bischof1991exploiting,enzyme2021}.
-This approach caters to the SIMD architecture of the GPU by assigning each expression to multiple threads responsible for computing derivatives for different values.
-
-\paragraph{Linear solvers.}
-We solve the KKT systems assembled within MadNLP using various sparse linear solvers, chosen based on the KKT formulation (\ref{eq:kkt:condensed}, \ref{eq:kkt:augmented}, \ref{eq:kkt:unreduced}) and the device (CPU, GPU) being utilized. We utilize the following solvers:
-\begin{itemize}
-  \item {\tt HSL MA27/MA57}: Implement the \lblt factorization on the CPU~\cite{duff1983multifrontal}.
-    It solves the augmented KKT system~\eqref{eq:kkt:augmented}.
-    This solver serves as the reference when running on the CPU.
-  \item {\tt CHOLMOD}: Implements the Cholesky and \ldlt factorizations on the CPU % Sungho: Maybe LDLFactorizations.jl instead, once the results are updated.
-    (using the AMD ordering \cite{amestoy-david-duff-2004} by default).
-    It factorizes the condensed matrices $K_\gamma$ and $K_\tau$ appearing
-    resp. in \eqref{eq:kkt:hykkt} and in \eqref{eq:liftedkkt}.
-    This solver is used to assess the performance of the hybrid solvers when running on the CPU.
-  \item {\tt cuDSS}: Implement \llt, \ldlt and \lu decompositions on an NVIDIA GPU.
-    We use the \ldlt factorization to factorize the ill-conditioned condensed matrices $K_\gamma$ on GPU,
-    as \ldlt is more robust than the Cholesky factorization.
-  \item {\tt Krylov.jl}: Contains the \CG method
-    used in the Golub \& Greif strategy to solve \eqref{eq:kkt:schurcomplhykkt} on both CPU and GPU architectures.
-\end{itemize}
-CHOLMOD \cite{chen-davis-hager-rajamanickam-2008} is shipped with Julia.
-For the HSL linear solvers, we utilize libHSL \cite{fowkes-lister-montoison-orban-2024} with the Julia interface HSL.jl \cite{montoison-orban-hsl-2021}.
-HSL MA57 and CHOLMOD are both compiled with OpenBLAS, a multithreaded version of BLAS and LAPACK.
-The Julia package Krylov.jl~\cite{montoison2023krylov} contains a collection of Krylov methods with a polymorphic implementation that can be used on both CPU and GPU architectures.
-% Should we provide the version of the linear solvers?
 
 \subsection{Performance analysis on a large-scale instance}
 \label{sec:num:pprof}
@@ -56,64 +11,43 @@ the PGLIB benchmark~\cite{babaeinejadsarookolaee2019power}: {\tt 78484epigrids}.
 Our formulation with ExaModels has
 a total of 674,562 variables, 661,017 equality constraints and 378,045
 inequality constraints.
-Our previous work has pointed out that as soon as the OPF model is
-evaluated on the GPU using ExaModels, the KKT solver becomes the bottleneck
-in the numerical implementation~\cite{shin2023accelerating}.
+Our previous work has pointed out that as soon as the OPF model is evaluated
+on the GPU using ExaModels, \add{the time spent in AD becomes negligible and}
+the KKT solver becomes the bottleneck in the numerical implementation~\cite{shin2023accelerating}.
 
 \subsubsection{Individual performance of the linear solvers}
-Subsequently, we evaluate the individual performance of the cuDSS solver when factorizing the matrix $K_{\gamma}$ at the first IPM iteration (here with $\gamma = 10^7$).
-We compare the times to perform the symbolic analysis,
-the factorization and the triangular solves with those reported in CHOLMOD.
+Subsequently, we evaluate the individual performance of the cuDSS solver when
+factorizing the matrix $K_{\gamma}$ at the first IPM iteration (here with
+$\gamma = 10^7$). We compare the times to perform the symbolic analysis,
+the factorization and the triangular solves with those reported in CHOLMOD \add{(running
+single threaded), HSL MA86 and Panua Pardiso with sparse Cholesky (both running in parallel using 8 threads).}
 
 The results are displayed in Table~\ref{tab:linsol:time}.
-We benchmark the three decompositions implemented in cuDSS (\llt, \ldlt, \lu), and assess the absolve accuracy of the solution by computing the infinity norm of the residual $\|K_\gamma x - b \|_\infty$.
+We benchmark the three decompositions implemented in cuDSS (\llt, \ldlt, \lu).
 % The accuracy of the solution depends of on more factors than the backsolve.
 % The main error comes from the factorization.
 We observe that the analysis phase is four times slower for cuDSS compared to CHOLMOD.
-Fortunately, this operation needs to be computed only once in IPM, meaning that its cost is amortized if we run many IPM iterations.
-The factorization is about twenty times faster in cuDSS, with a time almost independent of the algorithm being used.
-The backward and forward sweeps are ten times faster:
-the triangular solves are harder to parallelize on a GPU.
-% The triangular solves don't parallelize well on a GPU.
-In terms of accuracy, the quality of the solution remains on par with CHOLMOD, except for the \ldlt decomposition which lags behind by at least two orders of magnitude.
-
-% \begin{table}[!ht]
-%   \centering
-%   \resizebox{\textwidth}{!}{
-%   \begin{tabular}{|lrrrr|}
-%   \hline
-%   linear solver & analysis (s) & factorization (s) & backsolve (s) & accuracy \\
-%   \hline
-%     cholmod     & 0.798 &$6.34\times 10^{-1}$&$5.50\times 10^{-2}$&$3.60\times 10^{-13}$\\
-%     cudss-\llt  & 3.50  &$4.77\times 10^{-2}$&$2.08\times 10^{-2}$&$2.64\times 10^{-13}$\\
-%     cudss-\lu   & 3.48  &$4.97\times 10^{-2}$&$1.91\times 10^{-2}$&$2.58\times 10^{-13}$\\
-%     cudss-\ldlt & 3.49  &$5.80\times 10^{-2}$&$1.88\times 10^{-2}$&$5.44\times 10^{-11}$\\
-%   \hline
-%   \end{tabular}
-%   }
-%   \caption{Comparing the performance of cuDSS with CHOLMOD.
-%     The matrix $K_\gamma$ is symmetric positive definite, with
-%     a size $n = 674,562$. The matrix is extremely sparse, with only $7,342,680$ non-zero entries ($0.002$\%).
-%     \label{tab:linsol:time}
-%     (A30 GPU)
-%   }
-% \end{table}
+Fortunately, this operation needs to be computed only once in IPM, meaning that its cost is amortized if we ran many IPM iterations.
+The factorization is about two times faster in cuDSS \add{than in HSL MA86}, with a time almost independent of the algorithm being used.
 
 \begin{table}[!ht]
   \centering
-  \resizebox{\textwidth}{!}{
-  \begin{tabular}{|lrrrr|}
-  \hline
-  linear solver & analysis (s) & factorization (s) & backsolve (s) & abs. accuracy \\
-  \hline
-    CHOLMOD     & 1.18  & $8.57 \times 10^{-1}$ & $1.27 \times 10^{-1}$ & $3.60\times 10^{-13}$\\
-    cuDSS-\llt   & 4.52  & $3.75 \times 10^{-2}$ & $1.32 \times 10^{-2}$ & $2.64\times 10^{-13}$\\ % Sungho: not Cholesky? it would be better to use consistent term. I'd recommend Cholesky instead of LL^T.
-    cuDSS-\lu   & 4.50  & $3.72 \times 10^{-2}$ & $1.49 \times 10^{-2}$ & $2.58\times 10^{-13}$\\
-    cuDSS-\ldlt & 4.50  & $4.07 \times 10^{-2}$ & $1.55 \times 10^{-2}$ & $7.62\times 10^{-11}$\\
-  \hline
-  \end{tabular}
+  \resizebox{.7\textwidth}{!}{
+\begin{tabular}{lrrr}
+\toprule
+               & analysis (s)    & factorization (s) & backsolve (s) \\
+\midrule
+  CHOLMOD        & $1.37\times 10^{0}$ & $7.44\times 10^{-1}    $ & $5.20\times 10^{-2}$ \\
+  PARDISO        & $4.52\times 10^{0}$ & $2.94\times 10^{-1}    $ & $8.94\times 10^{-2}$ \\
+  MA86           & $3.88\times 10^{0}$ & $1.38\times 10^{-1}    $ & $5.50\times 10^{-2}$ \\
+  cuDSS-cholesky & $3.63\times 10^{0}$ & $4.05\times 10^{-2}    $ & $7.22\times 10^{-3}$ \\
+  cuDSS-ldl      & $3.57\times 10^{0}$ & $4.21\times 10^{-2}    $ & $6.35\times 10^{-3}$ \\
+  cuDSS-lu       & $3.55\times 10^{0}$ & $6.28\times 10^{-2}    $ & $6.42\times 10^{-3}$ \\
+\bottomrule
+\end{tabular}
   }
-  \caption{Comparing the performance of cuDSS with CHOLMOD.
+  \caption{Comparing the performance of cuDSS with CHOLMOD\add{, Pardiso and HSL MA86
+  (both running in parallel using 8 threads)}.
     The matrix $K_\gamma$ is symmetric positive definite, with
     a size $n = 674,562$. The matrix is extremely sparse, with only $7,342,680$ non-zero entries ($0.002$\%).
     \label{tab:linsol:time}
@@ -134,9 +68,9 @@ is not accurate enough and the IPM algorithm has to proceed to additional
 primal-dual regularizations.
 
 On the numerical side, the table in Figure~\ref{fig:hybrid:gamma} compares
-the time spent in the IPM solver on the CPU (using CHOLMOD) and on the GPU
+the time spent in the IPM solver on the CPU (using \add{Pardiso}) and on the GPU
 (using the solver {\tt cuDSS}). Overall {\tt cuDSS} is
-faster than CHOLMOD, leading to a 4x-8x speed-up in the total IPM solution time.
+faster than \add{Pardiso}, leading to a 4x-8x speed-up in the total IPM solution time.
 We note also that the assembly of the condensed matrix $K_\gamma$ parallelizes well
 on the GPU, with a reduction in the assembly time from $\approx 8s$ on the CPU to $\approx 0.2s$ on the GPU.
 
@@ -145,15 +79,15 @@ on the GPU, with a reduction in the assembly time from $\approx 8s$ on the CPU t
   \resizebox{\textwidth}{!}{
   \begin{tabular}{|r|rrrr >{\bfseries}r|rrrr >{\bfseries}r|}
   \hline
-  & \multicolumn{5}{c|}{\bf CHOLMOD-\ldlt (CPU)} & \multicolumn{5}{c|}{\bf cuDSS-\ldlt (CUDA)} \\
+  & \multicolumn{5}{c|}{\bf Pardiso (CPU)} & \multicolumn{5}{c|}{\bf cuDSS-\ldlt (CUDA)} \\
   \hline
   $\gamma$ & \# it & cond. (s) & \CG (s) & linsol (s) & IPM (s) & \# it & cond. (s) & \CG (s) & linsol (s) & IPM (s) \\
   \hline
-  $10^4$ & 96 & 8.15 & 463.86 & 536.83 & 575.06 & 96 & 0.17 & 113.27 & 114.52 & 124.00 \\
-  $10^5$ & 96 & 8.33 & 163.35 & 235.61 & 273.36 & 96 & 0.17 & 53.37 & 54.62 & 64.39 \\
-  $10^6$ & 96 & 8.22 & 68.69 & 139.86 & 177.24 & 96 & 0.17 & 14.53 & 15.78 & 25.39 \\
-  $10^7$ & 96 & 8.24 & 35.12 & 107.17 & 144.78 & 96 & 0.17 & 7.95 & 9.20 & 18.41 \\
-  $10^8$ & 96 & 7.89 & 21.68 & 93.85 & 131.33 & 96 & 0.17 & 5.36 & 6.62 & 15.90 \\
+  $10^4$ & 96 & 8.1 & 562.1 & 599.8 & 639.2 & 96 & 0.17 & 113.27 & 114.52 & 124.00 \\
+  $10^5$ & 96 & 8.5 & 212.0 & 249.9 & 290.0 & 96 & 0.17 & 53.37  & 54.62  & 64.39  \\
+  $10^6$ & 96 & 8.6 & 96.7  & 134.6 & 174.6 & 96 & 0.17 & 14.53  & 15.78  & 25.39  \\
+  $10^7$ & 96 & 8.6 & 52.9  & 91.0  & 130.5 & 96 & 0.17 & 7.95   & 9.20   & 18.41  \\
+  $10^8$ & 96 & 8.6 & 35.1  & 73.2  & 113.3 & 96 & 0.17 & 5.36   & 6.62   & 15.90  \\
   \hline
   \end{tabular}
   }
@@ -162,7 +96,8 @@ on the GPU, with a reduction in the assembly time from $\approx 8s$ on the CPU t
     Above: Decomposition of IPM solution time across
     (a) condensation time (cond.), (b) \CG time, (c) total time
     spent in the linear solver (linsol.) and (d) total time spent in
-    IPM solver (IPM).
+    IPM solver (IPM). \add{We compare the performance of cuDSS with those obtained
+    by Pardiso running in parallel on the CPU using 8 threads.}
     Below: Impact of $\gamma$ on the total number of \CG iterations
     and the norm of the relative residual at each IPM iteration.
     The peak observed in the norm of the relative residual corresponds
@@ -184,13 +119,12 @@ in IPM).
 
 We compare in Table~\ref{tab:sckkt:performance} the performance obtained by LiftedKKT
 as we decrease the IPM tolerance $\varepsilon_{tol}$.
-We display both the runtimes on the CPU (using CHOLMOD-\ldlt) and on the GPU (using {\tt cuDSS}-\ldlt).
+We display both the runtimes on the CPU (using \add{Pardiso} with Cholesky) and on the GPU (using {\tt cuDSS}-\ldlt).
 The slacks associated with the relaxed equality constraints are converging to a value below $2 \tau$,
 leading to highly ill-conditioned terms in the diagonal matrices $D_s$.
 As a consequence, the conditioning of the matrix $K_\tau$ in \eqref{eq:liftedkkt} can increase
 above $10^{18}$, leading to a nearly singular linear system.
-We observe {\tt cuDSS}-\ldlt is more stable than CHOLMOD: the factorization
-succeeds, and the loss of accuracy caused by the ill-conditioning is tamed by the multiple
+\add{However, the factorization succeeds} and the loss of accuracy caused by the ill-conditioning is tamed by the multiple
 Richardson iterations that reduces the relative accuracy in the residual down to an acceptable level.
 As a result, {\tt cuDSS} can solve
 the problem to optimality in $\approx 20s$, a time comparable with HyKKT (see Figure~\ref{fig:hybrid:gamma}).
@@ -198,47 +132,32 @@ the problem to optimality in $\approx 20s$, a time comparable with HyKKT (see Fi
 \begin{table}[!ht]
   \centering
   \resizebox{.7\textwidth}{!}{
-  % \begin{tabular}{|l|rr|rr|rr|r|}
-  %   \hline
-  %   & \multicolumn{2}{c|}{\bf CHOLMOD-\ldlt (CPU)} & \multicolumn{2}{c|}{\bf LDLFactorizations (CPU)} & \multicolumn{2}{c|}{\bf cuDSS-\ldlt (CUDA)}& \\
-  %   \hline
-  %   $\varepsilon_{tol}$ & \#it & time (s)& \#it & time (s) & \#it & time (s) & accuracy \\
-  %   \hline
-  %   $10^{-4}$& 115 & 268.2  &220& 358.8& 114 & 19.9& $1.2 \times 10^{-2}$\\
-  %   $10^{-5}$ & 210 & 777.8 & 120&  683.1& 113 & 30.4&$1.2 \times 10^{-3}$ \\
-  %   $10^{-6}$ & 102 & 337.5 & 109&  328.7& 109 & 25.0&$1.2 \times 10^{-4}$  \\
-  %   $10^{-7}$ &108 & 352.9 & 108&  272.9& 104 & 20.1&$1.2 \times 10^{-5}$ \\
-  %   $10^{-8}$ & - &  - &- &  - & 105 & 20.3&$1.2 \times 10^{-6}$  \\
-  %   \hline
-  % \end{tabular}
   \begin{tabular}{|l|rr|rr|r|}
     \hline
-    & \multicolumn{2}{c|}{\bf CHOLMOD-\ldlt (CPU)} & \multicolumn{2}{c|}{\bf cuDSS-\ldlt (CUDA)}& \\
+    & \multicolumn{2}{c|}{\bf Pardiso-\ldlt (CPU)} & \multicolumn{2}{c|}{\bf cuDSS-\ldlt (CUDA)}& \\
     \hline
     $\varepsilon_{tol}$ & \#it & time (s)&  \#it & time (s) & accuracy \\
     \hline
-    $10^{-4}$ & 115 & 268.2 & 114 & 19.9 & $1.2 \times 10^{-2}$ \\
-    $10^{-5}$ & 210 & 777.8 & 113 & 30.4 & $1.2 \times 10^{-3}$ \\
-    $10^{-6}$ & 102 & 337.5 & 109 & 25.0 & $1.2 \times 10^{-4}$ \\
-    $10^{-7}$ & 108 & 352.9 & 104 & 20.1 & $1.2 \times 10^{-5}$ \\
-    $10^{-8}$ & -   & -     & 105 & 20.3 & $1.2 \times 10^{-6}$ \\
+    $10^{-4}$ &127 & 164.9 & 114 & 19.9 & $1.2 \times 10^{-2}$ \\
+    $10^{-5}$ &129 & 168.1 & 113 & 30.4 & $1.2 \times 10^{-3}$ \\
+    $10^{-6}$ &200 & 301.7 & 109 & 25.0 & $1.2 \times 10^{-4}$ \\
+    $10^{-7}$ &110 & 159.2 & 104 & 20.1 & $1.2 \times 10^{-5}$ \\
+    $10^{-8}$ &111 & 156.9 & 105 & 20.3 & $1.2 \times 10^{-6}$ \\
     \hline
   \end{tabular}
   }
   \label{tab:sckkt:performance}
   \caption{Performance of the equality-relaxation
     strategy as we decrease the IPM tolerance $\varepsilon_{tol}$.
-    The table displays the wall time on the CPU (using CHOLMOD-\ldlt)
+    The table displays the wall time on the CPU \add{(using Pardiso-\ldlt)}
     and on the GPU (using cuDSS-\ldlt).
   }
 \end{table}
 
 \subsubsection{Breakdown of the time spent in one IPM iteration}
-We decompose the time spent in a single
-IPM iteration for LiftedKKT and HyKKT.
-As a reference running on the CPU, we show the time spent in the solver HSL MA27.
-We observe that HSL MA57 is slower
-than HSL MA27, as the OPF instances are super-sparse.
+We decompose the time spent in a single IPM iteration for LiftedKKT and HyKKT.
+As a reference running on the CPU, we show the time spent in the solver HSL MA27:
+we observe that HSL MA57 is slower than HSL MA27, as the OPF instances are super-sparse.
 Hence, the block elimination algorithm implemented in HSL MA57 is not beneficial there
 \footnote{Personal communication with Iain Duff.}.
 
@@ -246,59 +165,68 @@ When solving the KKT system, the time can be decomposed into: (1) assembling the
 KKT system, (2) factorizing the KKT system, and (3) computing the descent direction with triangular solves.
 As depicted in Figure~\ref{fig:timebreakdown}, we observe
 that constructing the KKT system represents only a fraction of the computation time, compared
-to the factorization and the triangular solves. Using {\tt cuDSS}-\ldlt, we observe speedups of
-30x and 15x in the factorization compared to MA27 and CHOLMOD running on the CPU.
+to the factorization and the triangular solves.
+\add{The condensed strategies LiftedKKT and HyKKT leads to faster factorization time,
+as the condensed KKT system can be factorized efficiently in parallel. HSL MA86
+factorizes the condensed system almost 10 times faster than HSL MA27, and using
+cuDSS leads to an additional 4x speed-up.}
 Once the KKT system is factorized, computing the descent direction with LiftedKKT is faster than with HyKKT
-(0.04s compared to 0.13s) as HyKKT has to run a \CG algorithm to solve the Schur complement
-system~\eqref{eq:kkt:schurcomplhykkt}, leading to additional backsolves
-in the linear solver.
+(0.01s compared to 0.07s) as HyKKT has to run a \CG algorithm to completion to solve the Schur complement
+system~\eqref{eq:kkt:schurcomplhykkt} --- hence requiring additional backsolves in the linear solver.
 
 \begin{figure}[!ht]
   \centering
   \resizebox{.8\textwidth}{!}{
-    \begin{tabular}{|l|rrrr|}
+    \begin{tabular}{|l|rrr|}
       \hline
-       & build (s) & factorize (s) & backsolve (s) & accuracy \\
+       linear solver & build (s) & factorize (s) & backsolve (s)  \\
        \hline
-      HSL MA27       & $3.15\times 10^{-2}$&$1.22 \times 10^{-0} $&$3.58\times 10^{-1}$&$5.52\times 10^{-7}$\\
-      LiftedKKT (CPU)  & $8.71\times 10^{-2}$&$6.08\times 10^{-1}$&$2.32\times 10^{-1}$&$3.73\times 10^{-9}$\\
-      HyKKT (CPU)  & $7.97\times 10^{-2}$&$6.02\times 10^{-1}$&$7.30\times 10^{-1}$&$3.38\times 10^{-3}$\\
-      LiftedKKT (CUDA) & $2.09\times 10^{-3}$&$4.37\times 10^{-2}$&$3.53\times 10^{-2}$&$4.86\times 10^{-9}$\\
-      HyKKT (CUDA) & $1.86\times 10^{-3}$&$3.38\times 10^{-2}$&$1.35\times 10^{-1}$&$3.91\times 10^{-3}$\\
+      HSL MA27          & $2.85 \times 10^{-2}$ & $1.23 \times 10^0$  & $3.48 \times 10^{-1}$ \\
+      \hline
+      LiftedKKT-CHOLMOD & $8.55 \times 10^{-2}$ & $5.84\times10^{-1}$ & $1.17\times10^{-1}$   \\
+      LiftedKKT-pardiso & $8.16 \times 10^{-2}$ & $2.23\times10^{-1}$ & $1.38\times10^{-1}$   \\
+      LiftedKKT-MA86    & $8.57 \times 10^{-2}$ & $1.36\times10^{-1}$ & $1.18\times10^{-1}$   \\
+      LiftedKKT-cuDSS   & $2.26 \times 10^{-3}$ & $4.91\times10^{-2}$ & $1.09\times10^{-2}$   \\
+      \hline
+      HyKKT-CHOLMOD     & $8.01 \times 10^{-2}$ & $5.89\times10^{-1}$ & $7.22\times10^{-1}$   \\
+      HyKKT-pardiso     & $9.06 \times 10^{-2}$ & $2.21\times10^{-1}$ & $9.19\times10^{-1}$   \\
+      HyKKT-MA86        & $8.60 \times 10^{-2}$ & $1.35\times10^{-1}$ & $7.50\times10^{-1}$   \\
+      HyKKT-cuDSS       & $1.98 \times 10^{-3}$ & $3.38\times10^{-2}$ & $6.66\times10^{-2}$   \\
       \hline
     \end{tabular}
   }
-  \includegraphics[width=.7\textwidth]{figures/breakdown.pdf}
+  \includegraphics[width=.9\textwidth]{figures/breakdown.pdf}
   \caption{Breakdown of the time spent in one IPM iteration
-    for different linear solvers, when solving {\tt 78484epigrids}
+    for different linear solvers, when solving {\tt 78484epigrids}.
+    \add{We set up Pardiso and HSL MA86 to run in parallel using 8 threads.}
   \label{fig:timebreakdown}}
 \end{figure}
 
 
-
 \subsection{Benchmark on OPF instances}
 \label{sec:num:opf}
-We run a benchmark on difficult OPF instances taken
-from the PGLIB benchmark~\cite{babaeinejadsarookolaee2019power}.
-We compare LiftedKKT and HyKKT with HSL MA27.
-The results are displayed in Table~\ref{tab:opf:benchmark},
-for an IPM tolerance set to $10^{-6}$.
+We run a benchmark on difficult OPF instances from the PGLIB benchmark~\cite{babaeinejadsarookolaee2019power}.
+We compare LiftedKKT and HyKKT with HSL MA27. We set the IPM tolerance to $10^{-6}$.
 Regarding HyKKT, we set $\gamma = 10^7$ following the analysis in \S\ref{sec:num:tuninghykkt}.
-The table displays the time spent in the initialization, the time spent in the linear solver and the total
-solving time.
-We complement the table with a Dolan \& Moré performance profile~\cite{dolan2002benchmarking} displayed
-in Figure~\ref{fig:opf:pprof}.
+The Dolan \& Moré performance profile~\cite{dolan2002benchmarking} is displayed
+in Figure~\ref{fig:opf:pprof}. \add{On the left, we compare LiftedKKT and HyKKT
+with MadNLP+Ma27. As a baseline, we include the performance obtained by Ipopt and Knitro, running also with HSL MA27.
 Overall, the performance of HSL MA27 on the CPU is consistent with what was reported
 in \cite{babaeinejadsarookolaee2019power}.
+The second performance profile on the right focuses on the performance obtained
+with LiftedKKT and HyKKT, using various sparse linear solvers.
+We observe that cuDSS leads to the fastest solution time, compared to Panua Pardiso and HSL MA86 running in parallel on the CPU using 8 threads.}
 
-On the GPU, LiftedKKT+cuDSS is faster than HyKKT+cuDSS on small and medium instances: indeed, the algorithm
-does not have to run a \CG algorithm at each IPM iteration, limiting the number
-of triangular solves performed at each iteration.
-Both LiftedKKT+cuDSS and HyKKT+cuDSS are significantly faster than HSL MA27.
+The detailed results are displayed in Table~\ref{tab:opf:benchmark}:
+The table displays the time spent in the initialization, the time spent in the linear solver and the total
+solving time. On the GPU, LiftedKKT+cuDSS is faster than HyKKT+cuDSS on small
+and medium instances: indeed, the algorithm does not have to run a \CG
+algorithm at each IPM iteration, limiting the number of triangular solves
+performed at each iteration. Both LiftedKKT+cuDSS and HyKKT+cuDSS are significantly faster than HSL MA27.
 HyKKT+cuDSS is slower when solving {\tt 8387\_pegase}, as on this particular instance
 the parameter $\gamma$ is not set high enough to reduce the
 total number of \CG iterations, leading to a 4x slowdown compared to LiftedKKT+cuDSS.
-Nevertheless, the performance of HyKKT+cuDSS is better on the largest instances,
+Nevertheless, the performance of HyKKT+cuDSS becomes better on the largest instances,
 with almost an 8x speed-up compared to the reference HSL MA27.
 
 The benchmark presented in Table~\ref{tab:opf:benchmark} has been generated using a
@@ -308,8 +236,8 @@ with cheaper GPUs: a NVIDIA A1000 (a laptop-based GPU, 4GB memory) and a NVIDIA 
 As a comparison, the selling price of the AMD EPYC
 7443 processor we used for the benchmark on the CPU is \$1.2k. The results are
 displayed in Figure~\ref{fig:gpubench}. We observe that the performance of the A30
-and the A100 are relatively similar. The cheaper A1000 GPU is already faster
-than HSL MA27 running on the CPU, but is not able to solve the largest instance as it is running out of memory.
+and the A100 are relatively similar, and the cheaper A1000 GPU is already
+faster than HSL MA27 running on the CPU.
 
 \begin{table}[!ht]
   \centering
@@ -321,37 +249,36 @@ than HSL MA27 running on the CPU, but is not able to solve the largest instance 
       \multicolumn{4}{c|}{\bf HyKKT+cuDSS} \\
       \hline
       Case & it & init & lin & total & it & init & lin & total & it & init & lin & total \\
+      % 89\_pegase & 32 & 0.00 & 0.02 & 0.03 & 29 & 0.03 & 0.12 & 0.24 & 32 & 0.03 & 0.07 & 0.22 \\
+      % 179\_goc & 45 & 0.00 & 0.03 & 0.05 & 39 & 0.03 & 0.19 & 0.35 & 45 & 0.03 & 0.07 & 0.25 \\
+      % 500\_goc & 39 & 0.01 & 0.10 & 0.14 & 39 & 0.05 & 0.09 & 0.26 & 39 & 0.05 & 0.07 & 0.27 \\
+      % 793\_goc & 35 & 0.01 & 0.12 & 0.18 & 57 & 0.06 & 0.27 & 0.52 & 35 & 0.05 & 0.10 & 0.30 \\
       \hline
-      89\_pegase & 32 & 0.00 & 0.02 & 0.03 & 29 & 0.03 & 0.12 & 0.24 & 32 & 0.03 & 0.07 & 0.22 \\
-      179\_goc & 45 & 0.00 & 0.03 & 0.05 & 39 & 0.03 & 0.19 & 0.35 & 45 & 0.03 & 0.07 & 0.25 \\
-      500\_goc & 39 & 0.01 & 0.10 & 0.14 & 39 & 0.05 & 0.09 & 0.26 & 39 & 0.05 & 0.07 & 0.27 \\
-      793\_goc & 35 & 0.01 & 0.12 & 0.18 & 57 & 0.06 & 0.27 & 0.52 & 35 & 0.05 & 0.10 & 0.30 \\
       1354\_pegase & 49 & 0.02 & 0.35 & 0.52 & 96 & 0.12 & 0.69 & 1.22 & 49 & 0.12 & 0.17 & 0.50 \\
-      \hline
       2000\_goc & 42 & 0.03 & 0.66 & 0.93 & 46 & 0.15 & 0.30 & 0.66 & 42 & 0.16 & 0.14 & 0.50 \\
       2312\_goc & 43 & 0.02 & 0.59 & 0.82 & 45 & 0.14 & 0.32 & 0.68 & 43 & 0.14 & 0.21 & 0.56 \\
       2742\_goc & 125 & 0.04 & 3.76 & 7.31 & 157 & 0.20 & 1.93 & 15.49 & - & - & - & - \\
       2869\_pegase & 55 & 0.04 & 1.09 & 1.52 & 57 & 0.20 & 0.30 & 0.80 & 55 & 0.21 & 0.26 & 0.73 \\
-      3022\_goc & 55 & 0.03 & 0.98 & 1.39 & 48 & 0.18 & 0.23 & 0.66 & 55 & 0.18 & 0.23 & 0.68 \\
       \hline
+      3022\_goc & 55 & 0.03 & 0.98 & 1.39 & 48 & 0.18 & 0.23 & 0.66 & 55 & 0.18 & 0.23 & 0.68 \\
       3970\_goc & 48 & 0.05 & 1.95 & 2.53 & 47 & 0.26 & 0.37 & 0.87 & 48 & 0.27 & 0.24 & 0.80 \\
       4020\_goc & 59 & 0.06 & 3.90 & 4.60 & 123 & 0.28 & 1.75 & 3.15 & 59 & 0.29 & 0.41 & 1.08 \\
       4601\_goc & 71 & 0.09 & 3.09 & 4.16 & 67 & 0.27 & 0.51 & 1.17 & 71 & 0.28 & 0.39 & 1.12 \\
       4619\_goc & 49 & 0.07 & 3.21 & 3.91 & 49 & 0.34 & 0.59 & 1.25 & 49 & 0.33 & 0.31 & 0.95 \\
-      4837\_goc & 59 & 0.08 & 2.49 & 3.33 & 59 & 0.29 & 0.58 & 1.31 & 59 & 0.29 & 0.35 & 0.98 \\
       \hline
+      4837\_goc & 59 & 0.08 & 2.49 & 3.33 & 59 & 0.29 & 0.58 & 1.31 & 59 & 0.29 & 0.35 & 0.98 \\
       4917\_goc & 63 & 0.07 & 1.97 & 2.72 & 55 & 0.26 & 0.55 & 1.18 & 63 & 0.26 & 0.34 & 0.94 \\
       5658\_epigrids & 51 & 0.31 & 2.80 & 3.86 & 58 & 0.35 & 0.66 & 1.51 & 51 & 0.35 & 0.35 & 1.03 \\
       7336\_epigrids & 50 & 0.13 & 3.60 & 4.91 & 56 & 0.45 & 0.95 & 1.89 & 50 & 0.43 & 0.35 & 1.13 \\
       8387\_pegase & 74 & 0.14 & 5.31 & 7.62 & 82 & 0.59 & 0.79 & 2.30 & 75 & 0.58 & 7.66 & 8.84 \\
-      9241\_pegase & 74 & 0.15 & 6.11 & 8.60 & 101 & 0.63 & 0.88 & 2.76 & 71 & 0.63 & 0.99 & 2.24 \\
       \hline
+      9241\_pegase & 74 & 0.15 & 6.11 & 8.60 & 101 & 0.63 & 0.88 & 2.76 & 71 & 0.63 & 0.99 & 2.24 \\
       9591\_goc & 67 & 0.20 & 11.14 & 13.37 & 98 & 0.63 & 2.67 & 4.58 & 67 & 0.62 & 0.74 & 1.96 \\
       10000\_goc & 82 & 0.15 & 6.00 & 8.16 & 64 & 0.49 & 0.81 & 1.83 & 82 & 0.49 & 0.75 & 1.82 \\
       10192\_epigrids & 54 & 0.41 & 7.79 & 10.08 & 57 & 0.67 & 1.14 & 2.40 & 54 & 0.67 & 0.66 & 1.81 \\
       10480\_goc & 71 & 0.24 & 12.04 & 14.74 & 67 & 0.75 & 0.99 & 2.72 & 71 & 0.74 & 1.09 & 2.50 \\
-      13659\_pegase & 63 & 0.45 & 7.21 & 10.14 & 75 & 0.83 & 1.05 & 2.96 & 62 & 0.84 & 0.93 & 2.47 \\
       \hline
+      13659\_pegase & 63 & 0.45 & 7.21 & 10.14 & 75 & 0.83 & 1.05 & 2.96 & 62 & 0.84 & 0.93 & 2.47 \\
       19402\_goc & 69 & 0.63 & 31.71 & 36.92 & 73 & 1.42 & 2.28 & 5.38 & 69 & 1.44 & 1.93 & 4.31 \\
       20758\_epigrids & 51 & 0.63 & 14.27 & 18.21 & 53 & 1.34 & 1.05 & 3.57 & 51 & 1.35 & 1.55 & 3.51 \\
       30000\_goc & 183 & 0.65 & 63.02 & 75.95 & - & - & - & - & 225 & 1.22 & 5.59 & 10.27 \\
@@ -359,14 +286,23 @@ than HSL MA27 running on the CPU, but is not able to solve the largest instance 
       \hline
     \end{tabular}
   }
-  \caption{OPF benchmark, solved with a tolerance {\tt tol=1e-6}. \label{tab:opf:benchmark}}
+  \caption{OPF benchmark, solved with a tolerance {\tt tol=1e-6}.
+    \add{The derivatives are evaluated using ExaModels: the total
+      time spent in AD is negligible w.r.t. the time spent solving the KKT
+      system (it is less than 1s even for the largest instances). For that reason,
+  we are not including the AD time in this table.} \label{tab:opf:benchmark}}
 \end{table}
 
 \begin{figure}[!ht]
   \centering
-  \includegraphics[width=.6\textwidth]{figures/pprof-cuda.pdf}
+  \begin{tabular}{cc}
+    \includegraphics[width=.5\textwidth]{figures/pprof-pglib.pdf} &
+    \includegraphics[width=.5\textwidth]{figures/pprof-pglib-condensed.pdf}
+  \end{tabular}
   \caption{Performance profile for the PGLIB OPF benchmark, solved
-    with a tolerance {\tt tol=1e-6}.
+    with a tolerance {\tt tol=1e-6}. \add{Left: comparing LiftedKKT+cuDSS and
+      HyKKT+cuDSS with HSL MA27. Right: comparing LiftedKKT and HyKKT
+    with various parallel sparse linear solvers. }
   \label{fig:opf:pprof}}
 \end{figure}
 
@@ -379,85 +315,118 @@ than HSL MA27 running on the CPU, but is not able to solve the largest instance 
   \label{fig:gpubench}}
 \end{figure}
 
-
-\subsection{Benchmark on COPS instances}
-\label{sec:num:cops}
-We have observed in the previous section that both LiftedKKT
+\subsection{Benchmark on CUTEst instances}
+\label{sec:num:cutest}
+\add{We have observed in the previous section that both LiftedKKT
 and HyKKT outperform HSL MA27 when running on the GPU.
 However, the OPF instances are specific nonlinear instances.
 For that reason, we complement our analysis by looking
-at the performance of LiftedKKT and HyKKT on large-scale COPS instances~\cite{dolan2004benchmarking}.
-We look at the performance we get on the COPS instances used in
-the Mittelmann benchmark~\cite{mittelmann2002benchmark}.
-To illustrate the heterogeneity of the COPS instances,
-we display in Figure~\ref{fig:cops:nnz} the sparsity pattern of the
-condensed matrices $K_\gamma$ \eqref{eq:kkt:hykkt} for one OPF instance and for multiple
-COPS instances. We observe that some instances ({\tt bearing}) have a sparsity pattern
-similar to the OPF instance on the left, whereas some are fully dense ({\tt elec}).
-On the opposite, the optimal control instances ({\tt marine}, {\tt steering}) are
-highly sparse and can be reordered efficiently using AMD ordering~\cite{amestoy-david-duff-2004}.
+at the performance of LiftedKKT and HyKKT on large-scale CUTEst instances.
+Among all CUTEst instances, we select the instances with more than 1,000 variables and
+at least 1 constraint.
+As for the PGLIB benchmark, we set the IPM tolerance to $10^{-6}$ and
+uses $\gamma = 10^7$ in HyKKT.
+The CUTEst benchmark is implemented using the SIF format. We use the package
+{\tt CUTEst.jl} to decode the SIF instances in Julia. Once decoded, {\tt CUTEst.jl}
+compiles the instances using {\tt gfortran}. As a result, we obtain a shared library
+we can use to evaluate the model on the CPU. To use CUTEst on the GPU with HyKKT+cuDSS and
+Lifted+cuDSS, we have implemented a wrapper to evaluate the model on the CPU using
+CUTEst, and then move the resulting values (gradient, constraints, Jacobian and Hessian)
+on the GPU using a copy.
+As a result, the evaluation of the derivatives is not as fast as if they were
+evaluated fully on the GPU, and the GPU solvers are slightly penalized by the
+data exchange between the CPU and the GPU.
 
-The results of the COPS benchmark are displayed in Table~\ref{tab:cops:benchmark}.
-HSL MA57 gives better results than HSL MA27 for the COPS benchmark, and
-for that reason we have decided to replace HSL MA27 by HSL MA57. As expected,
-the results are different than on the OPF benchmark.
-We observe that LiftedKKT+cuDSS and HyKKT+cuDSS outperform HSL MA57 on the dense instance {\tt elec}
-(20x speed-up) and {\tt bearing}  --- an instance whose sparsity pattern
-is similar to the OPF. In the other instances, LiftedKKT+cuDSS and HyKKT+cuDSS
-on par with HSL MA57 and sometimes even slightly slower ({\tt rocket} and {\tt pinene}).
-
+A performance profile comparing LiftedKKT+cuDSS and HyKKT+cuDSS is given
+in Figure~\ref{fig:cutest:pprof}. As a baseline, we include the performance
+obtained with Ipopt, MadNLP and Knitro, all running with HSL MA57.
+This time, we observe that HyKKT and LiftedKKT are less competitive
+than a standard method running on the CPU, despite a robustness being
+comparable with Knitro for LiftedKKT.
+}
 
 \begin{figure}[!ht]
   \centering
-  \includegraphics[width=.9\textwidth]{figures/sparsity_pattern.png}
-  \caption{Sparsity patterns for one OPF instance and for various
-    COPS problems. The first row displays the sparsity pattern
-    of $K_\gamma$, after AMD reordering. The second row displays
-    the sparsity pattern of $K_\gamma$ after Metis reordering.
-    \label{fig:cops:nnz}
-  }
+  \includegraphics[width=.7\textwidth]{figures/pprof-cutest.pdf}
+  \caption{\add{Performance profile for the CUTEst benchmark, selecting
+    all instances with more than 1,000 variables.}
+    \label{fig:cutest:pprof}}
 \end{figure}
 
 
-\begin{table}[!ht]
+\begin{table*}[!ht]
   \centering
-  \resizebox{\textwidth}{!}{
-    \begin{tabular}{|l|rr|rrr >{\bfseries}r|rrr >{\bfseries}r|rrr >{\bfseries}r|}
-      \hline
-  & &
-  & \multicolumn{4}{c|}{\bf HSL MA57} &
-      \multicolumn{4}{c|}{\bf LiftedKKT+cuDSS} &
-      \multicolumn{4}{c|}{\bf HyKKT+cuDSS} \\
-      \hline
-      & $n$ & $m$ & it & init & lin & total & it & init & lin & total & it & init & lin & total \\
-      \hline
-      bearing\_400 & 162k & 2k & 17 & 0.14 & 3.42 & 4.10 & 14 & 0.85 & 0.07 & 1.13 & 14 & 0.78 & 0.76 & 1.74 \\
-      camshape\_6400 & 6k & 19k & 38 & 0.02 & 0.18 & 0.29 & 35 & 0.05 & 0.03 & 0.19 & 38 & 0.05 & 0.04 & 0.23 \\
-      elec\_400 & 1k & 0.4k & 185 & 0.54 & 24.64 & 33.02 & 273 & 0.46 & 0.97 & 20.01 & 128 & 0.48 & 0.75 & 4.16 \\
-      gasoil\_3200 & 83k & 83k & 37 & 0.36 & 4.81 & 5.81 & 21 & 0.54 & 0.24 & 1.40 & 20 & 0.59 & 0.21 & 1.35 \\
-      marine\_1600 & 51k & 51k & 13 & 0.05 & 0.41 & 0.50 & 33 & 0.38 & 0.58 & 1.29 & 13 & 0.37 & 0.12 & 0.62 \\
-      pinene\_3200 & 160k & 160k & 12 & 0.11 & 1.32 & 1.60 & 21 & 0.87 & 0.16 & 1.52 & 11 & 0.90 & 0.84 & 2.02 \\
-      robot\_1600 & 14k & 10k & 34 & 0.04 & 0.33 & 0.45 & 35 & 0.20 & 0.07 & 0.76 & 34 & 0.21 & 0.08 & 0.80 \\
-      rocket\_12800 & 51k & 38k & 23 & 0.12 & 1.73 & 2.16 & 37 & 0.74 & 0.06 & 2.49 & 24 & 0.25 & 1.70 & 3.12 \\
-      steering\_12800 & 64k & 51k & 19 & 0.25 & 1.49 & 1.93 & 18 & 0.44 & 0.06 & 1.64 & 18 & 0.46 & 0.07 & 1.83 \\
-      \hline
-      bearing\_800 & 643k & 3k & 13 & 0.94 & 14.59 & 16.86 & 14 & 3.31 & 0.18 & 4.10 & 12 & 3.32 & 1.98 & 5.86 \\
-      camshape\_12800 & 13k & 38k & 34 & 0.02 & 0.34 & 0.54 & 33 & 0.05 & 0.02 & 0.16 & 34 & 0.06 & 0.03 & 0.19 \\
-      elec\_800 & 2k & 0.8k & 354 & 2.36 & 337.41 & 409.57 & 298 & 2.11 & 2.58 & 24.38 & 184 & 1.81 & 2.40 & 16.33 \\
-      gasoil\_12800 & 333k & 333k & 20 & 1.78 & 11.15 & 13.65 & 18 & 2.11 & 0.98 & 5.50 & 22 & 2.99 & 1.21 & 6.47 \\
-      marine\_12800 & 410k & 410k & 11 & 0.36 & 3.51 & 4.46 & 146 & 2.80 & 25.04 & 39.24 & 11 & 2.89 & 0.63 & 4.03 \\
-      pinene\_12800 & 640k & 640k & 10 & 0.48 & 7.15 & 8.45 & 21 & 4.50 & 0.99 & 7.44 & 11 & 4.65 & 3.54 & 9.25 \\
-      robot\_12800 & 115k & 77k & 35 & 0.54 & 4.63 & 5.91 & 33 & 1.13 & 0.30 & 4.29 & 35 & 1.15 & 0.27 & 4.58 \\
-      rocket\_51200 & 205k & 154k & 31 & 1.21 & 6.24 & 9.51 & 37 & 0.83 & 0.17 & 8.49 & 30 & 0.87 & 2.67 & 10.11 \\
-      steering\_51200 & 256k & 205k & 27 & 1.40 & 9.74 & 13.00 & 15 & 1.82 & 0.19 & 5.41 & 28 & 1.88 & 0.56 & 11.31 \\
-      \hline
-    \end{tabular}
-  }
-  \caption{COPS benchmark , solved with a tolerance {\tt tol=1e-6}\label{tab:cops:benchmark}}
-\end{table}
+  \rotatebox{0}{\resizebox{1\textwidth}{!}{
+    \begin{tabular}{|l|rrrr|rrrr>{\bfseries}r|rrrr>{\bfseries}r|rrrr>{\bfseries}r|}
+  \hline
+      &
+  \multicolumn{4}{c|}{} &
+  \multicolumn{5}{c|}{\bf HSL MA57} &
+      \multicolumn{5}{c|}{\bf LiftedKKT+cuDSS} &
+      \multicolumn{5}{c|}{\bf HyKKT+cuDSS} \\
+\hline
+ & n & m & nnzj & nnzh & it & init & AD & lin & total & it & init & AD & lin & total & it & init & AD & lin & total \\
+\hline
+A5NSDSIL & 60012 & 20004 & 115012 & 100020 & 265 & 0.03 & 1.22 & 6.97 & 11.33 & 119 & 26.16 & 1.35 & 129.95 & 164.00 & - & - & - & - & - \\
+CLEUVEN4 & 1200 & 2973 & 199600 & 71583 & - & - & - & - & - & 423 & 0.76 & 4.69 & 3.59 & 26.54 & - & - & - & - & - \\
+PATTERNNE & 1001 & 1001 & 1002001 & 501501 & 15 & 0.33 & 2.18 & 4.50 & 7.14 & - & - & - & - & - & - & - & - & - & - \\
+STCQP1 & 8193 & 4095 & 28665 & 57333 & 13 & 0.01 & 0.06 & 13.87 & 13.96 & 15 & 0.06 & 0.08 & 0.06 & 0.26 & 161 & 0.07 & 1.10 & 1.18 & 2.94 \\
+READING8 & 2002 & 1000 & 502501 & 3003 & 191 & 0.04 & 0.89 & 11.80 & 13.26 & 373 & 5.37 & 2.03 & 8.00 & 28.81 & 198 & 5.09 & 1.52 & 5.07 & 18.85 \\
+CVXQP3 & 10000 & 7500 & 22497 & 39984 & 17 & 0.12 & 0.03 & 36.33 & 36.50 & 31 & 0.13 & 0.07 & 0.41 & 0.69 & 17 & 0.13 & 0.07 & 118.33 & 118.60 \\
+BRAINPC2 & 13807 & 13800 & 82799 & 34585 & - & - & - & - & - & 42 & 0.27 & 0.57 & 3.73 & 9.60 & - & - & - & - & - \\
+BTS4 & 36570 & 36310 & 136912 & 36570 & 24 & 0.33 & 0.11 & 5.09 & 5.67 & 20 & 0.46 & 0.27 & 1.63 & 3.91 & - & - & - & - & - \\
+EIGENA2 & 2550 & 1275 & 125000 & 66300 & 3 & 0.07 & 0.02 & 5.15 & 5.25 & 4 & 1.47 & 0.04 & 0.04 & 1.61 & 2 & 1.23 & 0.02 & 0.03 & 1.29 \\
+NCVXQP1 & 10000 & 5000 & 14998 & 39984 & 340 & 0.10 & 0.55 & 163.98 & 165.30 & - & - & - & - & - & 336 & 0.12 & 1.15 & 115.78 & 118.45 \\
+CATENA & 3003 & 1000 & 6000 & 6003 & 32 & 0.00 & 0.02 & 12.72 & 12.74 & 36 & 0.06 & 0.10 & 0.33 & 1.13 & - & - & - & - & - \\
+LUKVLE17 & 9997 & 7497 & 17493 & 14995 & 394 & 0.01 & 0.98 & 8.45 & 9.80 & - & - & - & - & - & - & - & - & - & - \\
+NCVXQP4 & 10000 & 2500 & 7499 & 39984 & 277 & 0.07 & 0.39 & 43.11 & 44.10 & 478 & 0.14 & 1.88 & 12.25 & 22.39 & 278 & 0.10 & 0.86 & 7.93 & 10.03 \\
+GASOIL & 10403 & 10398 & 54388 & 8606 & - & - & - & - & - & 16 & 0.11 & 0.09 & 0.34 & 0.96 & 375 & 0.08 & 1.57 & 1.57 & 5.79 \\
+LUKVLE15 & 9997 & 7497 & 22491 & 19993 & - & - & - & - & - & 44 & 0.07 & 0.16 & 0.46 & 1.32 & - & - & - & - & - \\
+10FOLDTR & 1000 & 1000 & 500500 & 500500 & 24 & 0.26 & 0.54 & 5.79 & 6.67 & - & - & - & - & - & 24 & 5.05 & 0.61 & 0.10 & 6.16 \\
+CLEUVEN3 & 1200 & 2973 & 199600 & 71583 & 134 & 0.08 & 0.80 & 6.81 & 7.87 & 104 & 0.53 & 0.80 & 0.29 & 2.16 & 99 & 0.54 & 0.84 & 1.07 & 3.00 \\
+NCVXQP7 & 10000 & 7500 & 22497 & 39984 & 121 & 0.12 & 0.21 & 133.73 & 134.46 & 302 & 0.13 & 1.12 & 7.91 & 10.55 & 129 & 0.13 & 0.48 & 178.30 & 179.46 \\
+BDRY2 & 251001 & 250498 & 1247999 & 63500 & 45 & 2.53 & 1.06 & 158.10 & 163.68 & 157 & 1.46 & 4.99 & 28.96 & 36.30 & 50 & 1.75 & 1.57 & 10.99 & 14.77 \\
+SCW2 & 2003 & 1001 & 2002 & 2007006 & 251 & 0.41 & 25.96 & 66.30 & 95.12 & 97 & 0.75 & 10.64 & 1.55 & 13.48 & 259 & 0.74 & 28.03 & 4.71 & 35.14 \\
+TWIRIBG1 & 3127 & 1239 & 141210 & 199062 & 75 & 0.02 & 1.06 & 25.71 & 26.97 & 198 & 4.50 & 3.76 & 105.77 & 117.78 & 67 & 4.51 & 1.22 & 41.46 & 48.64 \\
+LOBSTERZ & 16263 & 16243 & 187913 & 178686 & 95 & 0.05 & 1.89 & 4.09 & 6.39 & 17 & 0.23 & 0.35 & 0.09 & 0.84 & - & - & - & - & - \\
+CLEUVEN6 & 1200 & 3091 & 216608 & 71583 & 206 & 0.08 & 1.26 & 9.45 & 11.05 & 88 & 0.55 & 0.74 & 0.27 & 2.04 & - & - & - & - & - \\
+EIGENBCO & 2550 & 1275 & 125000 & 3252525 & 261 & 0.37 & 50.55 & 278.55 & 332.81 & 206 & 1.37 & 40.90 & 3.74 & 47.41 & 237 & 1.64 & 47.54 & 4.42 & 54.98 \\
+MANNE & 6000 & 4000 & 11999 & 4000 & 431 & 0.00 & 0.29 & 156.09 & 156.97 & 431 & 0.04 & 0.37 & 0.79 & 2.69 & 400 & 0.04 & 0.51 & 0.74 & 2.86 \\
+ROSEPETAL & 1000 & 2000 & 2000000 & 1000 & 26 & 0.38 & 1.84 & 6.00 & 8.51 & - & - & - & - & - & - & - & - & - & - \\
+EIGENC & 2652 & 2652 & 332928 & 70278 & 12 & 0.07 & 0.20 & 54.44 & 54.74 & - & - & - & - & - & 26 & 1.62 & 0.48 & 0.30 & 2.62 \\
+A2NSDSIL & 60012 & 20004 & 115012 & 100020 & 166 & 0.02 & 0.76 & 3.99 & 5.45 & 152 & 18.47 & 1.32 & 120.11 & 142.74 & - & - & - & - & - \\
+TWOD & 70521 & 67080 & 628680 & 3202 & 20 & 1.14 & 0.15 & 78.69 & 80.37 & - & - & - & - & - & 33 & 1.03 & 0.47 & 4.81 & 6.51 \\
+EIGENB2 & 2550 & 1275 & 125000 & 66300 & 132 & 0.08 & 0.82 & 211.36 & 212.42 & 110 & 1.23 & 1.01 & 1.77 & 4.68 & 128 & 1.23 & 1.21 & 2.14 & 5.25 \\
+LEUVEN3 & 1200 & 2973 & 199600 & 71583 & 493 & 0.08 & 5.17 & 43.11 & 49.39 & - & - & - & - & - & - & - & - & - & - \\
+LEUVEN5 & 1200 & 2973 & 199600 & 71583 & 493 & 0.07 & 5.14 & 43.16 & 49.40 & - & - & - & - & - & 384 & 0.52 & 4.77 & 7.26 & 16.06 \\
+NCVXQP9 & 10000 & 7500 & 22497 & 39984 & 390 & 0.12 & 0.68 & 385.61 & 387.18 & - & - & - & - & - & 404 & 0.13 & 1.55 & 798.12 & 802.24 \\
+EIGENC2 & 2652 & 1326 & 132651 & 70278 & 16 & 0.08 & 0.10 & 26.37 & 26.57 & 17 & 1.31 & 0.16 & 0.58 & 2.15 & 15 & 1.32 & 0.16 & 0.56 & 2.12 \\
+STNQP1 & 8193 & 4095 & 28665 & 57333 & 17 & 0.01 & 0.07 & 19.59 & 19.69 & 21 & 0.06 & 0.12 & 0.13 & 0.38 & 60 & 0.06 & 0.40 & 0.48 & 1.24 \\
+EIGENCCO & 2652 & 1326 & 132651 & 3517878 & 42 & 0.58 & 8.85 & 51.38 & 61.37 & 35 & 1.46 & 7.56 & 0.59 & 9.84 & 42 & 1.77 & 9.09 & 0.83 & 11.93 \\
+EIGENAU & 2550 & 2550 & 313750 & 66300 & 2 & 0.05 & 0.03 & 10.95 & 11.05 & 3 & 1.49 & 0.05 & 0.02 & 1.60 & 1 & 1.50 & 0.03 & 0.01 & 1.57 \\
+NCVXQP8 & 10000 & 7500 & 22497 & 39984 & 317 & 0.13 & 0.56 & 377.29 & 378.63 & - & - & - & - & - & 320 & 0.13 & 1.53 & 563.52 & 567.05 \\
+COSHFUN & 6001 & 2000 & 11998 & 8000 & - & - & - & - & - & 439 & 0.04 & 0.37 & 0.77 & 3.16 & - & - & - & - & - \\
+LUKVLE12 & 9997 & 7497 & 19992 & 22492 & 86 & 0.00 & 0.18 & 208.54 & 208.77 & 30 & 0.05 & 0.09 & 0.09 & 0.41 & 24 & 0.04 & 0.07 & 0.08 & 0.30 \\
+RDW2D52F & 132098 & 65025 & 1170450 & 657410 & 4 & 1.71 & 0.59 & 2.89 & 5.28 & 4 & 0.84 & 0.60 & 0.37 & 1.88 & 4 & 0.93 & 0.64 & 0.55 & 2.19 \\
+CONT5-QP & 40601 & 40200 & 240200 & 401 & 40 & 0.37 & 0.15 & 24.26 & 25.18 & - & - & - & - & - & 70 & 0.25 & 0.61 & 1.57 & 3.05 \\
+EIGENA & 2550 & 2550 & 313750 & 66300 & 138 & 0.04 & 2.11 & 243.73 & 246.15 & 96 & 1.49 & 1.70 & 0.83 & 4.99 & - & - & - & - & - \\
+EIGENACO & 2550 & 1275 & 125000 & 3252525 & 3 & 0.57 & 0.58 & 4.29 & 5.50 & 5 & 1.36 & 0.99 & 0.07 & 2.46 & 2 & 1.39 & 0.41 & 0.03 & 1.83 \\
+CLEUVEN5 & 1200 & 2973 & 199600 & 71583 & 134 & 0.07 & 0.81 & 6.80 & 7.85 & 104 & 0.53 & 0.82 & 0.29 & 2.18 & 99 & 0.53 & 0.77 & 1.11 & 3.04 \\
+SAROMM & 5120 & 5110 & 50370 & 24090 & 132 & 0.01 & 4.49 & 0.66 & 5.21 & 103 & 0.04 & 3.53 & 0.30 & 4.21 & 165 & 0.04 & 5.73 & 0.53 & 6.91 \\
+RDW2D52B & 132098 & 65025 & 1170450 & 657410 & 4 & 1.89 & 0.59 & 2.82 & 5.39 & 6 & 0.84 & 0.88 & 0.54 & 2.34 & 4 & 0.88 & 0.63 & 1.15 & 2.74 \\
+NCVXQP5 & 10000 & 2500 & 7499 & 39984 & 412 & 0.07 & 0.57 & 65.10 & 66.43 & - & - & - & - & - & 419 & 0.10 & 1.37 & 12.20 & 16.26 \\
+MARINE & 11215 & 11192 & 46768 & 9423 & 85 & 0.01 & 0.11 & 8.60 & 8.75 & 25 & 0.09 & 0.05 & 0.14 & 0.39 & 31 & 0.10 & 0.07 & 0.25 & 0.54 \\
+CHARDIS12 & 2000 & 999 & 1998 & 2001000 & 438 & 0.16 & 111.02 & 116.74 & 232.10 & 416 & 0.74 & 102.13 & 7.61 & 112.50 & 436 & 0.74 & 114.19 & 8.14 & 125.82 \\
+RDW2D51F & 132098 & 65025 & 1170450 & 657410 & 5 & 1.87 & 0.71 & 3.46 & 6.13 & 3 & 0.84 & 0.46 & 0.28 & 1.63 & 5 & 0.89 & 0.78 & 0.67 & 2.42 \\
+ORTHREGE & 7506 & 5000 & 30000 & 17509 & - & - & - & - & - & - & - & - & - & - & 122 & 0.06 & 0.60 & 0.37 & 1.94 \\
+\hline
+\end{tabular}
+  }}
+  \caption{CUTEst benchmark , solved with a tolerance {\tt tol=1e-6}\label{tab:cutest:benchmark}}
+\end{table*}
+
+% TODO
+% - dense column
+% - initialization time
 
 
-%%% Local Variables:
-%%% mode: latex
-%%% TeX-master: "../main"
-%%% End:
