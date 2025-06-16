@@ -71,12 +71,19 @@ function run_benchmark(bench_solver, instances, ntrials; use_gpu=false, options.
     results = zeros(n, m)
     for (k, instance) in enumerate(instances)
         @info "Benchmark $(instance)"
-        nlp = CUTEst.CUTEstModel(instance)
-        if use_gpu
-            nlp = MadNLPTests.SparseWrapperModel(CuArray, nlp)
+        nlp_ = CUTEst.CUTEstModel(instance; decode=false)
+        nlp = if use_gpu
+            MadNLPTests.SparseWrapperModel(CuArray, nlp_)
+        else
+            nlp_
         end
-
-        results[k, :] .= benchmark_solver(bench_solver, nlp, ntrials; options...)
+        try
+            results[k, :] .= benchmark_solver(bench_solver, nlp, ntrials; options...)
+        catch ex
+            println("Fail to solve $(instance): $(ex)")
+            results[k, 1] = -1.0
+        end
+        finalize(nlp_)
     end
     return results
 end
@@ -107,9 +114,9 @@ Comonicon.@main function main(;
     end
 
     filter!(e->!(e in EXCLUDE), instances)
-    instances = instances[1:10]
+    instances = instances
 
-    index = instances[1:10]
+    index = instances
 
     if solver == "all" || solver == "ipopt"
         @info "[CPU] Benchmark Ipopt+ma57"
@@ -117,13 +124,29 @@ Comonicon.@main function main(;
             solve_ipopt,
             instances,
             ntrials;
-            maxit=max_iter,
+            max_iter=max_iter,
+            max_wall_time=900.0,
             hsllib=HSL_jll.libhsl_path,
             linear_solver="ma57",
             tol=tol,
             print_level=0,
         )
         output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-ipopt-hsl-ma57.csv")
+        writedlm(output_file, [index results])
+    end
+
+    if solver == "all" || solver == "knitro"
+        @info "[CPU] Benchmark Knitro+ma57"
+        results = run_benchmark(
+            solve_knitro,
+            instances,
+            ntrials;
+            maxit=max_iter,
+            maxtime=900.0,
+            opttol=tol,
+            outlev=0,
+        )
+        output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-knitro-hsl-ma57.csv")
         writedlm(output_file, [index results])
     end
 
@@ -134,6 +157,7 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=900.0,
             linear_solver=Ma27Solver,
             tol=tol,
             print_level=print_level,
@@ -149,6 +173,7 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=900.0,
             linear_solver=Ma57Solver,
             tol=tol,
             print_level=print_level,
@@ -164,11 +189,28 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=900.0,
             linear_solver=Ma86Solver,
             tol=tol,
             print_level=print_level,
         )
         output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-hsl-ma86.csv")
+        writedlm(output_file, [index results])
+    end
+
+    if solver == "all" || solver == "pardiso"
+        @info "[CPU] Benchmark SparseKKTSystem+pardiso"
+        results = run_benchmark(
+            solve_madnlp_hsl,
+            instances,
+            ntrials;
+            maxit=max_iter,
+            max_wall_time=900.0,
+            linear_solver=PardisoSolver,
+            tol=tol,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-pardiso.csv")
         writedlm(output_file, [index results])
     end
 
@@ -179,11 +221,47 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=900.0,
             tol=tol,
             linear_solver=HybridKKT.CHOLMODSolver,
             print_level=print_level,
         )
         output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-sckkt-cholmod.csv")
+        writedlm(output_file, [index results])
+    end
+
+    if solver == "all" || solver == "sckkt-ma86"
+        @info "[CPU] Benchmark SparseCondensedKKTSystem+Ma86"
+        BLAS.set_num_threads(1)
+        results = run_benchmark(
+            solve_madnlp_sckkt,
+            instances,
+            ntrials;
+            maxit=max_iter,
+            max_wall_time=900.0,
+            tol=tol,
+            linear_solver=Ma86Solver,
+            ma86_num_threads=8,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-sckkt-ma86.csv")
+        writedlm(output_file, [index results])
+    end
+
+    if solver == "all" || solver == "sckkt-pardiso"
+        @info "[CPU] Benchmark SparseCondensedKKTSystem+Pardiso"
+        results = run_benchmark(
+            solve_madnlp_sckkt,
+            instances,
+            ntrials;
+            maxit=max_iter,
+            max_wall_time=900.0,
+            tol=tol,
+            linear_solver=PardisoSolver,
+            pardiso_algorithm=MadNLP.CHOLESKY,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-sckkt-pardiso.csv")
         writedlm(output_file, [index results])
     end
 
@@ -194,11 +272,48 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=900.0,
             tol=tol,
             linear_solver=HybridKKT.CHOLMODSolver,
             print_level=print_level,
         )
         output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-hckkt-cholmod.csv")
+        writedlm(output_file, [index results])
+    end
+
+    if solver == "all" || solver == "hckkt-ma86"
+        @info "[CPU] Benchmark HybridCondensedKKTSystem+ma86"
+        BLAS.set_num_threads(1)
+        results = run_benchmark(
+            solve_madnlp_hykkt,
+            instances,
+            ntrials;
+            maxit=max_iter,
+            max_wall_time=900.0,
+            ma86_num_threads=8,
+            tol=tol,
+            linear_solver=Ma86Solver,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-hckkt-ma86.csv")
+        writedlm(output_file, [index results])
+    end
+
+    if solver == "all" || solver == "hckkt-pardiso"
+        @info "[CPU] Benchmark HybridCondensedKKTSystem+Pardiso"
+        BLAS.set_num_threads(1)
+        results = run_benchmark(
+            solve_madnlp_hykkt,
+            instances,
+            ntrials;
+            maxit=max_iter,
+            max_wall_time=900.0,
+            linear_solver=PardisoSolver,
+            pardiso_algorithm=MadNLP.CHOLESKY,
+            tol=tol,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "cutest-$(flag)-madnlp-hckkt-pardiso.csv")
         writedlm(output_file, [index results])
     end
 
@@ -209,6 +324,7 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=900.0,
             use_gpu=true,
             tol=tol,
             linear_solver=MadNLPGPU.CUDSSSolver,
@@ -226,6 +342,7 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=900.0,
             use_gpu=true,
             tol=tol,
             linear_solver=MadNLPGPU.CUDSSSolver,

@@ -47,7 +47,8 @@ Comonicon.@main function main(; solver="all", case="pglib_opf_case78484_epigrids
             nlp, 1e4;
             max_iter=1,
             print_level=MadNLP.INFO,
-            linear_solver=HybridKKT.CHOLMODSolver,
+            linear_solver=MadNLPPardiso.PardisoSolver,
+            pardiso_algorithm=MadNLP.CHOLESKY,
             tol=tol,
         )
         # Extract results
@@ -57,7 +58,8 @@ Comonicon.@main function main(; solver="all", case="pglib_opf_case78484_epigrids
                 nlp, gamma;
                 max_iter=200,
                 print_level=MadNLP.INFO,
-                linear_solver=HybridKKT.CHOLMODSolver,
+                linear_solver=MadNLPPardiso.PardisoSolver,
+                pardiso_algorithm=MadNLP.CHOLESKY,
                 tol=tol,
             )
             output_file = joinpath(RESULTS_DIR, "hybrid-convergence-$(gamma_).txt")

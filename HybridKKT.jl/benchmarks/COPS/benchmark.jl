@@ -130,6 +130,7 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=1800.0,
             hsllib=HSL_jll.libhsl_path,
             linear_solver="ma57",
             tol=tol,
@@ -146,6 +147,7 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=1800.0,
             linear_solver=Ma27Solver,
             tol=tol,
             print_level=print_level,
@@ -161,6 +163,7 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=1800.0,
             linear_solver=Ma57Solver,
             tol=tol,
             print_level=print_level,
@@ -176,6 +179,7 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=1800.0,
             linear_solver=Ma86Solver,
             tol=tol,
             print_level=print_level,
@@ -191,6 +195,7 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=1800.0,
             tol=tol,
             linear_solver=HybridKKT.CHOLMODSolver,
             print_level=print_level,
@@ -206,11 +211,30 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=1800.0,
             tol=tol,
             linear_solver=HybridKKT.CHOLMODSolver,
             print_level=print_level,
         )
         output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-hckkt-cholmod.csv")
+        writedlm(output_file, [index results])
+    end
+
+    if solver == "all" || solver == "hckkt-ma86"
+        @info "[CPU] Benchmark HybridCondensedKKTSystem+ma86"
+        BLAS.set_num_threads(1)
+        results = run_benchmark(
+            solve_madnlp_hykkt,
+            instances,
+            ntrials;
+            maxit=max_iter,
+            max_wall_time=1800.0,
+            ma86_num_threads=8,
+            tol=tol,
+            linear_solver=Ma86Solver,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "cops-$(flag)-madnlp-hckkt-ma86.csv")
         writedlm(output_file, [index results])
     end
 
@@ -221,6 +245,7 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=1800.0,
             use_gpu=true,
             tol=tol,
             linear_solver=MadNLPGPU.CUDSSSolver,
@@ -238,6 +263,7 @@ Comonicon.@main function main(;
             instances,
             ntrials;
             maxit=max_iter,
+            max_wall_time=1800.0,
             use_gpu=true,
             tol=tol,
             linear_solver=MadNLPGPU.CUDSSSolver,

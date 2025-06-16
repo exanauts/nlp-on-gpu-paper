@@ -14,7 +14,7 @@ CUDA.allowscalar(false)
 N_COLUMNS = Dict{Symbol, Int}(
     :benchmark_madnlp => 7,
     :benchmark_ipopt => 4,
-    :benchmark_knitro => 7,
+    :benchmark_knitro => 4,
     :benchmark_sparse_condensed => 7,
     :benchmark_hybrid => 11,
 )
@@ -96,6 +96,31 @@ function benchmark_ipopt(nlp, ntrials; options...)
     ## Benchmark
     for _ in 1:ntrials
         results = ipopt(nlp; options...)
+
+        status += get_ipopt_status(results.status)
+        t_total += results.elapsed_time
+        n_it += results.iter
+        obj += results.objective
+        # Clean memory
+        refresh_memory()
+    end
+
+    return (
+        status / ntrials,
+        n_it / ntrials,
+        obj / ntrials,
+        t_total / ntrials,
+    )
+end
+
+function benchmark_knitro(nlp, ntrials; options...)
+    t_init, t_total, t_callbacks, t_linear_solver = (0.0, 0.0, 0.0, 0.0)
+    n_it, obj = 0, 0.0
+    status = 0
+    t_init = 0.0
+    ## Benchmark
+    for _ in 1:ntrials
+        results = knitro(nlp; options...)
 
         status += get_ipopt_status(results.status)
         t_total += results.elapsed_time
@@ -281,6 +306,20 @@ Comonicon.@main function main(;
         writedlm(output_file, [cases results])
     end
 
+    if solver == "all" || solver == "knitro"
+        @info "[CPU] Benchmark Knitro+ma27"
+        results = run_benchmark(
+            benchmark_knitro,
+            cases,
+            ntrials;
+            linsolver=4,
+            opttol=tol,
+            outlev=0,
+        )
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-knitro-hsl-ma27.csv")
+        writedlm(output_file, [cases results])
+    end
+
     if solver == "all" || solver == "hsl-ma27"
         @info "[CPU] Benchmark SparseKKTSystem+HSL+ma27"
         results = run_benchmark(
@@ -311,15 +350,31 @@ Comonicon.@main function main(;
 
     if solver == "all" || solver == "hsl-ma86"
         @info "[CPU] Benchmark SparseKKTSystem+HSL+ma86"
+        BLAS.set_num_threads(1)
         results = run_benchmark(
             benchmark_madnlp,
             cases,
             ntrials;
             tol=tol,
             linear_solver=Ma86Solver,
+            ma86_num_threads=8,
             print_level=print_level,
         )
-        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hsl-ma86.csv")
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hsl-ma86-8.csv")
+        writedlm(output_file, [cases results])
+    end
+
+    if solver == "all" || solver == "pardiso"
+        @info "[CPU] Benchmark SparseKKTSystem+Pardiso"
+        results = run_benchmark(
+            benchmark_madnlp,
+            cases,
+            ntrials;
+            tol=tol,
+            linear_solver=PardisoSolver,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-pardiso.csv")
         writedlm(output_file, [cases results])
     end
 
@@ -337,6 +392,22 @@ Comonicon.@main function main(;
         writedlm(output_file, [cases results])
     end
 
+    if solver == "all" || solver == "sckkt-pardiso"
+        @info "[CPU] Benchmark SparseKKTSystem+Pardiso"
+        results = run_benchmark(
+            benchmark_sparse_condensed,
+            cases,
+            ntrials;
+            tol=tol,
+            gamma=gamma,
+            linear_solver=PardisoSolver,
+            pardiso_algorithm=MadNLP.CHOLESKY,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-sckkt-pardiso.csv")
+        writedlm(output_file, [cases results])
+    end
+
     if solver == "all" || solver == "hckkt-cpu"
         @info "[CPU] Benchmark HybridCondensedKKTSystem+CHOLMOD"
         results = run_benchmark(
@@ -351,6 +422,40 @@ Comonicon.@main function main(;
         output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hckkt-cholmod-$(gamma_).csv")
         writedlm(output_file, [cases results])
     end
+
+    if solver == "all" || solver == "hckkt-ma86"
+        @info "[CPU] Benchmark HybridCondensedKKTSystem+HSL+ma86"
+        BLAS.set_num_threads(1)
+        results = run_benchmark(
+            benchmark_hybrid,
+            cases,
+            ntrials;
+            gamma=gamma,
+            tol=tol,
+            linear_solver=Ma86Solver,
+            ma86_num_threads=8,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hckkt-ma86-$(gamma_).csv")
+        writedlm(output_file, [cases results])
+    end
+
+    if solver == "all" || solver == "hckkt-pardiso"
+        @info "[CPU] Benchmark SparseKKTSystem+Pardiso"
+        results = run_benchmark(
+            benchmark_hybrid,
+            cases,
+            ntrials;
+            tol=tol,
+            gamma=gamma,
+            linear_solver=PardisoSolver,
+            pardiso_algorithm=MadNLP.CHOLESKY,
+            print_level=print_level,
+        )
+        output_file = joinpath(RESULTS_DIR, "pglib-$(flag)-madnlp-hckkt-pardiso.csv")
+        writedlm(output_file, [cases results])
+    end
+
 
     if (solver == "all" || solver == "sckkt-cuda") && CUDA.has_cuda()
         @info "[CUDA] Benchmark SparseCondensedKKTSystem+CUDSS"

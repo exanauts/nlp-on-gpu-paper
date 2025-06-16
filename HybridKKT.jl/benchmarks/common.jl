@@ -10,11 +10,14 @@ using CUDSS
 using MadNLP
 using MadNLPHSL
 using MadNLPGPU
+using MadNLPPardiso
 using MadNLPTests
 using HybridKKT
 using ExaModels
 
+using NLPModels
 using NLPModelsIpopt
+using NLPModelsKnitro
 
 using HSL_jll
 
@@ -22,12 +25,33 @@ import SuiteSparse: CHOLMOD
 
 if CUDA.has_cuda()
     CUDA.allowscalar(false)
+    CUDA.device!(1)
 end
 
 function refresh_memory()
     GC.gc(true)
     CUDA.has_cuda() && CUDA.reclaim()
     return
+end
+
+# Add default fallbacks to use ExaModels with Knitro.
+
+function NLPModels.jac_nln_structure!(model::ExaModels.ExaModel, rows, cols)
+    NLPModels.jac_structure!(model, rows, cols)
+    return rows, cols
+end
+
+function NLPModels.jac_nln_coord!(model::ExaModels.ExaModel, x, jac)
+    NLPModels.jac_coord!(model, x, jac)
+    return jac
+end
+
+function NLPModels.hess_structure(model::ExaModels.ExaModel)
+    nnzh = NLPModels.get_nnzh(model)
+    rows = zeros(Int, nnzh)
+    cols = zeros(Int, nnzh)
+    NLPModels.hess_structure!(model, rows, cols)
+    return rows, cols
 end
 
 function get_ipopt_status(code::Symbol)
@@ -42,6 +66,19 @@ end
 
 function solve_ipopt(nlp; gamma=1e7, options...)
     results = ipopt(nlp; options...)
+    return (
+        status=get_ipopt_status(results.status),
+        time_init=0.0,
+        total_time=results.elapsed_time,
+        time_callbacks=0.0,
+        time_linear_solver=0.0,
+        iter=results.iter,
+        objective=results.objective,
+    )
+end
+
+function solve_knitro(nlp; gamma=1e7, max_iter=1000, options...)
+    results = knitro(nlp; maxit=max_iter, options...)
     return (
         status=get_ipopt_status(results.status),
         time_init=0.0,

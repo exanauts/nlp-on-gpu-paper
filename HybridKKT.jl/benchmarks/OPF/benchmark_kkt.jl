@@ -52,33 +52,70 @@ Comonicon.@main function main(;
     end
 
     columns = ["hsl", "sckkt-cpu", "hckkt-cpu", "sckkt-cuda", "hckkt-cuda"]
-    results = zeros(5, 4)
+    results = zeros(9, 4)
 
     datafile = joinpath(PGLIB_PATH, case)
     nlp = ac_power_model(datafile)
 
     @info "Benchmark KKT with HSL"
-    solver = build_ma27_solver(nlp; max_iter=1, print_level=MadNLP.ERROR)
+    solver = build_hsl_solver(nlp; max_iter=1, linear_solver=Ma27Solver, print_level=MadNLP.ERROR)
     results[1, :] .= benchmark_kkt(solver, ntrials)
 
     @info "Benchmark KKT with SparseCondensedKKTSystem+CHOLMOD"
-    solver = build_sckkt_solver(nlp; max_iter=1, print_level=MadNLP.ERROR, linear_solver=HybridKKT.CHOLMODSolver)
+    solver = build_sckkt_solver(nlp; max_iter=1,
+        print_level=MadNLP.ERROR,
+        linear_solver=HybridKKT.CHOLMODSolver,
+    )
     results[2, :] .= benchmark_kkt(solver, ntrials)
 
     @info "Benchmark KKT with HybridCondensedKKTSystem+CHOLMOD"
     solver = build_hckkt_solver(nlp; gamma=gamma, max_iter=1, print_level=MadNLP.ERROR, linear_solver=HybridKKT.CHOLMODSolver)
     results[3, :] .= benchmark_kkt(solver, ntrials)
 
+    @info "Benchmark KKT with SparseCondensedKKTSystem+Pardiso"
+    solver = build_sckkt_solver(nlp; max_iter=1,
+        print_level=MadNLP.ERROR,
+        linear_solver=MadNLPPardiso.PardisoSolver,
+        pardiso_algorithm=MadNLP.CHOLESKY,
+    )
+    results[4, :] .= benchmark_kkt(solver, ntrials)
+
+    @info "Benchmark KKT with HybridCondensedKKTSystem+Pardiso"
+    solver = build_hckkt_solver(nlp; gamma=gamma,
+        max_iter=1,
+        print_level=MadNLP.ERROR,
+        linear_solver=MadNLPPardiso.PardisoSolver,
+        pardiso_algorithm=MadNLP.CHOLESKY,
+    )
+    results[5, :] .= benchmark_kkt(solver, ntrials)
+
+    BLAS.set_num_threads(1)
+    @info "Benchmark KKT with SparseCondensedKKTSystem+MA86"
+    solver = build_sckkt_solver(nlp; max_iter=1,
+        print_level=MadNLP.ERROR,
+        linear_solver=MadNLPHSL.Ma86Solver,
+        ma86_num_threads=8,
+    )
+    results[6, :] .= benchmark_kkt(solver, ntrials)
+
+    @info "Benchmark KKT with HybridCondensedKKTSystem+MA86"
+    solver = build_hckkt_solver(nlp; max_iter=1,
+        print_level=MadNLP.ERROR,
+        linear_solver=MadNLPHSL.Ma86Solver,
+        ma86_num_threads=8,
+    )
+    results[7, :] .= benchmark_kkt(solver, ntrials)
+
 
     nlp_gpu = ac_power_model(datafile; backend=CUDABackend())
 
     @info "Benchmark KKT with SparseCondensedKKTSystem+cuDSS"
     solver = build_sckkt_solver(nlp_gpu; max_iter=1, print_level=MadNLP.ERROR, linear_solver=MadNLPGPU.CUDSSSolver, cudss_algorithm=MadNLP.CHOLESKY, tol=1e-4)
-    results[4, :] .= benchmark_kkt(solver, ntrials)
+    results[8, :] .= benchmark_kkt(solver, ntrials)
 
     @info "Benchmark KKT with HybridCondensedKKTSystem+cuDSS"
     solver = build_hckkt_solver(nlp_gpu; gamma=gamma, max_iter=1, print_level=MadNLP.ERROR, linear_solver=MadNLPGPU.CUDSSSolver, cudss_algorithm=MadNLP.CHOLESKY, tol=1e-4)
-    results[5, :] .= benchmark_kkt(solver, ntrials)
+    results[9, :] .= benchmark_kkt(solver, ntrials)
 
     output_file = joinpath(RESULTS_DIR, "benchmark_kkt.txt")
     writedlm(output_file, [columns results])
