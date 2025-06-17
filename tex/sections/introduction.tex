@@ -3,7 +3,7 @@ Graphics processing units (GPUs) are driving the advancement of scientific compu
 GPUs offer two practical advantages: (1) massive parallel computing capability for applications that can exploit coarse-grain parallelism and high-memory bandwidth and (2) power efficiency due to requiring fewer transistors to process multiple tasks in parallel utilizing ``single instruction, multiple data'' (SIMD) parallelism.
 
 While GPUs have made significant strides in enhancing machine learning applications, their adoption in the mathematical programming community has been relatively limited.
-This limitation stems primarily from the fact that most second-order optimization methods for constrained optimization solve a form of Newton's method using direct linear algebra as finding good iterative solvers for the Newton direction has proved elusive. 
+This limitation stems primarily from the fact that most second-order optimization methods for constrained optimization solve a form of Newton's method using direct linear algebra as finding good iterative solvers for the Newton direction has proved elusive.
 Additionally, the utilization of GPUs has been impeded by the challenges associated with sparse matrix factorization routines, which are inherently difficult to parallelize on SIMD architectures. Nevertheless, recent years have witnessed notable advancements that are reshaping this landscape.
 \begin{enumerate}
   \item \textbf{Improved sparse matrix operations}: The performance of sparse matrix operations has seen substantial improvements in the CUDA library, largely attributed to the integration of novel tensor cores in recent GPUs~\cite{markidis2018nvidia}.
@@ -95,29 +95,34 @@ methods if the number of degrees of freedom in the problem remains relatively sm
 
 
 \subsection{Contributions}
-In this article, we assess the current capabilities of modern GPUs
-to solve large-scale nonconvex nonlinear programs to optimality.
+In this article, we \add{assess the performance of a filter line-search
+interior-point method on modern GPUs. Our aim is
+to solve large-scale nonconvex nonlinear programs to optimality.}
 We focus on the two condensed-space methods
 introduced respectively in~\cite{regev2023hykkt,shin2023accelerating}.
-We re-use classical results from~\cite{wright1998ill} to show
-that for both methods, the condensed matrix exhibits
-structured ill-conditioning that limits the loss of accuracy in
-the descent direction (provided the interior-point algorithm satisfies
-some standard assumptions).
 We implement both algorithms inside the GPU-accelerated solver MadNLP,
 and leverage the GPU-accelerated automatic differentiation
-backend ExaModels~\cite{shin2023accelerating}.
-The interior-point algorithm runs entirely on the GPU, from
+backend ExaModels~\cite{shin2023accelerating} \add{to accelerate the evaluation
+of the derivatives on the GPU}.
+\add{
+Compared to previous works on condensed-space method, our contributions are as follows.
+(i) We replace the linear solver {\tt cusolverRF} used in
+\cite{shin2023accelerating} by the new NVIDIA library {\tt cuDSS},
+which provides GPU-accelerated sparse Cholesky and \ldlt factorization routines.
+As a result, the interior-point algorithm runs entirely on the GPU, from
 the evaluation of the model (using ExaModels) to the solution of
 the KKT system (using a condensed-space method running on the GPU).
-We use CUDSS.jl \cite{Montoison_CUDSS}, a Julia interface to the NVIDIA library {\tt cuDSS},
-to solve the condensed KKT systems. We evaluate the strengths
-and weaknesses of both methods, in terms of accuracy and runtime.
+(ii) We re-use classical results from~\cite{wright1998ill} to show
+that for both methods, the condensed matrix exhibits
+structured ill-conditioning that limits the loss of accuracy in
+the descent direction (provided the interior-point algorithm satisfies some standard assumptions).
+We deduce from the analysis accurate error bounds on the Schur-complement used in the condensed-space method HyKKT.
+(iii) We evaluate the strengths and weaknesses for both methods, in terms of accuracy and runtime.
 Extending beyond the classical OPF instances examined in our previous work,
-we incorporate large-scale problems sourced from the COPS nonlinear benchmark~\cite{dolan2004benchmarking}.
-Our assessment involves comparing the performance achieved on the GPU with that of a state-of-the-art method executed on the CPU.
+we incorporate large-scale problems sourced from the CUTEst nonlinear benchmark~\cite{gould2015cutest}.
+Our assessment involves comparing the performance achieved on the GPU with that of a state-of-the-art method executed on the CPU.}
 The findings reveal that the condensed-space IPM enables a remarkable ten-time acceleration in solving large-scale OPF instances when utilizing the GPU.
-However, performance outcomes on the COPS benchmark exhibit more variability.
+However, performance outcomes on the \add{CUTEst} benchmark exhibit more variability.
 
 \subsection{Notations}
 By default, the norm $\|\cdot\|$ refers to the 2-norm.

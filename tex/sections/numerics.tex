@@ -48,6 +48,10 @@ The factorization is about two times faster in cuDSS \add{than in HSL MA86}, wit
   }
   \caption{Comparing the performance of cuDSS with CHOLMOD\add{, Pardiso and HSL MA86
   (both running in parallel using 8 threads)}.
+  The column analysis displays the time spent in the symbolic analysis (computation
+  of a reordering to minimize the fill-in, construction of the elimination tree).
+  The column factorization and backsolves display the time spent in the numerical
+  factorization and in the ensuing triangular solve.
     The matrix $K_\gamma$ is symmetric positive definite, with
     a size $n = 674,562$. The matrix is extremely sparse, with only $7,342,680$ non-zero entries ($0.002$\%).
     \label{tab:linsol:time}
@@ -103,6 +107,11 @@ on the GPU, with a reduction in the assembly time from $\approx 8s$ on the CPU t
     The peak observed in the norm of the relative residual corresponds
     to the primal-dual regularization performed inside the IPM algorithm,
     applied when the matrix $K_\gamma$ is not positive definite.
+    \add{The column {\tt it} displays the numer of iterations,
+    whereas the columns {\tt cond.}, {\tt CG}, {\tt linsol} and {\tt IPM}
+    display the time spent in assembling the condensed KKT matrix,
+    the time spent in the conjugate gradient, the time spent in the linear
+    solver (including CG) and the total time spent in the IPM algorithm, respectively.}
     \label{fig:hybrid:gamma}
   }
 \end{figure}
@@ -177,27 +186,33 @@ system~\eqref{eq:kkt:schurcomplhykkt} --- hence requiring additional backsolves 
 \begin{figure}[!ht]
   \centering
   \resizebox{.8\textwidth}{!}{
-    \begin{tabular}{|l|rrr|}
+    \begin{tabular}{|ll|rrr|}
       \hline
-       linear solver & build (s) & factorize (s) & backsolve (s)  \\
+      linear system & linear solver & build (s) & factorize (s) & backsolve (s)  \\
        \hline
-      HSL MA27          & $2.85 \times 10^{-2}$ & $1.23 \times 10^0$  & $3.48 \times 10^{-1}$ \\
+      \eqref{eq:kkt:augmented} & HSL MA27          & $2.85 \times 10^{-2}$ & $1.23 \times 10^0$  & $3.48 \times 10^{-1}$ \\
       \hline
-      LiftedKKT-CHOLMOD & $8.55 \times 10^{-2}$ & $5.84\times10^{-1}$ & $1.17\times10^{-1}$   \\
-      LiftedKKT-pardiso & $8.16 \times 10^{-2}$ & $2.23\times10^{-1}$ & $1.38\times10^{-1}$   \\
-      LiftedKKT-MA86    & $8.57 \times 10^{-2}$ & $1.36\times10^{-1}$ & $1.18\times10^{-1}$   \\
-      LiftedKKT-cuDSS   & $2.26 \times 10^{-3}$ & $4.91\times10^{-2}$ & $1.09\times10^{-2}$   \\
+      \eqref{eq:liftedkkt} & LiftedKKT-CHOLMOD & $8.55 \times 10^{-2}$ & $5.84\times10^{-1}$ & $1.17\times10^{-1}$   \\
+      \eqref{eq:liftedkkt} & LiftedKKT-pardiso & $8.16 \times 10^{-2}$ & $2.23\times10^{-1}$ & $1.38\times10^{-1}$   \\
+      \eqref{eq:liftedkkt} & LiftedKKT-MA86    & $8.57 \times 10^{-2}$ & $1.36\times10^{-1}$ & $1.18\times10^{-1}$   \\
+      \eqref{eq:liftedkkt} & LiftedKKT-cuDSS   & $2.26 \times 10^{-3}$ & $4.91\times10^{-2}$ & $1.09\times10^{-2}$   \\
       \hline
-      HyKKT-CHOLMOD     & $8.01 \times 10^{-2}$ & $5.89\times10^{-1}$ & $7.22\times10^{-1}$   \\
-      HyKKT-pardiso     & $9.06 \times 10^{-2}$ & $2.21\times10^{-1}$ & $9.19\times10^{-1}$   \\
-      HyKKT-MA86        & $8.60 \times 10^{-2}$ & $1.35\times10^{-1}$ & $7.50\times10^{-1}$   \\
-      HyKKT-cuDSS       & $1.98 \times 10^{-3}$ & $3.38\times10^{-2}$ & $6.66\times10^{-2}$   \\
+      \eqref{eq:kkt:hykkt} & HyKKT-CHOLMOD     & $8.01 \times 10^{-2}$ & $5.89\times10^{-1}$ & $7.22\times10^{-1}$   \\
+      \eqref{eq:kkt:hykkt} & HyKKT-pardiso     & $9.06 \times 10^{-2}$ & $2.21\times10^{-1}$ & $9.19\times10^{-1}$   \\
+      \eqref{eq:kkt:hykkt} & HyKKT-MA86        & $8.60 \times 10^{-2}$ & $1.35\times10^{-1}$ & $7.50\times10^{-1}$   \\
+      \eqref{eq:kkt:hykkt} & HyKKT-cuDSS       & $1.98 \times 10^{-3}$ & $3.38\times10^{-2}$ & $6.66\times10^{-2}$   \\
       \hline
     \end{tabular}
   }
   \includegraphics[width=.9\textwidth]{figures/breakdown.pdf}
   \caption{Breakdown of the time spent in one IPM iteration
     for different linear solvers, when solving {\tt 78484epigrids}.
+    \add{HSL MA27 factorizes the original augmented KKT system \eqref{eq:kkt:augmented},
+    and is used as a reference.
+    The column {\tt build} shows the time spent in assembling the KKT matrix,
+    whereas the columns {\tt factorize} and {\tt backsolve} display the time
+    spent in the numerical factorization and in the triangular solves, respectively.
+    }
     \add{We set up Pardiso and HSL MA86 to run in parallel using 8 threads.}
   \label{fig:timebreakdown}}
 \end{figure}
@@ -238,6 +253,16 @@ As a comparison, the selling price of the AMD EPYC
 displayed in Figure~\ref{fig:gpubench}. We observe that the performance of the A30
 and the A100 are relatively similar, and the cheaper A1000 GPU is already
 faster than HSL MA27 running on the CPU.
+
+\add{Among nonlinear programs, the OPF problems have a very
+  specific graph-structure that leads to the formulation of a super-sparse
+  KKT linear system~\eqref{eq:kkt:augmented}. The super-sparse structure
+  explains why HSL MA27 gives better results than HSLMA57, as
+  previous reported in \cite{tasseff2019exploring}. For that reason, it is hard
+  to generalize the results we obtain on the OPF instances to generic nonlinear programs.
+  In the next section, we analyze the performance of HyKKT and LiftedKKT on the CUTEst
+  benchmark to have a better overview of the methods' limitations.
+}
 
 \begin{table}[!ht]
   \centering
@@ -286,7 +311,13 @@ faster than HSL MA27 running on the CPU.
     \add{The derivatives are evaluated using ExaModels: the total
       time spent in AD is negligible w.r.t. the time spent solving the KKT
       system (it is less than 1s even for the largest instances). For that reason,
-  we are not including the AD time in this table.} \label{tab:opf:benchmark}}
+      we are not including the AD time in this table.
+      The column {\tt init} displays the time spent initializing the IPM
+      solver, including the initial symbolic factorization in the linear solver.
+      The columns {\tt AD}, {\tt lin} and {\tt total} display the time
+      spent in the evaluation of the derivatives using AD, the time spent
+      in the linear solver and the total time spent in the IPM algorithm.
+  } \label{tab:opf:benchmark}}
 \end{table}
 
 \begin{figure}[!ht]
@@ -418,7 +449,14 @@ ORTHREGE & 7506 & 5000 & 30000 & 17509 & - & - & - & - & - & - & - & - & - & - &
 \hline
 \end{tabular}
   }}
-  \caption{CUTEst benchmark , solved with a tolerance {\tt tol=1e-6}\label{tab:cutest:benchmark}}
+  \caption{\add{CUTEst benchmark , solved with a tolerance {\tt tol=1e-6}
+      The column {\tt init} displays the time spent initializing the IPM
+      solver, including the initial symbolic factorization in the linear solver.
+      The columns {\tt AD}, {\tt lin} and {\tt total} display the time
+      spent in the evaluation of the derivatives using AD, the time spent
+    in the linear solver and the total time spent in the IPM algorithm.}
+      \label{tab:cutest:benchmark}
+  }
 \end{table*}
 
 % TODO
