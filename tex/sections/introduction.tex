@@ -93,6 +93,36 @@ reduce the KKT system down to a dense matrix, a setting also favorable for GPUs.
 Our previous research has shown that the approach is suitable for  interior-point
 methods if the number of degrees of freedom in the problem remains relatively small~\cite{pacaud2022condensed}.
 
+\add{
+\paragraph{A fully GPU-based stack for nonlinear optimization.}
+Solving constrained, large-scale nonlinear optimization problems on GPUs requires tight coordination between three key components:
+\begin{itemize}
+\item a high-level modeling interface,
+\item a nonlinear optimization solver,
+\item a sparse linear algebra solver.
+\end{itemize}
+
+To fully benefit from the computational power of GPUs, the entire optimization pipeline must remain on the device, from model evaluation to linear system solves.
+It avoids costly transfers between host (CPU) and device (GPU) memory.
+This level of integration demands that all components be GPU-compatible and operate natively in GPU memory.
+
+While new architectures such as NVIDIA's GH200 offer unified memory and faster CPU–GPU communication, they still incur slowdowns compared to a fully GPU-resident approach, which we target.
+
+In the classical CPU-based setting, a standard stack for nonlinear optimization consists of AMPL for modeling, Ipopt for the solver, and MA57 (or another HSL package) for sparse factorization.
+Our Julia-based GPU-native ecosystem mirrors this architecture with ExaModels.jl, MadNLP.jl, and CUDSS.jl.
+% ExaModels.jl provides a symbolic modeling front-end with sparsity detection, MadNLP.jl implements a primal-dual interior-point algorithm with GPU-accelerated automatic differentiation, and cuDSS.jl performs the sparse Cholesky factorizations on the GPU.
+This integrated toolchain achieves a fully GPU-resident workflow for solving large-scale nonlinear programs, offering substantial performance gains by minimizing memory transfers and leveraging GPU-optimized kernels across all stages.
+If any component is not GPU-aware, it introduces costly CPU–GPU communication, similar to double-buffering in MPI-based distributed systems.
+
+This paper focuses primarily on the central component, the nonlinear optimization solver.
+While ExaModels.jl delivers significant speedups, its primary goal is not to replace full-featured modeling frameworks like AMPL or GAMS, which offer rich syntax, extensive modeling capabilities, and native support for partial separability.
+Instead, ExaModels.jl follows a different philosophy: it favors symbolic model construction and native GPU compatibility over maximal generality.
+To ensure that models can be evaluated entirely on the GPU, without CPU-GPU memory transfers, we restrict modeling features to those efficiently supported by GPU kernels.
+This design choice leads to a smaller and more homogeneous test set compared to frameworks like CUTEst, but ensures consistency and performance across both CPU and GPU execution.
+In that sense, ExaModels.jl shares more in common with modern tools such as Gravity.
+We expect further progress in parallelism and generic model support in the future, particularly through expression tree analysis.
+But as with GPU-based sparse linear solvers and optimization algorithms, each component must be carefully redesigned to fully exploit GPU architectures.
+}
 
 \subsection{Contributions}
 In this article, we \add{assess the performance of a filter line-search
