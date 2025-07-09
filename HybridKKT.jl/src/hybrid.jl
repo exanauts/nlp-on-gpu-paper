@@ -168,17 +168,17 @@ function MadNLP.create_kkt_system(
     end
 
     iterative_linear_solver = if cg_algorithm == :cg
-        Krylov.CgSolver(me, me, VT)
+        Krylov.CgWorkspace(me, me, VT)
     elseif cg_algorithm == :cr
-        Krylov.CrSolver(me, me, VT)
+        Krylov.CrWorkspace(me, me, VT)
     elseif cg_algorithm == :car
-        Krylov.CarSolver(me, me, VT)
+        Krylov.CarWorkspace(me, me, VT)
     elseif cg_algorithm == :gmres
-        Krylov.GmresSolver(me, me, 10, VT)
+        Krylov.GmresWorkspace(me, me, 10, VT)
     elseif cg_algorithm == :minres
-        Krylov.MinresSolver(me, me, VT)
+        Krylov.MinresWorkspace(me, me, VT)
     elseif cg_algorithm == :craigmr
-        Krylov.CraigmrSolver(me, n, VT)
+        Krylov.CraigmrWorkspace(me, n, VT)
     end
 
     ext = MadNLP.get_sparse_condensed_ext(VT, hess_com, jptr, jt_csc_map, hess_csc_map)
@@ -344,7 +344,7 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
 
     # Solve Schur-complement system with a Krylov iterative method.
     if kkt.etc[:cg_algorithm] ∈ (:cg, :gmres, :cr, :minres, :car)
-        t_cg = CUDA.@elapsed Krylov.solve!(
+        t_cg = CUDA.@elapsed Krylov.krylov_solve!(
             kkt.iterative_linear_solver,
             kkt.S,
             wy;
@@ -354,7 +354,7 @@ function MadNLP.solve!(kkt::HybridCondensedKKTSystem{T}, w::MadNLP.AbstractKKTVe
         )
         copyto!(wy, kkt.iterative_linear_solver.x)
     elseif kkt.etc[:cg_algorithm] ∈ (:craigmr, )
-        t_cg = CUDA.@elapsed Krylov.solve!(
+        t_cg = CUDA.@elapsed Krylov.krylov_solve!(
             kkt.iterative_linear_solver,
             kkt.G_csc,
             wy;

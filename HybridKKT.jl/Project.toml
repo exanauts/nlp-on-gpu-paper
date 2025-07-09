@@ -34,7 +34,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
 KNITRO = "0.14.8"
-Krylov = "0.9.10"
+Krylov = "0.10.1"
 MadNLPTests = "0.5.2"
 NLPModelsIpopt = "0.10.4"
 NLPModelsKnitro = "0.9.1"
