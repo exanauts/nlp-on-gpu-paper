@@ -33,8 +33,10 @@ Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
+HSL_jll = "4.0.2"
 KNITRO = "0.14.8"
 Krylov = "0.10.1"
+MadNLPPardiso = "0.3.4"
 MadNLPTests = "0.5.2"
 NLPModelsIpopt = "0.10.4"
 NLPModelsKnitro = "0.9.1"
