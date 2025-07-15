@@ -18,17 +18,17 @@ However, several recent developments are shifting this landscape:
 These trends have renewed interest in solving optimization problems directly on GPUs.
 We now review the state of the art in this area, from first-order methods to recent advances in second-order techniques.
 
-\paragraph{First-order methods for large-scale optimization}
+\paragraph{First-order methods for large-scale optimization.}
 Sparse matrix factorizations remain a bottleneck on GPUs. For this reason, early efforts focused on first-order methods, which mainly require (sparse) matrix-vector operations, well-suited to GPU execution.
 These methods trade precision for scalability and have been shown to outperform even commercial solvers like Gurobi on large-scale linear programs when fully GPU-accelerated~\cite{lu2023cupdlp,lu2023cupdlp2}.
 
-\paragraph{Batched optimization solvers}
+\paragraph{Batched optimization solvers.}
 In machine learning, embedding optimization problems into neural networks requires solving many small problems in parallel.
 This has led to GPU-native batched solvers capable of handling thousands of small problems simultaneously~\cite{amos2017optnet,pineda2022theseus}.
 Similar ideas have been applied to decomposition methods in large-scale optimization~\cite{kimLeveragingGPUBatching2021}.
 However, extending these methods to large-scale problems remains difficult, as current implementations often rely on dense linear algebra.
 
-\paragraph{Second-order methods for large-scale optimization}
+\paragraph{Second-order methods for large-scale optimization.}
 First-order methods are well suited to large-scale convex optimization, but extending their success to general nonlinear programming remains challenging. Many real-world engineering problems, such as those in power systems or robotics, involve complex, nonconvex constraints that break any underlying convex structure. In these settings, first-order approaches often struggle to achieve high accuracy. For instance, ADMM fails to converge reliably below a tolerance of $10^{-3}$ on the AC optimal power flow (OPF) problem~\cite{kimLeveragingGPUBatching2021}.
 
 Second-order methods offer a more robust alternative. By solving a Newton system at each iteration, they can provide fast local convergence and high accuracy, even in the presence of nonconvexities. However, these methods rely on solving large, sparse linear systems—typically Karush–Kuhn–Tucker (KKT) systems—which poses significant challenges for GPU acceleration.
@@ -62,7 +62,7 @@ This level of integration demands that all components be GPU-compatible and oper
 While new architectures such as NVIDIA's GH200 offer unified memory and faster CPU–GPU communication, they still incur slowdowns compared to a fully GPU-resident approach, which we target.
 
 In the classical CPU-based setting, a standard stack for nonlinear optimization consists of using AMPL~\cite{fourer1990ampl} for modeling, Ipopt for the solver, and MA57 (or any other HSL package) for sparse factorization.
-Our Julia-based GPU-native ecosystem mirrors this architecture with ExaModels.jl, MadNLP.jl, and CUDSS.jl.
+Our Julia-based GPU-native ecosystem mirrors this architecture with ExaModels.jl, MadNLP.jl, and {\tt cuDSS}.
 % ExaModels.jl provides a symbolic modeling front-end with sparsity detection, MadNLP.jl implements a primal-dual interior-point algorithm with GPU-accelerated automatic differentiation, and cuDSS.jl performs the sparse Cholesky factorizations on the GPU.
 This integrated toolchain achieves a fully GPU-resident workflow for solving large-scale nonlinear programs, offering substantial performance gains by minimizing memory transfers and leveraging GPU-optimized kernels across all stages.
 If any component is not GPU-aware, it introduces costly CPU–GPU communication, similar to double-buffering in MPI-based distributed systems.

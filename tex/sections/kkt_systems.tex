@@ -19,7 +19,7 @@ It has been recently revisited in \cite{regev2023hykkt}
 to solve the condensed KKT system~\eqref{eq:kkt:condensed} on the GPU.
 \add{We suppose that the dual regularization is $\delta_c = 0$:
 a positive dual regularization simplifies the solution of the
-KKT system~\eqref{eq:kkt:condensed}, as explained in \eqrefin Remark~\ref{rmk:dualreg}.}
+KKT system~\eqref{eq:kkt:condensed}, as explained in Remark~\ref{rmk:dualreg}.}
 Then, the trick is to reformulate the condensed KKT system \eqref{eq:kkt:condensed} in an equivalent form
 \begin{equation}
   \label{eq:kkt:hykkt}
@@ -44,8 +44,8 @@ exists a threshold value $\underline{\gamma}$ such that
 for all $\gamma > \underline{\gamma}$, the reduced Hessian $Z^\top K Z$
 is positive definite if and only if $K_\gamma$ is positive definite.
 Using the Sylvester's law of inertia stated in \eqref{eq:ipm:inertia}, we deduce
-that for $\gamma > \underline{\gamma}$, if $\inertia(K_2) = (n + m_i, m_e +m_i, 0)$
-then $K_\gamma$ is positive definite.
+that for $\gamma > \underline{\gamma}$, $\inertia(K_2) = (n + m_i, m_e +m_i, 0)$
+if and only if the condensed matrix $K_\gamma$ is positive definite.
 
 The linear solver HyKKT~\cite{regev2023hykkt}
 leverages the positive definiteness of $K_\gamma$ to solve
@@ -92,6 +92,27 @@ Although we observe similar performance, these methods ensure a monotonic decrea
     and setting $d_y = \delta_c^{-1} (G d_x - \bar{r}_2)$.
   }
 \end{remark}
+
+\begin{remark}
+  \add{
+    We have seen that the parameter $\gamma$ should be set above a given threshold $\underline{\gamma}$
+    for $K_\gamma$ to be positive definite. However, a large value of $\gamma$ increase
+    the ill-conditioning in $K_\gamma$, hence deteriorating the solution's quality.
+    In \cite{golub2003solving}, the authors recommend choosing $\gamma = \| K \| / \|G\|^2$,
+    which is offering a good empirical trade-off.
+    In \cite[Lemma 2.10]{gould2010spectral}, a tighter estimate is given for the threshold
+    $\underline{\gamma}$, if $G$ is full row-rank and $Z^\top K Z$ is positive definite:
+    \begin{equation}
+      \underline{\gamma} = \dfrac{1}{\sigma_{\min}^2} \left(
+        \dfrac{\|K\|^2}{\lambda_{\min}^Z} - \lambda_{\min}^Y
+      \right) \; ,
+    \end{equation}
+    with $\sigma_{\min}$ the smallest nonzero singular value of the Jacobian $G$,
+    $\lambda_{\min}^Z > 0$ the smallest eigenvalue of $Z^\top K Z$
+    and $\lambda_{\min}^Y$ the smallest eigenvalue of $Y^\top K Y$.
+  }
+\end{remark}
+
 
 
 
