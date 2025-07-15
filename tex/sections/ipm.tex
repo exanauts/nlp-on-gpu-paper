@@ -210,7 +210,7 @@ is full row-rank and the matrix $\begin{bmatrix} W  & 0 \\ 0 & D_s \end{bmatrix}
 projected onto the null-space of the Jacobian $J$ is definite~\cite{benzi2005numerical}.
 The condition is satisfied if the inertia (defined as the respective numbers
 of positive, negative and zero eigenvalues) of the matrix~\eqref{eq:kkt:augmented} is $(n + m_i, m_i + m_e, 0)$.
-We use the inertia-controlling method introduced in \cite{wachter2006implementation}
+We use the inertia-controlling method introduced in \cite[Section 3.1]{wachter2006implementation}
 to regularize the augmented matrix by adding multiple of the identity
 on the diagonal of \eqref{eq:kkt:augmented} if the inertia is not equal to $(n+m_i, m_e+m_i, 0)$.
 

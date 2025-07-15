@@ -401,6 +401,10 @@ Condition (b) supposes in addition $\gamma = \Theta(\Xi^{-1})$, making
 the matrix $\Sigma_L$ well-conditioned with
 $\underline{\sigma} = \Theta(\Xi^{-1})$,
 $\overline{\sigma} = \Theta(\Xi^{-1})$ and $\overline{\sigma}/\underline{\sigma} = \Theta(1)$.
+\add{This is in line with the recommendation in \cite{golub2003solving},
+  where the authors recommend chosing $\gamma = \frac{\|K\|}{\|G\|^2}$
+  (as here the condition (a) implies that $\|K \| = \Theta(\Xi)$).
+}
 Condition (c) ensures that $\cond(K_\gamma) = \Theta(\overline{\sigma})$
 satisfies $\cond(K_\gamma) \epstol \ll 1$
 (implying the Cholesky factorization runs to completion).

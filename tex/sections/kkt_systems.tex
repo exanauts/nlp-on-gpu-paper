@@ -17,8 +17,10 @@ The Golub \& Greif~\cite{golub2003solving} strategy reformulates the KKT system
 using an Augmented Lagrangian formulation.
 It has been recently revisited in \cite{regev2023hykkt}
 to solve the condensed KKT system~\eqref{eq:kkt:condensed} on the GPU.
-For a dual regularization $\delta_c = 0$,
-the trick is to reformulate the condensed KKT system \eqref{eq:kkt:condensed} in an equivalent form
+\add{We suppose that the dual regularization is $\delta_c = 0$:
+a positive dual regularization simplifies the solution of the
+KKT system~\eqref{eq:kkt:condensed}, as explained in \eqrefin Remark~\ref{rmk:dualreg}.}
+Then, the trick is to reformulate the condensed KKT system \eqref{eq:kkt:condensed} in an equivalent form
 \begin{equation}
   \label{eq:kkt:hykkt}
   \begin{bmatrix}
@@ -74,6 +76,24 @@ the larger the $\gamma$, the faster the convergence of
 the \CG algorithm in \eqref{eq:kkt:schurcomplhykkt}.
 \CR \cite{hestenes-stiefel-1952} and \CAR \cite{montoison-orban-saunders-2023} can also be used as an alternative to \CG.
 Although we observe similar performance, these methods ensure a monotonic decrease in the residual norm of \eqref{eq:kkt:schurcomplhykkt} at each iteration.
+
+\begin{remark}
+  \label{rmk:dualreg}
+  \add{
+    The dual regularization $\delta_c$ can become positive during the IPM iterations.
+    This is the case if the primal-dual regularization detects
+    a degenerate Jacobian $G$ or if the filter line-search algorithm is entering a feasibility
+    restoration phase~\cite[Section 3.3]{wachter2006implementation}.
+    For a positive $\delta_c$ the Golub \& Greif strategy becomes not necessary, as
+    solving the system \eqref{eq:kkt:condensed} translates to solving
+    \begin{equation*}
+      \left( K + \frac{1}{\delta_c} G^\top G \right) d_x = \bar{r}_1 - \frac{1}{\delta_c} \bar{r}_2 \;,
+    \end{equation*}
+    and setting $d_y = \delta_c^{-1} (G d_x - \bar{r}_2)$.
+  }
+\end{remark}
+
+
 
 \subsection{Equality relaxation strategy: LiftedKKT}
 \label{sec:kkt:sckkt}
