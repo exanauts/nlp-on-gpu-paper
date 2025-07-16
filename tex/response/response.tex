@@ -41,12 +41,10 @@
 \maketitle
 
 \section*{Introduction}
-We thank the two reviewers for their comprehensive comments.
-The comments were relevant, and pointed to several limitations
-in the first version of the paper. We have revised the paper
-accordingly, and we believe that this new version addresses
-the major shortcomings pointed before by the reviewers.
-
+We thank the two reviewers for their comprehensive feedbacks on the previous
+version of our paper. The comments pointed to several limitations.
+We have revised the paper accordingly, and we believe that this new version addresses
+the major shortcomings raised before by the reviewers.
 We have addressed one by one the comments made by the two reviewers in
 the following sections.
 
@@ -61,9 +59,10 @@ The Authors use older linear solvers like MA27/57 instead of more recent ones li
 
 \answer
 The author is right that the previous comparison was not fair. We used HSL MA27/HSL MA57 as most
-users are using these two linear solvers by default, as they are broadly available in Ipopt or Knitro.
-We have complemented the numerical results by providing a comparison with Panua Pardiso and HSL MA86, both running in parallel on the CPU. We have found that setting the number of threads to 8 gives the best performance
-in Pardiso and in HSL MA86.
+users are using these two linear solvers by default and they are available in Ipopt or Knitro.
+We have complemented the numerical results by providing a comparison with Panua Pardiso and HSL MA86, both running in parallel on the CPU.
+We have found that setting the number of threads to 8 gives the best performance in Pardiso and in HSL MA86, the parallel
+scalability remaining limited on the CPU.
 
 \begin{quotereviewer}
 I understand that the Authors want to compare with a common situation in nonlinear programming (i.e. MA57 with OpenBLAS), but the use of a better linear solver and a better BLAS library may have a large effect on the CPU performance. It may even be that the best performance on a CPU is comparable with the speed up observed on the GPU, in some cases.
@@ -76,7 +75,7 @@ does not make a significant difference in HSL MA57's performance.
 To be more specific, if we take our largest OPF instance ({\tt 78481epigrids}),
 the time spent in the numerical factorization of the augmented KKT system
 is approximately 1.9s using 1 thread, and does not decrease if we increase
-the number of threads (using openblas as a backend).
+the number of threads (this observation is consistent whether we use openblas or MKL as backend).
 
 
 \begin{quotereviewer}
@@ -95,11 +94,12 @@ equality constraints (encoding the discretization of the dynamics).
 It is not clear how the regularization terms $\delta_c$ and $\delta_w$ are chosen. Page 10 mentions that they are chosen dynamically, but they cannot be chosen during the factorization, as this is done with a black-box solver. So what exactly does this mean? Also, choosing the minimum regularization that makes the matrix positive definite may not be enough to guarantee that Cholesky does not break down, since IPM matrices are extremely ill conditioned. What kind of safeguards are in place?
 \end{quotereviewer}
 
-\answer The reviewer is right, and the issue is even more complicated than
-that if the solver enters into feasibility restoration (in that case the matrix appearing
+\answer The reviewer is right, and the issue is even more complicated
+if the solver enters into feasibility restoration (in that case the matrix appearing
 in the (2, 2) block becomes not trivial, as illustrated in \cite[Eq (32)]{wachter2006implementation}.
 We have modified the Section 2.2 and Section 3.1 to detail exactly how the regularization
-terms are computed.
+terms are computed. In addition, we have added a new Remark 1 to explain how we solve
+the linear system if the dual regularization is positive.
 
 
 \begin{quotereviewer}
@@ -107,18 +107,27 @@ It is not completely clear how to choose the parameter $\gamma$. It should be la
 \end{quotereviewer}
 
 \answer
-TODO
+One of the shortcoming of the HyKKT method is that we don't know a priori how large should be $\gamma$. For some problems with a
+reduced Hessian being close to singularity, $\gamma$ has to be increased significantly (this is observed for instance in the {\tt ROCKET} instance in CUTEst, as the problem has
+a singular arc that leads to a near degenerate reduced Hessian).
+We note the parameter $\gamma$ can be tuned adaptively, e.g. using an augmented Lagrangian algorithm: investigating this idea is left for future work.
+
+In this article, we have set $\gamma$ to a relatively high value $\gamma = 10^7$. In practice, this is not an issue in the IPM algorithm.
+In the early stage of the algorithm, the solution of the linear system does not have to be very accurate to find the next iterate, as observed e.g. in \cite{zanetti2023new}.
+In the latter stage, the ill-conditioning induced by $\gamma$ remains limited compared to the ill-conditioning induced by the active slack variables (all converging to $0$, leading
+to terms increasing to $+\infty$ on the diagonal of the KKT system).
+
+
 
 \begin{quotereviewer}
 Page 23, table 1. Why is the accuracy so much worse when using cuDSS-LDLT? Also, why is the analyse phase so expensive compared to the factorise phase? Does it include the assembly of the matrix as well?
 \end{quotereviewer}
 
 \answer
-We confirm that the analysis phase includes the assembly of the KKT system
-and the time needed to compute the symbolic factorization in cuDSS (the symbolic factorization
-has to find an eliminiation tree depending on a given ordering, an operation not trivial
-to run in parallel on the GPU and which often does run on the CPU).
-TODO
+We confirm that the analysis phase includes the assembling of the KKT system
+and the time needed to compute the symbolic factorization inside cuDSS (the symbolic factorization
+has to find an elimination tree depending on a given ordering, an operation not trivial
+to run in parallel on the GPU and which often does run on the CPU~\cite{chang2025parallelizing}).
 
 
 \begin{quotereviewer}
@@ -126,7 +135,7 @@ On the same page, section 5.2.2: ``the IPM algorithm has to proceed to additiona
 \end{quotereviewer}
 
 \answer
-TODO
+The reviewer is right, that sentence was indeed unclear. We have decided to remove it in the revision.
 
 \begin{quotereviewer}
 Page 24, table 2. Why does it take fewer IPM iterations to solve the problem to a better accuracy?
@@ -147,7 +156,7 @@ Page 27, Figure 3. From the performance profile, it looks like MA27 is able to s
 \answer We confirm that currently, the linear solvers based on the condensed KKT systems are less robust than
 the classical approach solving the augmented KKT system with HSL MA27/MA57.
 Our approach is still fairly new, but we have good hope it will improve in the future
-as the sparse linear solvers get better on the GPU.
+as sparse linear solvers get better on the GPU.
 
 
 \begin{quotereviewer}
@@ -160,24 +169,22 @@ Overall, the issue of accuracy (which is thoroughly discussed theoretically) sho
 Cholmod seems to perform well in Figure 2, better than MA27. Why are the rest of the tests performed only with MA27 then? It would make a lot of sense to compare to Cholmod as well, since it is not doing pivoting.
 \end{quotereviewer}
 
-\answer In figure 2, HSL MA27 is used as a reference: HSL MA27 factorizes
+\answer In figure 2, HSL MA27 is used as a reference: it factorizes
 the augmented KKT system (which is sparse symmetric indefinite), as done in standard solvers like Ipopt and Knitro.
-CHOLMOD factorizes the condensed KKT system we obtain with HyKKT (which on its end
-is sparse symmetric definite).
+CHOLMOD factorizes the condensed KKT system we obtain with HyKKT (which on its end is sparse symmetric definite).
 This has been clarified in the label of Figure 2.
 In addition we have included additional linear solvers running in parallel
-on the CPU, for the benchmark to be more comprehensive.
+on the CPU (Panua Pardiso and HSL MA86), for the benchmark to be more comprehensive.
 
 \begin{quotereviewer}
 Page 28: the pictures of the sparsity patterns do not provide enough information about the matrices used. Please show also the data about the density of the matrices involved and the extra density arising from the condensed approach.
 \end{quotereviewer}
 
 \answer
-We have removed the figure displaying the sparsity patterns, as we have replaced
-the COPS benchmark by the more comprehensive CUTEst benchmark. The sparsity patterns
+We have removed the figure displaying the sparsity patterns, and have replaced
+the COPS benchmark by CUTEst benchmark. The sparsity patterns
 were indeed more confusing than anything else. We have included the number of variables,
-constraints, and nonzeroes coefficients in the Jacobian and in the Hessian in the
-Table showing the results on the CUTEst benchmark.
+constraints, and nonzeroes coefficients in the Jacobian and in the Hessian in the Table showing the results on the CUTEst benchmark.
 
 \begin{quotereviewer}
 For the OPF instances, MA27 outperforms MA57, as mentioned in Page 25. This is quite telling of the unusual characteristics of these problems. The claims about large speed-ups (e.g. in abstract and introduction) should highlight that this has been observed for very specific structures of the problem.
@@ -206,20 +213,19 @@ benchmarks like CUTEst and Mittelmann is required.
 \answer
 We have taken into account the remark of \reviewername. The previous version
 of the paper was studying both OPF problems (which are known to be super sparse)
-and COPS instances (which come from discretized problems). To have a better
+and COPS instances (coming from discretized problems). To have a better
 overview of the condensed space methods, we have replaced the COPS benchmark
-by the CUTEst benchmark (selecting all the large-scale instances with more than 1,000
+by CUTEst (selecting all the large-scale instances with more than 1,000
 variables and at least 1 constraints).
 
-The CUTEst benchmark requires a SIF decoder, here wrapped by CUTEst.jl. Once decoded,
-the instances are compiled using {\tt gfortran} as a shared library we can
-call from CUTEst.jl. As a result, it is impossible to evaluate the model
+The CUTEst benchmark requires a SIF decoder, here wrapped by the package CUTEst.jl. Once decoded,
+the instances are compiled using {\tt gfortran} in a shared library we can
+call through CUTEst.jl. As a result, it is impossible to evaluate the model
 (including first and second-order derivatives) on the GPU. To alleviate this issue,
-we have written a wrapper that evaluate the CUTEst instances on the CPU, and move
-the results to the GPU. As a result, the method is not running exclusively on the GPU,
+we have written a wrapper evaluating the CUTEst instances on the CPU and moving
+the results to the GPU with a copy operation. As a result, the method is not running exclusively on the GPU,
 as it is the case with the OPF instances (and previously with the COPS instances which
-we have reimplemented using ExaModels). However, this allows benchmarking the
-two condensed-space approaches LiftedKKT and HyKKT on a broader set of problems.
+we have all re-implemented using ExaModels).
 
 \begin{quotereviewer}
 2.a. The use of condensed-space IPM with GPU acceleration for OPF has already been
@@ -239,7 +245,7 @@ space approaches LiftedKKT and HyKKT. Our contributions are:
   \item Despite the increased ill-conditioning caused by the condensed space approaches,
     we provide a theoretical analysis that shows that the ill-conditioning remains
     structured and does not impact the convergence of the interior-point method.
-  \item We provide an assessment of LiftedKKT's and HyKKT's, with a comparison
+  \item We provide a thorough assessment of LiftedKKT's and HyKKT's, with a comparison
     with state-of-the-art linear solvers running on the CPU.
 \end{enumerate}
 We have clarified our contributions in the introduction.
@@ -252,12 +258,12 @@ cuDSS or GPU does not oﬀer clear advantages over CPU-based methods for general
 
 \answer
 We have followed \reviewername suggestion and have replaced the COPS benchmark
-by the CUTEst benchmark, selecting only instances with more than 1,000 variables
+by CUTEst, selecting only instances with more than 1,000 variables
 and at least 1 constraint. This gives a more comprehensive picture of the
 performance offered by the condensed-space approaches.
 Our claim is not that cuDSS or GPU are offering a clear advantages over CPU-based
-method, but rather than they provide a valid alternative for certain cases
-(as shown by the speed-up we obtain on OPF instances).
+method, but rather than they provide a valid alternative for certain large-scale instances
+(as shown by the speed-up we obtain on OPF instances or a subset of the CUTEst instances, illustrated in Table 4).
 
 \begin{quotereviewer}
 2.c. The observation that GPU performance depends signiﬁcantly on the sparsity pattern of
@@ -278,15 +284,15 @@ not discussed in the paper, despite the general claims made about NLP.
 
 \answer
 We agree with the reviewer that the evaluation of the Hessian and the Jacobian
-can take a significant portion of the overall runtime. We have observed that
+can take a significant portion of the overall runtime. However, we have observed that
 if we can accelerate the derivatives on the GPU using ExaModels, the time spent in
 the evaluation becomes negligible compared to the time spent solving the KKT
 system (on the largest OPF instances {\tt 78481epigrids}, the AD time
-decreases from 7.8s on the CPU to 0.4s on the GPU).
+decreases from 7.8s on the CPU to 0.4s on the GPU). This has been clarified in Figure 1 in the revision.
 
 To clarify this point, we have included the time spent in AD in the OPF
 and in the CUTest benchmarks. The OPF benchmark uses ExaModels, whereas
-the CUTEst benchmark depends on the package CUTEst.jl which has to evaluate the
+the CUTEst benchmark depends on the package CUTEst.jl which evaluates the
 derivatives on the CPU. We have also included a new Section 5 that covers more
 in depth the implementation we are using, including a new paragraph on the time
 spent evaluating the derivatives of nonlinear programs.
@@ -301,7 +307,7 @@ concerns interior-point methods, and also the claim for NLP is too broad with th
 \end{quotereviewer}
 
 \answer
-TODO: should we change the title?
+\add{TODO: should we change the title?}
 
 \begin{quotereviewer}
 2. The condition number analysis in Section 4 is fairly standard. It would be helpful for the
@@ -311,7 +317,7 @@ authors to clarify how this analysis contributes to the novelty of the paper.
 \answer
 Despite building on the work of \cite{wright1998ill,wright2001effects},
 our condition number analysis builds specifically on the structure of
-the condensed KKT system we obtain in HyKKT and in LiftedKTK. In particular,
+the condensed KKT system we obtain in HyKKT and in LiftedKKT. In particular,
 the Section 4.3.1 contains new developments concerning the structure of the
 Schur complement $S_\gamma$.
 
@@ -346,8 +352,7 @@ contributions are.
 \end{quotereviewer}
 
 \answer
-We have added a comparison with Ipopt and Knitro both on the OPF and on
-the CUTEst benchmarks.
+We have added a comparison with Ipopt and Knitro both on the OPF and on the CUTEst benchmarks.
 
 \bibliographystyle{siam}
 \bibliography{biblio.bib}

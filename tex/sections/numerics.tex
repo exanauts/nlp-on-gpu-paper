@@ -64,9 +64,7 @@ from $10^4$ to $10^8$ in HyKKT.
 On the algorithmic side, we observe that the higher the regularization $\gamma$,
 the faster the \CG algorithm: we decrease the total number of iterations
 spent in \CG by a factor of 10. However, we have to pay a price in term
-of accuracy: for $\gamma > 10^8$ the solution returned by the linear solver
-is not accurate enough and the IPM algorithm has to proceed to additional
-primal-dual regularizations.
+of accuracy.
 
 On the numerical side, the table in Figure~\ref{fig:hybrid:gamma} compares
 the time spent in the IPM solver on the CPU (using \add{Pardiso}) and on the GPU
@@ -266,10 +264,7 @@ faster than HSL MA27 running on the CPU.
     \input{tables/opf_benchmark.tex}
   }
   \caption{OPF benchmark, solved with a tolerance {\tt tol=1e-6}.
-    \add{The derivatives are evaluated using ExaModels: the total
-      time spent in AD is negligible w.r.t. the time spent solving the KKT
-      system (it is less than 1s even for the largest instances). For that reason,
-      we are not including the AD time in this table.
+    \add{The derivatives are evaluated using ExaModels.
       The column {\tt init} displays the time spent initializing the IPM
       solver, including the initial symbolic factorization in the linear solver.
       The columns {\tt AD}, {\tt lin} and {\tt total} display the time
@@ -384,7 +379,14 @@ provided they remain small enough ({\tt EIGENAU}, {\tt EIGENCCO}, {\tt EIGENB2},
   \resizebox{\textwidth}{!}{
     \input{tables/cutest_benchmark.tex}
   }
-  \caption{
+  \caption{\add{CUTEst benchmark, solved with a tolerance {\tt tol=1e-6}.
+      The derivatives are evaluated with CUTEst.
+      The column {\tt init} displays the time spent initializing the IPM
+      solver, including the initial symbolic factorization in the linear solver.
+      The columns {\tt AD}, {\tt lin} and {\tt total} display the time
+      spent in the evaluation of the derivatives using AD, the time spent
+      in the linear solver and the total time spent in the IPM algorithm.
+    }
   \label{tab:cutest:benchmark}}
 \end{table}
 
