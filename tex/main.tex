@@ -51,15 +51,17 @@ Mihai Anitescu
 \maketitle
 
 \begin{abstract}
-  This paper explores two condensed-space interior-point methods designed to efficiently solve large-scale nonlinear programs on graphics processing units (GPUs).
-  Interior-point methods require solving a sequence of symmetric indefinite linear systems, known as Karush-Kuhn-Tucker (KKT) systems, which become increasingly ill-conditioned near the solution.
-  Traditional sparse factorization techniques for KKT systems rely on numerical pivoting, which poses challenges for parallel execution on GPUs.
+  This paper explores two condensed-space interior-point methods, HyKKT and Lifted KKT, designed to solve large-scale nonlinear programs on graphics processing units (GPUs).
+  Interior-point methods (IPM) require solving a sequence of symmetric indefinite linear systems, known as Karush-Kuhn-Tucker (KKT) systems, which become increasingly ill-conditioned near the solution.
+  Traditional sparse factorization techniques for KKT systems rely on numerical pivoting, posing challenges for parallel execution on GPUs.
   A viable alternative is to condense the KKT system into a symmetric positive-definite matrix and solve it using Cholesky factorization, which is numerically stable without requiring pivoting.
-  Although the condensed systems may suffer from greater ill-conditioning, their structure allows this to be handled with limited loss of accuracy.
-  We compare two recent condensed-space approaches: HyKKT and LiftedKKT.
+  Although the condensed systems may suffer from greater ill-conditioning, we establish that their respective structures limit the loss of accuracy in IPM.
   We implement both methods on GPUs using MadNLP.jl, an optimization solver interfaced with NVIDIA's sparse linear solver cuDSS and the GPU-accelerated modeling framework ExaModels.jl.
-  Our experiments on the PGLIB and COPS benchmark suites show that GPUs can achieve up to a tenfold speedup over CPUs on large-scale instances.
-  % Update the abstract to include CUTEst?
+  Our experiments on the PGLIB and CUTEst benchmarks show that
+  \add{(i) GPUs can achieve up to a tenfold speedup over CPUs on large-scale OPF instances,
+  (ii) the raw performance and robustness are more mitigated on the CUTEst benchmark, the two condensed-space methods being penalized for
+  certain classes of nonlinear programs that we have identified.
+  }
 \end{abstract}
 
 
@@ -80,8 +82,8 @@ Despite the emergence of ill-conditioned matrices, our theoretical analysis show
 Numerically, both methods prove competitive for solving large-scale nonlinear problems.
 Compared to state-of-the-art CPU-based solver toolchains, our framework runs fully on the GPU.
 It includes the modeling backend, the optimization solver, and the linear solver.
-This GPU-based implementation achieves up to a 10× speed-up on large-scale OPF problems and quasi-dense instances (e.g., \texttt{elec}).
-While performance is more variable across the COPS and CUTEst benchmarks, our solver consistently remains competitive with its CPU-based counterpart.
+This GPU-based implementation achieves up to a 10× speed-up on large-scale OPF problems.
+While performance is more variable across the CUTEst benchmarks, our solver consistently remains competitive with its CPU-based counterpart.
 
 Looking ahead, we plan to improve the robustness of the two condensed KKT methods, with a particular emphasis on achieving stable convergence at tighter tolerances (below $10^{-8}$).
 Moreover, the sparse Cholesky solver can be further customized to align with the specific structure and needs of interior-point algorithms~\cite{wright1999modified}.

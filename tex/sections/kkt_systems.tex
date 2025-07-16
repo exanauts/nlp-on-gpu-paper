@@ -103,6 +103,7 @@ Although we observe similar performance, these methods ensure a monotonic decrea
     In \cite[Lemma 2.10]{gould2010spectral}, a tighter estimate is given for the threshold
     $\underline{\gamma}$, if $G$ is full row-rank and $Z^\top K Z$ is positive definite:
     \begin{equation}
+      \label{eq:kkt:boundgamma}
       \underline{\gamma} = \dfrac{1}{\sigma_{\min}^2} \left(
         \dfrac{\|K\|^2}{\lambda_{\min}^Z} - \lambda_{\min}^Y
       \right) \; ,
@@ -110,6 +111,10 @@ Although we observe similar performance, these methods ensure a monotonic decrea
     with $\sigma_{\min}$ the smallest nonzero singular value of the Jacobian $G$,
     $\lambda_{\min}^Z > 0$ the smallest eigenvalue of $Z^\top K Z$
     and $\lambda_{\min}^Y$ the smallest eigenvalue of $Y^\top K Y$.
+    We observe from \eqref{eq:kkt:boundgamma} that $\underline{\gamma}$ is
+    inversely proportional to $\lambda_{\min}^Z$ and $\sigma_{\min}$, meaning
+    it can reach a large magnitude if $G$ has nearly aligned rows or
+    $Z^\top K Z$ is closed to be indefinite.
   }
 \end{remark}
 

@@ -17,11 +17,11 @@ We refer to \cite{shin2023accelerating} for a detailed description of the GPU im
 
 \paragraph{Evaluation of the nonlinear models.}
 For fast evaluation of the derivatives on the GPU,
-we use the ExaModels.jl modeling tool~\cite{shin2023accelerating} to implement all the nonlinear programs utilized in our benchmark.
+we use the ExaModels.jl modeling tool~\cite{shin2023accelerating} to \add{instantiate the evaluation of the nonlinear programs on the GPU}.
 ExaModels.jl harnesses the sparsity structure and provides custom derivative kernels for repetitive algebraic subexpressions of the constraints and objective functions to compute first and second-order derivatives on the GPU in parallel~\cite{bischof1991exploiting,enzyme2021}.
 This approach caters to the SIMD architecture of the GPU by assigning each expression to multiple threads responsible for computing derivatives for different values.
 \add{ExaModels.jl is efficient at evaluating the problem's derivatives, and offers a speedup often greater than 100 compared
-  to standard tools like Ampl or JuMP (see Figure~\ref{fig:examodels}). As a result, the time spent in the evaluation of the model becomes
+  to standard tools like AMPL or JuMP (see Figure~\ref{fig:examodels}). As a result, the time spent in the evaluation of the model becomes
   negligible compared to the time spent in the linear solver.
 }
 
@@ -34,8 +34,6 @@ This approach caters to the SIMD architecture of the GPU by assigning each expre
   \label{fig:examodels}}
 \end{figure}
 
-
-
 \paragraph{Linear solvers.}
 We solve the KKT systems assembled within MadNLP using various sparse linear solvers, chosen based on the KKT formulation (\eqref{eq:kkt:condensed}, \eqref{eq:kkt:augmented}, \eqref{eq:kkt:unreduced}) and the device (CPU, GPU) being utilized. We utilize the following solvers:
 \begin{itemize}
@@ -43,12 +41,11 @@ We solve the KKT systems assembled within MadNLP using various sparse linear sol
   \item {\tt HSL MA57}: Implement the multifrontal \lblt factorization on the CPU~\cite{duff1983multifrontal},
     using multithreaded BLAS kernels in the elimination algorithm.
   \item \add{{\tt HSL MA86}: Implement a fine grained multicore parallel supernodal \lblt factorization on the CPU.}
-  \item \add{{\tt Panua Pardiso}: Implement a shared-memory parallel supernodal Cholesky, \ldlt and \lblt factorization on the CPU.}
+  \item \add{{\tt Panua Pardiso}: Implement shared-memory parallel supernodal Cholesky, \ldlt and \lblt factorizations on the CPU.}
   \item {\tt CHOLMOD}: Implements the Cholesky and \ldlt factorizations on the CPU % Sungho: Maybe LDLFactorizations.jl instead, once the results are updated.
     (using the AMD ordering \cite{amestoy-david-duff-2004} by default).
     It factorizes the condensed matrices $K_\gamma$ and $K_\tau$ appearing
     resp. in \eqref{eq:kkt:hykkt} and in \eqref{eq:liftedkkt}.
-    This solver is used to assess the performance of the hybrid solvers when running on the CPU.
   \item {\tt cuDSS}: Implement \llt, \ldlt and \lu decompositions on an NVIDIA GPU.
     We use the \ldlt factorization to factorize the ill-conditioned condensed matrices $K_\gamma$ on GPU,
     as \ldlt is more robust than the Cholesky factorization.
