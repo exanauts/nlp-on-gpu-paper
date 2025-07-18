@@ -135,7 +135,7 @@ Comonicon.@main function main(;
         writedlm(output_file, [index results])
     end
 
-    if solver == "all" || solver == "knitro"
+    if solver == "knitro"
         @info "[CPU] Benchmark Knitro+ma57"
         results = run_benchmark(
             solve_knitro,
@@ -198,7 +198,7 @@ Comonicon.@main function main(;
         writedlm(output_file, [index results])
     end
 
-    if solver == "all" || solver == "pardiso"
+    if solver == "pardiso" || solver == "k2-pardiso"
         @info "[CPU] Benchmark SparseKKTSystem+pardiso"
         results = run_benchmark(
             solve_madnlp_hsl,
@@ -248,7 +248,7 @@ Comonicon.@main function main(;
         writedlm(output_file, [index results])
     end
 
-    if solver == "all" || solver == "sckkt-pardiso"
+    if solver == "pardiso" || solver == "sckkt-pardiso"
         @info "[CPU] Benchmark SparseCondensedKKTSystem+Pardiso"
         results = run_benchmark(
             solve_madnlp_sckkt,
@@ -299,7 +299,7 @@ Comonicon.@main function main(;
         writedlm(output_file, [index results])
     end
 
-    if solver == "all" || solver == "hckkt-pardiso"
+    if solver == "pardiso" || solver == "hckkt-pardiso"
         @info "[CPU] Benchmark HybridCondensedKKTSystem+Pardiso"
         BLAS.set_num_threads(1)
         results = run_benchmark(

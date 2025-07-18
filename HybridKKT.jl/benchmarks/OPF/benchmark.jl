@@ -306,7 +306,7 @@ Comonicon.@main function main(;
         writedlm(output_file, [cases results])
     end
 
-    if solver == "all" || solver == "knitro"
+    if solver == "knitro"
         @info "[CPU] Benchmark Knitro+ma27"
         results = run_benchmark(
             benchmark_knitro,
@@ -364,7 +364,7 @@ Comonicon.@main function main(;
         writedlm(output_file, [cases results])
     end
 
-    if solver == "all" || solver == "pardiso"
+    if solver == "pardiso" || solver == "k2-pardiso"
         @info "[CPU] Benchmark SparseKKTSystem+Pardiso"
         results = run_benchmark(
             benchmark_madnlp,
@@ -392,7 +392,7 @@ Comonicon.@main function main(;
         writedlm(output_file, [cases results])
     end
 
-    if solver == "all" || solver == "sckkt-pardiso"
+    if solver == "pardiso" || solver == "sckkt-pardiso"
         @info "[CPU] Benchmark SparseKKTSystem+Pardiso"
         results = run_benchmark(
             benchmark_sparse_condensed,
@@ -440,7 +440,7 @@ Comonicon.@main function main(;
         writedlm(output_file, [cases results])
     end
 
-    if solver == "all" || solver == "hckkt-pardiso"
+    if solver == "pardiso" || solver == "hckkt-pardiso"
         @info "[CPU] Benchmark SparseKKTSystem+Pardiso"
         results = run_benchmark(
             benchmark_hybrid,
