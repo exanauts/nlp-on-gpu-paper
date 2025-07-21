@@ -132,6 +132,9 @@ above $10^{18}$, leading to a nearly singular linear system.
 Richardson iterations that reduces the relative accuracy in the residual down to an acceptable level.
 As a result, {\tt cuDSS} can solve
 the problem to optimality in $\approx 20s$, a time comparable with HyKKT (see Figure~\ref{fig:hybrid:gamma}).
+\add{We observe that updating the parameter $\tau$ changes the total number of iterations
+  in IPM: this is expected, as we solve a different problem~\eqref{eq:problemrelaxation}
+every time we update the regularization $\tau$.}
 
 \begin{table}[!ht]
   \centering
@@ -161,7 +164,9 @@ the problem to optimality in $\approx 20s$, a time comparable with HyKKT (see Fi
 \subsubsection{Breakdown of the time spent in one IPM iteration}
 We decompose the time spent in a single IPM iteration for LiftedKKT and HyKKT.
 As a reference running on the CPU, we show the time spent in the solver HSL MA27:
-we have observed that HSL MA57 is slower than HSL MA27, as the OPF instances are super-sparse.
+\add{The factorization time in HSL MA57 is 1.9s, compared to 1.2s for HSL MA27 (here,
+  increasing the number of threads in the BLAS backend used by HSL MA57 does not make
+a difference.)}
 Hence, the block elimination algorithm implemented in HSL MA57 is not beneficial there.
 
 When solving the KKT system, the time can be decomposed into: (1) assembling the
@@ -319,7 +324,7 @@ in Figure~\ref{fig:cutest:pprof}. As a baseline, we include the performance
 obtained with Ipopt, MadNLP and Knitro, all running with HSL MA57 (on the contrary
 to OPF problems, HSL MA57 has better performance than HSL MA27 on CUTEst).
 On the performance profile (a), we observe that HyKKT and LiftedKKT are less competitive
-than a standard method running on the CPU, despite a robustness being
+than a standard method running on the CPU, despite exhibiting a robustness
 comparable with Knitro for LiftedKKT. However, if we select only
 the largest instances where Ipopt solve time is greater than 1 second (performance profile (b)),
 HyKKT and Lifted are more competitive and are overall as fast as Knitro (the best

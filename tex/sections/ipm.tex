@@ -201,7 +201,7 @@ $r_4 := h(x) + s$.
 Once \eqref{eq:kkt:augmented} is solved, we recover the updates on bound multipliers with
 $d_v = - S^{-1}(V d_s - \mu e) - v$.
 
-Note that we have added additional regularization terms $\delta_w \geq 0 $
+\add{Note that we have added additional regularization terms $\delta_w \geq 0 $
 and $\delta_c \geq 0$ in \eqref{eq:kkt:augmented}, to ensure the
 matrix is invertible.
 Without the regularization terms in \eqref{eq:kkt:augmented}, the augmented KKT system is non-singular
@@ -212,7 +212,7 @@ The condition is satisfied if the inertia (defined as the respective numbers
 of positive, negative and zero eigenvalues) of the matrix~\eqref{eq:kkt:augmented} is $(n + m_i, m_i + m_e, 0)$.
 We use the inertia-controlling method introduced in \cite[Section 3.1]{wachter2006implementation}
 to regularize the augmented matrix by adding multiple of the identity
-on the diagonal of \eqref{eq:kkt:augmented} if the inertia is not equal to $(n+m_i, m_e+m_i, 0)$.
+on the diagonal of \eqref{eq:kkt:augmented} if the inertia is not equal to $(n+m_i, m_e+m_i, 0)$.}
 
 As a consequence, the system \eqref{eq:kkt:augmented} is usually factorized using
 an inertia-revealing \lblt factorization~\cite{duff1983multifrontal}.

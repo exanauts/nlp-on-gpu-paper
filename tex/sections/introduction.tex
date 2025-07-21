@@ -56,7 +56,7 @@ Solving constrained, large-scale nonlinear optimization problems on GPUs require
 (iii) a sparse linear solver.
 
 To fully benefit from the computational power of GPUs, the entire optimization pipeline must remain on the device, from model evaluation to linear system solves.
-It avoids costly transfers between host (CPU) and device (GPU) memory.
+This avoids costly transfers between host (CPU) and device (GPU) memory.
 This level of integration demands that all components be GPU-compatible and operate natively in GPU memory.
 
 While new architectures such as NVIDIA's GH200 offer unified memory and faster CPU–GPU communication, they still incur slowdowns compared to a fully GPU-resident approach, which we target.
@@ -91,7 +91,7 @@ of the derivatives on the GPU}.
 Our main contributions are:
 
 \begin{enumerate}
-\item We replace the linear solver {\tt cusolverRF} used in~\cite{shin2023accelerating} with NVIDIA's new {\tt cuDSS} library, enabling GPU-accelerated sparse Cholesky and \ldlt factorization. As a result, the interior-point method is executed entirely on the GPU, from model evaluation to KKT system solve.
+\item We replace the linear solver {\tt cusolverRF} used in~\cite{shin2023accelerating} with NVIDIA's new {\tt cuDSS} library, enabling GPU-accelerated sparse Cholesky and \ldlt factorization. As a result, the interior-point method is executed entirely on the GPU, from model evaluation to KKT system solve. To the best of our knowledge, MadNLP is the first GPU-only nonlinear optimization solver.
 
 \item We extend classical results from~\cite{wright1998ill} to show that the condensed KKT matrices are structurally ill-conditioned in a controlled manner. This yields accurate error bounds for the Schur complement used in the HyKKT method.
 
