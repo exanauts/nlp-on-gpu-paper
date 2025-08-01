@@ -102,13 +102,14 @@ Although we observe similar performance, these methods ensure a monotonic decrea
     % SS: we need to clarify what type of norm this is
     which is offering a good empirical trade-off.
     In \cite[Lemma 2.10]{gould2010spectral}, a tighter estimate is given for the threshold
-    $\underline{\gamma}$, if $G$ is full row-rank and $Z^\top K Z$ is positive definite:
+    $\underline{\gamma}$, if $G$ has full row-rank and $Z^\top K Z$ is positive definite:
     \begin{equation}
       \label{eq:kkt:boundgamma}
       \underline{\gamma} = \dfrac{1}{\sigma_{\min}^2} \left(
         \dfrac{\|K\|^2}{\lambda_{\min}^Z} - \lambda_{\min}^Y
       \right) \; ,
     \end{equation}
+    % SS: $Y$ should be introduced here
     with $\sigma_{\min}$ the smallest nonzero singular value of the Jacobian $G$,
     $\lambda_{\min}^Z > 0$ the smallest eigenvalue of $Z^\top K Z$
     and $\lambda_{\min}^Y$ the smallest eigenvalue of $Y^\top K Y$.
@@ -159,7 +160,7 @@ system and use instead alternate reformulations based on the condensed KKT
 system~\eqref{eq:kkt:condensed}. Both strategies
 rely on a Cholesky factorization: HyKKT factorizes a positive
 definite matrix $K_\gamma$ obtained with an Augmented Lagrangian strategy
-whereas Lifted KKT factorizes a positive definite matrix $K_\tau$
+whereas LiftedKKT factorizes a positive definite matrix $K_\tau$
 after using an equality relaxation strategy.
 We will see in the next section that the ill-conditioned matrices $K_\gamma$ and $K_\tau$
 have a specific structure that limits the loss of accuracy in IPM.

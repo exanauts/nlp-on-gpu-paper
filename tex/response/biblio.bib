@@ -563,3 +563,20 @@ Systems},
   journal={arXiv preprint arXiv:2504.17097},
   year={2025}
 }
+
+@misc{tasseffExploringBenefitsLinear2019,
+  title = {Exploring {{Benefits}} of {{Linear Solver Parallelism}} on {{Modern Nonlinear Optimization Applications}}},
+  author = {Tasseff, Byron and Coffrin, Carleton and W{\"a}chter, Andreas and Laird, Carl},
+  year = {2019},
+  month = {sep},
+  number = {arXiv:1909.08104},
+  eprint = {1909.08104},
+  primaryclass = {math},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.1909.08104},
+  urldate = {2024-03-21},
+  abstract = {The advent of efficient interior point optimization methods has enabled the tractable solution of large-scale linear and nonlinear programming (NLP) problems. A prominent example of such a method is seen in Ipopt, a widely-used, open-source nonlinear optimization solver. Algorithmically, Ipopt depends on the use of a sparse symmetric indefinite linear system solver, which is heavily employed within the optimization of barrier subproblems. As such, the performance and reliability of Ipopt is dependent on the properties of the selected linear solver. Inspired by a trend in mathematical programming toward solving larger and more challenging NLPs, this work explores two core questions: first, how does the scalability of available linear solvers, many of which exhibit shared-memory parallelism, impact Ipopt performance; and second, does the best linear solver vary across NLP problem classes, including nonlinear network problems and problems constrained by partial differential equations? To better understand these properties, this paper first describes available open- and closed-source, serial and parallel linear solvers and the fundamental differences among them. Second, it introduces the coupling of a new open-source linear solver capable of heterogeneous parallelism over multi-core central processing units and graphics processing units. Third, it compares linear solvers using a variety of mathematical programming problems, including standard test problems for linear and nonlinear optimization, optimal power flow benchmarks, and scalable two- and three-dimensional partial differential equation and optimal control problems. Finally, linear solver recommendations are provided to maximize Ipopt performance across different application domains.},
+  archiveprefix = {arXiv},
+  keywords = {Mathematics - Optimization and Control},
+  file = {/Users/sushin/Zotero/storage/7Y7IWPJF/Tasseff et al. - 2019 - Exploring Benefits of Linear Solver Parallelism on.pdf;/Users/sushin/Zotero/storage/8DH9GFRW/1909.html},
+}

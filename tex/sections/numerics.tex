@@ -18,8 +18,11 @@ the KKT solver becomes the bottleneck in the numerical implementation~\cite{shin
 Subsequently, we evaluate the individual performance of the cuDSS solver when
 factorizing the matrix $K_{\gamma}$ at the first IPM iteration (here with
 $\gamma = 10^7$). We compare the times to perform the symbolic analysis,
-the factorization and the triangular solves with those reported in CHOLMOD \add{(running
-single threaded), HSL MA86 and Panua Pardiso with sparse Cholesky (both running in parallel using 8 threads).}
+the factorization and the triangular solves with those reported in CHOLMOD \add{
+  (running single threaded), HSL MA86 and Panua Pardiso with sparse Cholesky.
+  The CPU implementations achieved their highest efficiency when  configured with 8 threads.
+  Therefore, in the remainder of this paper, we will consistently present the performance of the linear solvers operating in parallel using 8 threads.
+}
 
 The results are displayed in Table~\ref{tab:linsol:time}.
 We benchmark in parallel the three decompositions implemented in cuDSS (\llt, \ldlt, \lu).
@@ -166,7 +169,7 @@ We decompose the time spent in a single IPM iteration for LiftedKKT and HyKKT.
 As a reference running on the CPU, we show the time spent in the solver HSL MA27:
 \add{The factorization time in HSL MA57 is 1.9s, compared to 1.2s for HSL MA27 (here,
   increasing the number of threads in the BLAS backend used by HSL MA57 does not make
-a difference.)}
+a difference).}
 Hence, the block elimination algorithm implemented in HSL MA57 is not beneficial there.
 
 When solving the KKT system, the time can be decomposed into: (1) assembling the
@@ -275,6 +278,7 @@ faster than HSL MA27 running on the CPU.
       The columns {\tt AD}, {\tt lin} and {\tt total} display the time
       spent in the evaluation of the derivatives using AD, the time spent
       in the linear solver and the total time spent in the IPM algorithm.
+      % SS: We should check the discrepancy between the total time versus init + AD + lin. For case78484, solver internal time seems to be unreasonably high.
   } \label{tab:opf:benchmark}}
 \end{table}
 
@@ -327,7 +331,7 @@ On the performance profile (a), we observe that HyKKT and LiftedKKT are less com
 than a standard method running on the CPU, despite exhibiting a robustness
 comparable with Knitro for LiftedKKT. However, if we select only
 the largest instances where Ipopt solve time is greater than 1 second (performance profile (b)),
-HyKKT and Lifted are more competitive and are overall as fast as Knitro (the best
+HyKKT and LiftedKKT are more competitive and are overall as fast as Knitro (the best
 performing solver on the largest CUTEst instances) on 50\% of the instances.
 %
 Overall, HyKKT is less robust than LiftedKKT on CUTEst: for some cases, the regularization parameter
@@ -401,3 +405,8 @@ provided they remain small enough ({\tt EIGENAU}, {\tt EIGENCCO}, {\tt EIGENB2},
 % - failure in SOSC
 
 
+
+%%% Local Variables:
+%%% mode: LaTeX
+%%% TeX-master: "../main"
+%%% End:

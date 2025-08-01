@@ -51,7 +51,7 @@ Mihai Anitescu
 \maketitle
 
 \begin{abstract}
-  This paper explores two condensed-space interior-point methods, HyKKT and Lifted KKT, designed to solve large-scale nonlinear programs on graphics processing units (GPUs).
+  This paper explores two condensed-space interior-point methods, HyKKT and LiftedKKT, designed to solve large-scale nonlinear programs on graphics processing units (GPUs).
   Interior-point methods (IPM) require solving a sequence of symmetric indefinite linear systems, known as Karush-Kuhn-Tucker (KKT) systems, which become increasingly ill-conditioned near the solution.
   Traditional sparse factorization techniques for KKT systems rely on numerical pivoting, posing challenges for parallel execution on GPUs.
   A viable alternative is to condense the KKT system into a symmetric positive-definite matrix and solve it using Cholesky factorization, which is numerically stable without requiring pivoting.

@@ -23,6 +23,10 @@ This approach caters to the SIMD architecture of the GPU by assigning each expre
 \add{ExaModels.jl is efficient at evaluating the problem's derivatives, and offers a speedup often greater than 100 compared
   to standard tools like AMPL or JuMP (see Figure~\ref{fig:examodels}). As a result, the time spent in the evaluation of the model becomes
   negligible compared to the time spent in the linear solver.
+ExaModels.jl outperforms traditional modeling tools like JuMP and AMPL when even running on CPUs.
+This performance advantage arises from ExaModels.jl compiling derivative evaluation kernels specifically for the given problem, whereas JuMP and AMPL depend on a precompiled interpreter to evaluate the model's derivatives.
+Conversely, ExaModels.jl necessitates compilation time to create the derivative evaluation kernels, which can become substantial for problems involving a large number of heterogeneous constraints.
+Within this paper, we always have excluded the compilation time from the reported timings.
 }
 
 \begin{figure}[!ht]
@@ -56,3 +60,8 @@ CHOLMOD \cite{chen-davis-hager-rajamanickam-2008} is shipped with Julia.
 For the HSL linear solvers, we utilize libHSL \cite{fowkes-lister-montoison-orban-2024} with the Julia interface HSL.jl \cite{montoison-orban-hsl-2021}.
 HSL MA57 and CHOLMOD are both compiled with OpenBLAS, a multithreaded version of BLAS and LAPACK.
 The Julia package Krylov.jl~\cite{montoison2023krylov} contains a collection of Krylov methods with a polymorphic implementation that can be used on both CPU and GPU architectures.
+
+%%% Local Variables:
+%%% mode: LaTeX
+%%% TeX-master: "../main"
+%%% End:

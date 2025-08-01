@@ -41,7 +41,7 @@
 \maketitle
 
 \section*{Introduction}
-We thank the two reviewers for their comprehensive feedbacks on the previous
+We thank the reviewers for their comprehensive feedbacks on the previous
 version of our paper. The comments pointed to several limitations.
 We have revised the paper accordingly, and we believe that this new version addresses
 the shortcomings raised before by the reviewers.
@@ -58,21 +58,29 @@ The Authors use older linear solvers like MA27/57 instead of more recent ones li
 \end{quotereviewer}
 
 \answer
-The author is right that the previous comparison was not fair. We used HSL MA27/HSL MA57 as most
+The reviewer is right that the previous comparison was not fair. We used HSL MA27/HSL MA57 as most
 users are using these two linear solvers by default and they are available in Ipopt or Knitro.
 We have complemented the numerical results by providing a comparison with Panua Pardiso and HSL MA86, both running in parallel on the CPU.
-We have found that setting the number of threads to 8 gives the best performance in Pardiso and in HSL MA86, the parallel
+The results indicate that
+(i) the parallel CPU solvers can provide decent speed-ups when they are used within condensed KKT systems (LiftedKKT or HyKKT).
+In this regard, LiftedKKT and HyKKT are not only GPU-friendly methods, but is more of a general parallel solver-friendly KKT system reformulation.
+In addition, (ii) the performance of the GPU solver cuDSS is still better than the CPU solvers.
+In partiuclar, we have found that setting the number of threads to 8 gives the best performance in Pardiso and in HSL MA86, the parallel
 scalability remaining limited on the CPU.
+This comes from the fact that GPU parallelism is more effective at handling the sparse linear systems arising from many nonlinear program instances (e.g. OPF problems). 
 
 \begin{quotereviewer}
 I understand that the Authors want to compare with a common situation in nonlinear programming (i.e. MA57 with OpenBLAS), but the use of a better linear solver and a better BLAS library may have a large effect on the CPU performance. It may even be that the best performance on a CPU is comparable with the speed up observed on the GPU, in some cases.
 \end{quotereviewer}
 
-\answer For OPF problems, our experience is that HSL MA27 gives better performance than
-HSL MA57, as the resulting KKT systems are super-sparse. As a result, HSL MA57 is not able
+\answer For OPF problems, it is known that HSL MA27 gives better performance than
+HSL MA57, as the resulting KKT systems are highly sparse \cite{tasseffExploringBenefitsLinear2019}.
+Specifically, for the largest instance {\tt case78484epigrids}, the condensed KKT system has ~10 nonzeros per row.
+Due to such extreme sparsity, there is little parallelism to exploit at the BLAS level.
+As a result, HSL MA57 is not able
 to exploit the efficient BLAS kernels it uses under the hood. Changing the BLAS backend (e.g. to MKL)
 does not make a significant difference in HSL MA57's performance.
-To be more specific, if we take our largest OPF instance ({\tt 78481epigrids}),
+To be more specific, if we take our largest OPF instance ({\tt case78484epigrids}),
 the time spent in the numerical factorization of the augmented KKT system
 is approximately 1.9s using 1 thread, and does not decrease if we increase
 the number of threads (this observation is consistent whether we use openblas or MKL as backend).
@@ -364,3 +372,8 @@ We have added a comparison with Ipopt and Knitro both on the OPF and on the CUTE
 \bibliography{biblio.bib}
 
 \end{document}
+
+%%% Local Variables:
+%%% mode: LaTeX
+%%% TeX-master: t
+%%% End:
