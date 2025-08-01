@@ -99,6 +99,7 @@ Although we observe similar performance, these methods ensure a monotonic decrea
     for $K_\gamma$ to be positive definite. However, a large value of $\gamma$ increase
     the ill-conditioning in $K_\gamma$, hence deteriorating the solution's quality.
     In \cite{golub2003solving}, the authors recommend choosing $\gamma = \| K \| / \|G\|^2$,
+    % SS: we need to clarify what type of norm this is
     which is offering a good empirical trade-off.
     In \cite[Lemma 2.10]{gould2010spectral}, a tighter estimate is given for the threshold
     $\underline{\gamma}$, if $G$ is full row-rank and $Z^\top K Z$ is positive definite:
