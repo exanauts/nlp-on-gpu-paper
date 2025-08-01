@@ -91,7 +91,9 @@ This has been clarified in \S6.1.4 in the revision.
 The condensed KKT system is denser than the original Hessian $W$ and could potentially be much denser. It is not clear why the Authors say that this phenomenon is ``rarer that in the normal equations commonly encountered in LP' (page 8). For the purpose of using IPMs on GPUs, this approach makes sense because it avoids pivoting. However, the issues mentioned for approach $K_1$ remain valid, limiting the applicability of the technique. This is even more problematic when the term $G^TG$ is added as well.
 \end{quotereviewer}
 
-\answer The reviewer is right to point this issue. We have updated the numerical
+\answer The reviewer is right to point this issue.
+In particular, the condenstation strategy can lead to a fully dense KKT system if the Jacobian has a fully dense row (similarly to the normal equations being fully dense if the Jacobian has a fully dense column).
+We have updated the numerical
 results to replace the COPS benchmark by the CUTEst benchmark, and have included a thorough
 discussion of the limits faced by the two condensation strategies LiftedKKT and HyKKT,
 including the issue of dense columns. This issue arises frequently when solving
@@ -116,7 +118,7 @@ It is not completely clear how to choose the parameter $\gamma$. It should be la
 \end{quotereviewer}
 
 \answer
-One of the shortcoming of the HyKKT method is that we don't know a priori how large should be $\gamma$. For some problems with a
+One of the shortcoming of the HyKKT method is that we don't know a priori how large should $\gamma$ be. For some problems with a
 reduced Hessian being close to singularity, $\gamma$ has to be increased significantly (this is observed for instance in the {\tt ROCKET} instance in CUTEst, as the problem has
 a singular arc that leads to a near degenerate reduced Hessian).
 We note the parameter $\gamma$ can be tuned adaptively, e.g. using an augmented Lagrangian algorithm: investigating this idea is left for future work.
@@ -133,10 +135,12 @@ Page 23, table 1. Why is the accuracy so much worse when using cuDSS-LDLT? Also,
 \end{quotereviewer}
 
 \answer
-We confirm that the analysis phase includes the assembling of the KKT system
-and the time needed to compute the symbolic factorization inside cuDSS (the symbolic factorization
-has to find an elimination tree depending on a given ordering, an operation not trivial
-to run in parallel on the GPU and which often does run on the CPU~\cite{chang2025parallelizing}).
+cuDSS-LDLT is found to have a lower accuracy than cuDSS-Cholesky, but we do not know why it is the case, as cuDSS is not an open-source library. Analysis phase does not include the assembly of the KKT system, but it is used primarily to compute the symbolic factorization of the KKT system. This includes the ordering of the KKT system and the formation of elimination trees. According to cuDSS documentation, part of the symbolic analysis is run on the CPU \cite{nvidiaNVIDIACuDSSPreview}, as the ordering operation is serial in nature. Thus, analysis phase is often the bottleneck, and this is also observed in the numerical results in Table 1. This discussion is added to the revised version of the paper.
+
+% We confirm that the analysis phase includes the assembling of the KKT system
+% and the time needed to compute the symbolic factorization inside cuDSS (the symbolic factorization
+% has to find an elimination tree depending on a given ordering, an operation not trivial
+% to run in parallel on the GPU and which often does run on the CPU~\cite{chang2025parallelizing}).
 
 
 \begin{quotereviewer}

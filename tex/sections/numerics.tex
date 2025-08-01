@@ -58,6 +58,9 @@ The numerical factorization is about two times faster in cuDSS \add{than in HSL 
   }
 \end{table}
 
+In Table~\ref{tab:linsol:time}, one can observe that the symbolic analysis time is significant portion of the total run time, especially for the GPU solvers. This is because the ordering, within symbolic analysis, is performed on CPU, so it cannot benefit from the GPU parallelism \cite{nvidiaNVIDIACuDSSPreview}. Fortunately, the analysis can be performed only once, and the symbolic factorization can be reused if the optimization problem is re-solved with the same sparsity structure.
+
+
 \subsubsection{Tuning the Golub \& Greif strategy}
 \label{sec:num:tuninghykkt}
 In Figure~\ref{fig:hybrid:gamma} we depict the evolution of the number
