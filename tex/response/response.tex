@@ -264,9 +264,10 @@ space approaches LiftedKKT and HyKKT. Our contributions are:
 \begin{enumerate}
   \item To the best of our knowledge, MadNLP using the two condensed space methods
     (LiftedKKT and HyKKT) is the first GPU-only nonlinear optimization solver.
-  \item We use the newly released sparse linear solver
-    cuDSS to solve large-scale nonlinear instances using our condensed-space methods.
-    Our previous work [37] was using the older linear solver {\tt cusolverRF}.
+  % SS: Commented out by SS. I think this can be considered to be a too small contribution, especially since we did not develop CUDSS. I will separately mention this.
+  % \item We use the newly released sparse linear solver
+  %   cuDSS to solve large-scale nonlinear instances using our condensed-space methods.
+  %   Our previous work [37] was using the older linear solver {\tt cusolverRF}.
   \item Despite the increased ill-conditioning caused by the condensed space approaches,
     we provide a theoretical analysis that shows that the ill-conditioning remains
     structured and does not impact the convergence of the interior-point method.
@@ -275,6 +276,8 @@ space approaches LiftedKKT and HyKKT. Our contributions are:
 \end{enumerate}
 We have clarified our contributions in the introduction.
 
+Additionally, while we do not assert this as a scientific contribution, a notable distinction from [37] is our adoption of a different linear solver, cuDSS. We have developed an interface for the NVIDIA sparse linear solver cuDSS, which is also integrated with the MadNLP.jl solver. In contrast, our previous work [37] utilized the older linear solver {\tt cusolverRF}. As the performance improvements are significant and as GPU sparse solvers are advancing rapidly, the updated numerical results may be of considerable interest to the community.
+ 
 \begin{quotereviewer}
 2.b. The results presented in Table 4 for a limited number of COPS instances do not paint
 a consistent picture, making it unclear what the central message is. Is the claim that
