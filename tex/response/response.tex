@@ -193,6 +193,7 @@ CHOLMOD cannot be used for factorizing augmented KKT system due to the indefinit
 This has been clarified in the caption of Figure 2.
 In addition we have included additional linear solvers running in parallel
 on the CPU (Panua Pardiso and HSL MA86), for the benchmark to be more comprehensive.
+Note that Pardiso and MA86 were applied to condensed KKT systems (lifted or hybrid), as they are more efficient on these systems than on the augmented KKT system.
 
 \begin{quotereviewer}
 Page 28: the pictures of the sparsity patterns do not provide enough information about the matrices used. Please show also the data about the density of the matrices involved and the extra density arising from the condensed approach.
@@ -244,11 +245,15 @@ we have written a wrapper evaluating the CUTEst instances on the CPU and moving
 the results to the GPU with a copy operation. As a result, the method is not running exclusively on the GPU,
 as it is the case with the OPF instances (and previously with the COPS instances which
 we have all re-implemented using ExaModels).
+This means for the CUTEst benchmark, there can potentially be a substantial performance penalty
+for the GPU solvers, as the derivative evaluation time will include the overhead of transferring
+the data to/from the GPU device memory.
+This overhead will be larger for older GPUs, they rely on older PCIe versions, which have a lower bandwidth.
 
 \begin{quotereviewer}
 2.a. The use of condensed-space IPM with GPU acceleration for OPF has already been
 studied in the authors’ previous work [37]. It is unclear how the contributions of this
-paper diﬀer signiﬁcantly from that prior work.
+paper differ signiﬁcantly from that prior work.
 \end{quotereviewer}
 
 \answer
@@ -273,7 +278,7 @@ We have clarified our contributions in the introduction.
 \begin{quotereviewer}
 2.b. The results presented in Table 4 for a limited number of COPS instances do not paint
 a consistent picture, making it unclear what the central message is. Is the claim that
-cuDSS or GPU does not oﬀer clear advantages over CPU-based methods for general
+cuDSS or GPU does not offer clear advantages over CPU-based methods for general
 \end{quotereviewer}
 
 \answer

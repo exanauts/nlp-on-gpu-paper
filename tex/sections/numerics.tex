@@ -262,11 +262,11 @@ and the A100 are relatively similar, and the cheaper A1000 GPU is already
 faster than HSL MA27 running on the CPU.
 
 \add{Among all nonlinear programs, the OPF problems have a very
-  specific graph-structure that leads to the formulation of a super-sparse
+  specific sparsity structure that leads to the formulation of a highly sparse
   KKT linear system~\eqref{eq:kkt:augmented}. The super-sparse structure
-  explains why HSL MA27 gives better results than HSL MA57, as
-  previous reported in \cite{tasseff2019exploring}. For that reason, it is hard
-  to generalize the results we obtain on the OPF instances to generic nonlinear programs.
+  explains why HSL MA27 gives better results than HSL MA57, which can utilize parallelism at BLAS level, as
+  previous reported in \cite{tasseff2019exploring}. For that reason, the numerical results obtained for the OPF instances
+  may not be representative of the performance of HyKKT and LiftedKKT on generic nonlinear programs.
   In the next section, we analyze the performance of HyKKT and LiftedKKT on the CUTEst
   benchmark to have a better overview of the method' limitations.
 }
