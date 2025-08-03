@@ -285,7 +285,7 @@ cuDSS or GPU does not offer clear advantages over CPU-based methods for general
 \end{quotereviewer}
 
 \answer
-We have followed \reviewername suggestion and have replaced the COPS benchmark
+We have followed \reviewername's suggestion and have replaced the COPS benchmark
 by CUTEst, selecting only instances with more than 1,000 variables
 and at least 1 constraint. This gives a more comprehensive picture of the
 performance offered by the condensed-space approaches.
@@ -312,11 +312,20 @@ not discussed in the paper, despite the general claims made about NLP.
 
 \answer
 We agree with the reviewer that the evaluation of the Hessian and the Jacobian
-can take a significant portion of the overall runtime. However, we have observed that
-if we can accelerate the derivatives on the GPU using ExaModels, the time spent in
+can take a significant portion of the overall runtime.
+Indeed we have not emphasized this aspect adequately in our previous submission.
+
+In the revised manuscript, we provide details on the used algebraic modeling framework ExaModels.jl, and
+discuss how the model functions can be evaluated on the GPUs.
+ExaModels.jl is a specialized modeling framework that allows the user to inform the automatic differentiation (AD) engine
+about the repeated algebraic structure of the model, which is then used to generate the parallelized code for the evaluation of the derivatives.
+ExaModels.jl implementation paper is under preparation.
+
+We have observed that if we can accelerate the derivatives on the GPU using ExaModels, the time spent in
 the evaluation becomes negligible compared to the time spent solving the KKT
 system (on the largest OPF instances {\tt 78481epigrids}, the AD time
-decreases from 7.8s on the CPU to 0.4s on the GPU). This has been clarified in Figure 1 in the revision.
+decreases from 7.8s on the CPU to 0.4s on the GPU).
+This has been clarified in Figure 1 in the revision.
 
 To clarify this point, we have included the time spent in AD in the OPF
 and in the CUTest benchmarks. The OPF benchmark uses ExaModels, whereas
@@ -336,6 +345,8 @@ concerns interior-point methods, and also the claim for NLP is too broad with th
 
 \answer
 TODO: should we change the title?
+% SS: I concur with the reviewer's perspective on this matter. I propose we revise the title to "Condensed-Space Interior-Point Methods for Solving Large-Scale Sparse Nonlinear Programs on GPUs."
+
 
 \begin{quotereviewer}
 2. The condition number analysis in Section 4 is fairly standard. It would be helpful for the
