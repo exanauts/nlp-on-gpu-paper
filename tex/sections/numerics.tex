@@ -183,7 +183,9 @@ to the factorization and the triangular solves.
 \add{The condensed strategies LiftedKKT and HyKKT leads to faster factorization time,
 as the condensed KKT system can be factorized efficiently in parallel. HSL MA86
 factorizes the condensed system almost 10 times faster than HSL MA27, and using
-cuDSS leads to an additional 4x speed-up.}
+cuDSS leads to an additional 4x speed-up.
+We focus exclusively on comparing the parallel CPU solvers, such as MA86 and Pardiso, for the Lifted/HyKKT formulations, since the augmented KKT system utilized with MA27 does not effectively leverage parallel linear solvers. 
+}
 Once the KKT system is factorized, computing the descent direction with LiftedKKT is faster than with HyKKT
 (0.01s compared to 0.07s) as HyKKT has to run a \CG algorithm to completion to solve the Schur complement
 system~\eqref{eq:kkt:schurcomplhykkt} --- hence requiring additional backsolves in the linear solver.

@@ -180,6 +180,7 @@ Overall, the issue of accuracy (which is thoroughly discussed theoretically) sho
 \end{quotereviewer}
 
 \answer We have included a new paragraph discussing the accuracy issue in HyKKT/LiftedKKT.
+% SS: we need to point the reviewer directly to the new paragraph
 
 \begin{quotereviewer}
 Cholmod seems to perform well in Figure 2, better than MA27. Why are the rest of the tests performed only with MA27 then? It would make a lot of sense to compare to Cholmod as well, since it is not doing pivoting.
@@ -188,7 +189,8 @@ Cholmod seems to perform well in Figure 2, better than MA27. Why are the rest of
 \answer In figure 2, HSL MA27 is used as a reference: it factorizes
 the augmented KKT system (which is sparse symmetric indefinite), as done in standard solvers like Ipopt and Knitro.
 CHOLMOD factorizes the condensed KKT system we obtain with HyKKT (which on its end is sparse symmetric definite).
-This has been clarified in the label of Figure 2.
+CHOLMOD cannot be used for factorizing augmented KKT system due to the indefiniteness.
+This has been clarified in the caption of Figure 2.
 In addition we have included additional linear solvers running in parallel
 on the CPU (Panua Pardiso and HSL MA86), for the benchmark to be more comprehensive.
 
