@@ -1,21 +1,22 @@
 \section{Introduction}
-Graphics Processing Units (GPUs) have become a cornerstone of scientific computing, with their most notable achievement being the training and deployment of large-scale artificial intelligence (AI) models.  
-GPUs provide two primary advantages: (1) significant parallel computing capabilities, particularly for applications that leverage coarse-grain parallelism and high memory bandwidth, and (2) enhanced power efficiency through the implementation of ``Single Instruction, Multiple Data'' (SIMD) execution.
+General-purpose GPU computing has become a cornerstone of scientific computing and machine learning, with its most notable achievement being the training and deployment of large-scale artificial intelligence (AI) models.  
+GPUs provide two primary advantages: (1) significant parallel computing capabilities, particularly for applications that leverage parallelism at the low-level BLAS operations and high memory bandwidth, and (2) enhanced power efficiency.
 
-Despite their success in machine learning, GPUs have seen limited adoption in mathematical programming.  
-This is primarily due to the dependence of second-order optimization methods on direct linear algebra for computing Newton directions, a task that is challenging to parallelize effectively.  
-Sparse matrix factorizations, which are central to these methods, present significant difficulties on SIMD architectures.  
-However, several recent developments are beginning to shift this landscape:  
-
-
+Despite their success in scientific computing and machine learning, GPUs have seen limited adoption in classical mathematical programming, such as linear programming (LP) and nonlinear programming (NLP). In most applications of classical mathematical programming, parallelizability at the BLAS operation level is limited, thus hindering the straightforward utilization of GPU computing power.
+Additionally, although certain classes of sparse matrix operations are parallelizable in principle, the implementation of efficient sparse matrix kernels on GPUs is non-trivial, especially for sparse matrix factorizations.
+Classical solution techniques rely on direct linear solvers with sophisticated numerical pivoting strategies to ensure numerical robustness.
+However, these techniques are inherently sequential, making effective parallelization on GPUs challenging.
+Nevertheless, recent advances in GPU computing techniques are beginning to shift this landscape:
 \begin{enumerate}
-  \item \textbf{Faster sparse matrix operations}: Improvements in CUDA libraries and the integration of tensor cores in modern GPUs have significantly accelerated sparse matrix operations~\cite{markidis2018nvidia}.
-  \item \textbf{Growing interest in batched optimization}: Applications such as differentiable programming increasingly rely on solving parametric optimization problems in batch mode~\cite{amos2017optnet,pineda2022theseus}.
-  \item \textbf{Progress in automatic differentiation}: GPUs are well-suited for automatic differentiation, a key component of both scientific simulations and machine learning~\cite{jax2018github,enzyme2021}. Engineering problems often exhibit recurring patterns throughout the model. Once these patterns are identified, they can be evaluated in parallel within a SIMD framework, enabling near speed-of-light performance~\cite{shin2023accelerating}.
-  \item \textbf{Rise of GPU-dominated HPC}: With the emergence of exascale supercomputers (e.g., Frontier, Aurora), GPU support has become a core requirement for scalable scientific software.
+\item \textbf{Faster sparse direct solvers}: Recent developments in GPU-based sparse direct solvers, such as NVIDIA's {\tt cuDSS}~\cite{nvidiaNVIDIACuDSSPreview}, have significantly improved the performance of sparse matrix factorizations, which are crucial for solving KKT systems in interior-point methods. These solvers now offer performance that rivals or exceeds that of traditional CPU-based solvers~\cite{shin2023accelerating}.
+\item \textbf{Progress in automatic differentiation}: GPUs are well-suited for automatic differentiation, a key component of both scientific simulations and machine learning~\cite{jax2018github,enzyme2021}. Engineering problems often exhibit recurring patterns throughout the model. Once these patterns are identified, they can be evaluated in parallel within a SIMD framework, enabling near speed-of-light performance~\cite{shin2023accelerating}.
+\item \textbf{Rise of GPU-dominated HPC}: With the emergence of exascale supercomputers (e.g., Frontier, Aurora), GPU support has become a core requirement for utilizing these HPC resources within mathematical optimization applications.
+\item \textbf{Growing interest in batched optimization}: Applications such as differentiable programming increasingly rely on solving parametric optimization problems in batch mode to train neural network models embedding optimization problems~\cite{amos2017optnet,pineda2022theseus}.
 \end{enumerate}
 
+
 \subsection{Solving optimization problems on GPUs}
+
 These trends have renewed interest in solving optimization problems directly on GPUs.
 We now review the state of the art in this area, from first-order methods to recent advances in second-order techniques.
 
