@@ -54,8 +54,8 @@ Mihai Anitescu
   This paper explores two condensed-space interior-point methods, HyKKT and LiftedKKT, designed to solve large-scale nonlinear programs on graphics processing units (GPUs).
   Interior-point methods (IPM) require solving a sequence of symmetric indefinite linear systems, known as Karush-Kuhn-Tucker (KKT) systems, which become increasingly ill-conditioned near the solution.
   Traditional sparse factorization techniques for KKT systems rely on numerical pivoting, posing challenges for parallel execution on GPUs.
-  A viable alternative is to condense the KKT system into a symmetric positive-definite matrix and solve it using Cholesky factorization, which is numerically stable without requiring pivoting.
-  Although the condensed systems may suffer from greater ill-conditioning, we establish that their respective structures limit the loss of accuracy in IPM.
+  A viable alternative is to transform the KKT system into a symmetric positive-definite matrix and solve it using Cholesky factorization, a method that maintains numerical stability without the need for numerical pivoting.
+  Despite the potential for greater ill-conditioning in the condensed systems, we demonstrate that their inherent structures effectively mitigate the loss of accuracy in the IPM.
   We implement both methods on GPUs using MadNLP.jl, an optimization solver interfaced with NVIDIA's sparse linear solver cuDSS and the GPU-accelerated modeling framework ExaModels.jl.
   Our experiments on the PGLIB and CUTEst benchmarks show that
   \add{(i) GPUs can achieve up to a tenfold speedup over CPUs on large-scale OPF instances,
