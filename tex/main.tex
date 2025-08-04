@@ -38,7 +38,10 @@
 \newcommand{\add}[1]{{\color{blue} #1}}
 
 
-\title{Condensed-space methods for nonlinear programming on GPUs} 
+\title{
+  Condensed-Space Interior-Point Methods for Solving Large-Scale Sparse Nonlinear Programs on GPUs.
+  % Condensed-space methods for nonlinear programming on GPUs
+}
 \author{François Pacaud \and
 Sungho Shin \and
 Alexis Montoison \and
@@ -58,8 +61,9 @@ Mihai Anitescu
   Despite the potential for greater ill-conditioning in the condensed systems, we demonstrate that their inherent structures effectively mitigate the loss of accuracy in the IPM.
   We implement both methods on GPUs using MadNLP.jl, an optimization solver interfaced with NVIDIA's sparse linear solver cuDSS and the GPU-accelerated modeling framework ExaModels.jl.
   Our experiments on the PGLIB and CUTEst benchmarks show that
-  \add{(i) GPUs can achieve up to a tenfold speedup over CPUs on large-scale OPF instances,
-  (ii) the raw performance and robustness are more mitigated on the CUTEst benchmark, the two condensed-space methods being penalized for
+  \add{
+    (i) condensed-psace approach on GPUs can achieve up to a tenfold speedup over single-threaded CPUs with the classical augmented KKT system formulation on large-scale OPF instances,
+    (ii) the raw performance and robustness are more mitigated on the CUTEst benchmark, the two condensed-space methods being penalized for
   certain classes of problems where the condensed matrix has a large number of nonzeros.
   }
 \end{abstract}
