@@ -183,7 +183,9 @@ to the factorization and the triangular solves.
 \add{The condensed strategies LiftedKKT and HyKKT leads to faster factorization time,
 as the condensed KKT system can be factorized efficiently in parallel. HSL MA86
 factorizes the condensed system almost 10 times faster than HSL MA27, and using
-cuDSS leads to an additional 4x speed-up.}
+cuDSS leads to an additional 4x speed-up.
+We focus exclusively on comparing the parallel CPU solvers, such as MA86 and Pardiso, for the Lifted/HyKKT formulations, since the augmented KKT system utilized with MA27 does not effectively leverage parallel linear solvers. 
+}
 Once the KKT system is factorized, computing the descent direction with LiftedKKT is faster than with HyKKT
 (0.01s compared to 0.07s) as HyKKT has to run a \CG algorithm to completion to solve the Schur complement
 system~\eqref{eq:kkt:schurcomplhykkt} --- hence requiring additional backsolves in the linear solver.
@@ -260,11 +262,11 @@ and the A100 are relatively similar, and the cheaper A1000 GPU is already
 faster than HSL MA27 running on the CPU.
 
 \add{Among all nonlinear programs, the OPF problems have a very
-  specific graph-structure that leads to the formulation of a super-sparse
+  specific sparsity structure that leads to the formulation of a highly sparse
   KKT linear system~\eqref{eq:kkt:augmented}. The super-sparse structure
-  explains why HSL MA27 gives better results than HSL MA57, as
-  previous reported in \cite{tasseff2019exploring}. For that reason, it is hard
-  to generalize the results we obtain on the OPF instances to generic nonlinear programs.
+  explains why HSL MA27 gives better results than HSL MA57, which can utilize parallelism at BLAS level, as
+  previous reported in \cite{tasseff2019exploring}. For that reason, the numerical results obtained for the OPF instances
+  may not be representative of the performance of HyKKT and LiftedKKT on generic nonlinear programs.
   In the next section, we analyze the performance of HyKKT and LiftedKKT on the CUTEst
   benchmark to have a better overview of the method' limitations.
 }

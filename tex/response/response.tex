@@ -180,6 +180,7 @@ Overall, the issue of accuracy (which is thoroughly discussed theoretically) sho
 \end{quotereviewer}
 
 \answer We have included a new paragraph discussing the accuracy issue in HyKKT/LiftedKKT.
+% SS: we need to point the reviewer directly to the new paragraph
 
 \begin{quotereviewer}
 Cholmod seems to perform well in Figure 2, better than MA27. Why are the rest of the tests performed only with MA27 then? It would make a lot of sense to compare to Cholmod as well, since it is not doing pivoting.
@@ -188,9 +189,11 @@ Cholmod seems to perform well in Figure 2, better than MA27. Why are the rest of
 \answer In figure 2, HSL MA27 is used as a reference: it factorizes
 the augmented KKT system (which is sparse symmetric indefinite), as done in standard solvers like Ipopt and Knitro.
 CHOLMOD factorizes the condensed KKT system we obtain with HyKKT (which on its end is sparse symmetric definite).
-This has been clarified in the label of Figure 2.
+CHOLMOD cannot be used for factorizing augmented KKT system due to the indefiniteness.
+This has been clarified in the caption of Figure 2.
 In addition we have included additional linear solvers running in parallel
 on the CPU (Panua Pardiso and HSL MA86), for the benchmark to be more comprehensive.
+Note that Pardiso and MA86 were applied to condensed KKT systems (lifted or hybrid), as they are more efficient on these systems than on the augmented KKT system.
 
 \begin{quotereviewer}
 Page 28: the pictures of the sparsity patterns do not provide enough information about the matrices used. Please show also the data about the density of the matrices involved and the extra density arising from the condensed approach.
@@ -242,11 +245,15 @@ we have written a wrapper evaluating the CUTEst instances on the CPU and moving
 the results to the GPU with a copy operation. As a result, the method is not running exclusively on the GPU,
 as it is the case with the OPF instances (and previously with the COPS instances which
 we have all re-implemented using ExaModels).
+This means for the CUTEst benchmark, there can potentially be a substantial performance penalty
+for the GPU solvers, as the derivative evaluation time will include the overhead of transferring
+the data to/from the GPU device memory.
+This overhead will be larger for older GPUs, they rely on older PCIe versions, which have a lower bandwidth.
 
 \begin{quotereviewer}
 2.a. The use of condensed-space IPM with GPU acceleration for OPF has already been
 studied in the authors’ previous work [37]. It is unclear how the contributions of this
-paper diﬀer signiﬁcantly from that prior work.
+paper differ signiﬁcantly from that prior work.
 \end{quotereviewer}
 
 \answer
@@ -257,9 +264,10 @@ space approaches LiftedKKT and HyKKT. Our contributions are:
 \begin{enumerate}
   \item To the best of our knowledge, MadNLP using the two condensed space methods
     (LiftedKKT and HyKKT) is the first GPU-only nonlinear optimization solver.
-  \item We use the newly released sparse linear solver
-    cuDSS to solve large-scale nonlinear instances using our condensed-space methods.
-    Our previous work [37] was using the older linear solver {\tt cusolverRF}.
+  % SS: Commented out by SS. I think this can be considered to be a too small contribution, especially since we did not develop CUDSS. I will separately mention this.
+  % \item We use the newly released sparse linear solver
+  %   cuDSS to solve large-scale nonlinear instances using our condensed-space methods.
+  %   Our previous work [37] was using the older linear solver {\tt cusolverRF}.
   \item Despite the increased ill-conditioning caused by the condensed space approaches,
     we provide a theoretical analysis that shows that the ill-conditioning remains
     structured and does not impact the convergence of the interior-point method.
@@ -268,14 +276,16 @@ space approaches LiftedKKT and HyKKT. Our contributions are:
 \end{enumerate}
 We have clarified our contributions in the introduction.
 
+Additionally, while we do not assert this as a scientific contribution, a notable distinction from [37] is our adoption of a different linear solver, cuDSS. We have developed an interface for the NVIDIA sparse linear solver cuDSS, which is also integrated with the MadNLP.jl solver. In contrast, our previous work [37] utilized the older linear solver {\tt cusolverRF}. As the performance improvements are significant and as GPU sparse solvers are advancing rapidly, the updated numerical results may be of considerable interest to the community.
+ 
 \begin{quotereviewer}
 2.b. The results presented in Table 4 for a limited number of COPS instances do not paint
 a consistent picture, making it unclear what the central message is. Is the claim that
-cuDSS or GPU does not oﬀer clear advantages over CPU-based methods for general
+cuDSS or GPU does not offer clear advantages over CPU-based methods for general
 \end{quotereviewer}
 
 \answer
-We have followed \reviewername suggestion and have replaced the COPS benchmark
+We have followed \reviewername's suggestion and have replaced the COPS benchmark
 by CUTEst, selecting only instances with more than 1,000 variables
 and at least 1 constraint. This gives a more comprehensive picture of the
 performance offered by the condensed-space approaches.
@@ -302,11 +312,20 @@ not discussed in the paper, despite the general claims made about NLP.
 
 \answer
 We agree with the reviewer that the evaluation of the Hessian and the Jacobian
-can take a significant portion of the overall runtime. However, we have observed that
-if we can accelerate the derivatives on the GPU using ExaModels, the time spent in
+can take a significant portion of the overall runtime.
+Indeed we have not emphasized this aspect adequately in our previous submission.
+
+In the revised manuscript, we provide details on the used algebraic modeling framework ExaModels.jl, and
+discuss how the model functions can be evaluated on the GPUs.
+ExaModels.jl is a specialized modeling framework that allows the user to inform the automatic differentiation (AD) engine
+about the repeated algebraic structure of the model, which is then used to generate the parallelized code for the evaluation of the derivatives.
+ExaModels.jl implementation paper is under preparation.
+
+We have observed that if we can accelerate the derivatives on the GPU using ExaModels, the time spent in
 the evaluation becomes negligible compared to the time spent solving the KKT
 system (on the largest OPF instances {\tt 78481epigrids}, the AD time
-decreases from 7.8s on the CPU to 0.4s on the GPU). This has been clarified in Figure 1 in the revision.
+decreases from 7.8s on the CPU to 0.4s on the GPU).
+This has been clarified in Figure 1 in the revision.
 
 To clarify this point, we have included the time spent in AD in the OPF
 and in the CUTest benchmarks. The OPF benchmark uses ExaModels, whereas
@@ -326,6 +345,8 @@ concerns interior-point methods, and also the claim for NLP is too broad with th
 
 \answer
 TODO: should we change the title?
+% SS: I concur with the reviewer's perspective on this matter. I propose we revise the title to "Condensed-Space Interior-Point Methods for Solving Large-Scale Sparse Nonlinear Programs on GPUs."
+
 
 \begin{quotereviewer}
 2. The condition number analysis in Section 4 is fairly standard. It would be helpful for the
