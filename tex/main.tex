@@ -62,7 +62,7 @@ Mihai Anitescu
   Additionally, we present numerical results that showcase the capabilities of a fully GPU-resident nonlinear programming framework, provided by MadNLP.jl (a filter line-search IPM solver), cuDSS (a direct sparse solver utilizing Cholesky factorization), and ExaModels.jl (a modeling framework).
   \add{
     Benchmark results against the pglib-opf and CUTEst libraries indicate that condensed-space methods hold promise for large-scale nonlinear programming on GPUs, although further work is required to improve their robustness and performance across a broader range of problem types:
-    a speedup of up to tenfold over single-threaded CPUs can be achieved for extremely large and sparse optimal power flow (OPF) instances, but GPU solvers often exhibit reduced robustness and limited speedups for various CUTEst instances.
+    a speedup of up to tenfold over single-threaded CPUs can be achieved for extremely large and sparse optimal power flow (OPF) instances, but GPU solvers often exhibit reduced robustness and limited speedups for various CUTEst instances. 
   }
 \end{abstract}
 
@@ -74,7 +74,7 @@ Mihai Anitescu
 \input{sections/kkt_systems.tex}
 \input{sections/conditioning.tex}
 \input{sections/implementation.tex}
-\input{sections/numerics.tex}
+% \input{sections/numerics.tex}
 
 \section{Conclusion}
 \add{
@@ -99,7 +99,7 @@ This research used resources of the Argonne Leadership Computing Facility, a U.S
 \small
 
 \bibliographystyle{spmpsci}
-\bibliography{biblio.bib}
+\bibliography{biblio.bib,shin.bib} 
 \end{document}
 
 %%% Local Variables:
