@@ -1,151 +1,132 @@
 \section{Introduction}
-General-purpose GPU computing has become a cornerstone of scientific computing and machine learning, with its most notable achievement being the training and deployment of large-scale artificial intelligence (AI) models.  
-GPUs provide two primary advantages: (1) significant parallel computing capabilities, particularly for applications that leverage parallelism at the low-level BLAS operations and high memory bandwidth, and (2) enhanced power efficiency.
+General-purpose GPU computing has emerged as a fundamental component of scientific computing and machine learning, particularly in its ability to train and deploy large-scale artificial intelligence (AI) models. As a computing platform, the modern GPU hardwares offer two major advantages: (1) substantial parallel computing power and (2) improved power efficiency.
 
-Despite their success in scientific computing and machine learning, GPUs have seen limited adoption in classical mathematical programming, such as linear programming (LP) and nonlinear programming (NLP). In most applications of classical mathematical programming, parallelizability at the BLAS operation level is limited, thus hindering the straightforward utilization of GPU computing power.
-Additionally, although certain classes of sparse matrix operations are parallelizable in principle, the implementation of efficient sparse matrix kernels on GPUs is non-trivial, especially for sparse matrix factorizations.
-Classical solution techniques rely on direct linear solvers with sophisticated numerical pivoting strategies to ensure numerical robustness.
-However, these techniques are inherently sequential, making effective parallelization on GPUs challenging.
-Nevertheless, recent advances in GPU computing techniques are beginning to shift this landscape:  
+Despite their achievements in scientific computing and machine learning, GPUs have been underutilized in classical mathematical programming, including linear programming (LP) and nonlinear programming (NLP). In machine learning applications, the parallelization is mostly utilized at the low-level matrix operations, via the libraries like NVIDIA's {\tt cuBLAS} or AMD's {\tt rocBLAS}. In contrast, most classical mathematical programming applications exhibit limited parallelizability at the BLAS operation level due to the inherent sparsity of the underlying problem instances, which prevents straight-forward utilization of parallel resources. Although certain categories of sparse matrix operations can be parallelized, the development of efficient sparse matrix kernels on GPUs poses significant challenges, particularly for sparse matrix factorizations. Classical solution methodologies typically depend on direct linear solvers that employ sophisticated numerical pivoting strategies to maintain numerical stability. However, these techniques are inherently sequential, creating difficulties for effective parallelization on GPUs. As a result, until recently, the full potential of GPU computing has not been realized within the mathematical programing domain.
+
+Recent advancements in GPU computing techniques are beginning to change this landscape. Here are some significant developments, driven either by the hardware, software, or the emergence of new applications:
 
 \begin{enumerate}
-\item \textbf{Faster sparse direct solvers}: Recent developments in GPU-based sparse direct solvers, such as NVIDIA's {\tt cuDSS}~\cite{nvidiaNVIDIACuDSSPreview}, have significantly improved the performance of sparse matrix factorizations, which are crucial for solving KKT systems in interior-point methods. These solvers now offer performance that rivals or exceeds that of traditional CPU-based solvers~\cite{shin2023accelerating}.
-\item \textbf{Progress in automatic differentiation}: GPUs are well-suited for automatic differentiation, a key component of both scientific simulations and machine learning~\cite{jax2018github,enzyme2021}. Engineering problems often exhibit recurring patterns throughout the model. Once these patterns are identified, they can be evaluated in parallel within a SIMD framework, enabling near speed-of-light performance~\cite{shin2023accelerating}.
-\item \textbf{Rise of GPU-dominated HPC}: With the emergence of exascale supercomputers (e.g., Frontier, Aurora), GPU support has become a core requirement for utilizing these HPC resources within mathematical optimization applications.
+\item \textbf{Development of mature direct sparse linear solvers}: Recent developments in GPU-based sparse direct solvers, such as NVIDIA's {\tt cuDSS}~\cite{nvidiaNVIDIACuDSSPreview}, have significantly improved the performance of the direct, repetitive solution of sparse linear systems. These solvers now offer performance that rivals or exceeds that of traditional CPU-based solvers, though the types of factorizations currently supported are limited to Cholesky, \lblt, and LU as of now~\cite{nvidiaNVIDIACuDSSPreview,shin2023accelerating}.
+\item \textbf{Progress in automatic differentiation}: GPUs are well-suited for automatic differentiation, a key component of both scientific simulations and machine learning~\cite{jax2018github,enzyme2021}. Efficient implementations for algebraic modeling and derivative evaluation on GPUs have now become available. For large-scale problem instances with highly repetitive patterns, the derivative evaluation can be performed at speeds that are orders of magnitude faster than their CPU counterparts~\cite{shin2023accelerating}. Notably, derivative evaluation kernels can be created in a fully automated fashion. This removes the barrier of having to write custom derivative evaluation kernels for each problem instance, which has been a major bottleneck in the past.
+\item \textbf{Rise of GPU-dominated HPC}: With the emergence of exascale supercomputers (e.g., Frontier, Aurora), GPU support has become a core requirement for utilizing these HPC resources in mathematical optimization applications.
 \item \textbf{Growing interest in batched optimization}:
-  In machine learning, embedding optimization problems into neural networks requires solving many small problems in parallel. This has led to GPU-native batched solvers capable of handling thousands of small problems simultaneously~\cite{amos2017optnet,pineda2022theseus}. Similar ideas have been applied to decomposition methods in large-scale optimization~\cite{kimLeveragingGPUBatching2021}, but extending these methods to large-scale problems remains difficult, as current implementations often rely on dense linear algebra. 
+  In machine learning, embedding optimization problems into neural networks requires solving many small problems in parallel. This has led to the development of GPU-native batched solvers capable of handling thousands of small problems simultaneously~\cite{amos2017optnet,pineda2022theseus}. Similar ideas have been applied to decomposition methods in large-scale optimization~\cite{kimLeveragingGPUBatching2021}, but extending these methods to large-scale problems remains difficult, as current implementations often rely on dense linear algebra. 
 \end{enumerate}
 
-These recent progress in GPU hardware and software has renewed interest in solving optimization problems directly on GPUs. 
-Here, we provide a general overview of the state of the art in GPU-based optimization, highlighting the challenges and opportunities in this area.
-The recent development in GPU-based optimization can be broadly categorized into two main approaches: (i) first-order method, (ii) second-order method wit hiterative linear algebra, and (iii) second-order methods with sparse direct solvers.
-In terms of numerical implementation, the first two approaches rely on iterative linear algebra methods, while the third approach leverages sparse direct solvers.
-As sparse matrix factorizations remain a bottleneck on GPUs, early efforts focused on the first two approaches, which mainly require (sparse) matrix-vector operations, well-suited to GPU execution.
+
+Due to this renewed interest in GPU-based optimization, there has been a surge of research in this area, particularly in the context of developing scalable algorithms and software implementations that can harness the power of GPUs. Here, we provide a general overview of the state of the art in GPU-based optimization, highlighting the challenges and opportunities in this area. The recent developments in GPU-based optimization can be broadly categorized into three main approaches: (i) first-order methods, (ii) second-order methods with iterative linear algebra, and (iii) second-order methods with sparse direct solvers. In terms of numerical implementation, the first two approaches rely mostly on repetitive sparse matrix-vector multiplications, while the third approach requires sparse direct solvers. 
 
 \paragraph{First-order methods for large-scale optimization.}
-Although first-order methods have been extensively used for large-scale optimization, especially in machine learning applications, their application to classical mathematical programming remains limited due to their slow linear convergence rate.
-However, for extremely large-scale instances of linear programs, where the numerical factorization of the KKT systems or normal equations is infeasible, first-order methods can be a promising alternative.
-Recently, a special type of primal-dual first-order method, known as the primal-dual hybrid gradient (PDHG) method, has been adapted to GPU architectures~\cite{lu2023cupdlp,lu2023cupdlp2}.
-This method is particularly effective for large-scale linear programs, as it can handle problems with billions of variables and constraints.
-Although these methods have faced challenges in obtaining high precision solution, for extremely large scale instances of linear programs, these methods have shown to outperform even commercial solvers like Gurobi when fully GPU-accelerated~\cite{lu2023cupdlp,lu2023cupdlp2}.
-Recently, this algorithm as been enhanced with restarted Halpern PDHG method with reflection and PID-controlled primal weight update strategy and has been shown to achieve greater speed~\cite{luCuPDLPFurtherEnhanced2025}.
+Although first-order methods have been extensively used for large-scale optimization, especially in machine learning applications, their application to classical mathematical programming remains limited due to their slow linear convergence rate. 
+However, for extremely large-scale instances of linear programs, where the numerical factorization of the KKT systems or normal equations is infeasible, first-order methods can be a promising alternative. 
+Recently, a special type of primal-dual first-order method, known as the primal-dual hybrid gradient (PDHG) method, has been developed to target such extremely large problems. 
+This method is particularly effective for large-scale linear programs, as it can handle problems with billions of variables and constraints. 
+This algorithm is implemented within a solver called PDLP, and it is adapted to GPU architectures~\cite{lu2023cupdlp,lu2023cupdlp2}. 
+Recently, this algorithm has been enhanced with the restarted Halpern PDHG method with reflection and a PID-controlled primal weight update strategy, and has been shown to achieve greater speed~\cite{luCuPDLPFurtherEnhanced2025}. 
+Although these methods have faced challenges in obtaining high precision solutions, for extremely large-scale instances of linear programs, they have shown to outperform even commercial solvers like Gurobi when fully GPU-accelerated~\cite{lu2023cupdlp,lu2023cupdlp2}.
 
 \paragraph{Second-order methods with iterative linear algebra.}
-An alternative to first-order method is to perform second-order methods with iterative linear algebra, such as Krylov subspace methods.
-Krylov subspace methods require only matrix-vector products and are inherently parallelizable.
-These methods are particularly well-suited for large-scale optimization problems, as they can efficiently solve the KKT systems arising in interior-point methods without requiring full matrix factorizations.
-However, most of second-order algorithms, such as the primal-dual interior-point method, rely on barrier functions to handle inequality constraints, which can lead to ill-conditioned KKT systems, and thus, the iterative linear solvers need to be employed with careful KKT system reformulation and/or preconditioning strategies \cite{curtisNoteImplementationInteriorpoint2012,rodriguezScalablePreconditioningBlockstructured2020}.
-Promising results have been obtained in convex settings~\cite{schubigerGPUAccelerationADMM2020}, in particular, by combining the operator splitting methods and preconditioned conjugate gradient, while nonconvex problems often rely on Augmented Lagrangian reformulations~\cite{cao2016augmented}.
+An alternative to first-order methods is to perform second-order methods with iterative linear algebra, such as Krylov subspace methods. 
+Krylov subspace methods require only matrix-vector products and are inherently parallelizable. 
+These methods are particularly well-suited for large-scale optimization problems, as they can efficiently solve the KKT systems arising in interior-point methods without requiring full matrix factorizations. 
+However, most second-order algorithms, such as the primal-dual interior-point method, rely on barrier functions to handle inequality constraints, which can lead to ill-conditioned KKT systems; thus, the iterative linear solvers need to be employed with careful KKT system reformulation and/or preconditioning strategies \cite{curtisNoteImplementationInteriorpoint2012,rodriguezScalablePreconditioningBlockstructured2020}. 
+Promising results have been reported in convex settings~\cite{schubigerGPUAccelerationADMM2020}, particularly by combining the operator splitting methods and preconditioned conjugate gradient. 
+For nonlinear programming, a strategy based on the Augmented Lagrangian method, interior-point method, and preconditioned conjugate gradient method has been proposed~\cite{cao2016augmented}.
 
 \paragraph{Second-order methods for large-scale optimization.}
-Previous two strategeis are well suited to large-scale convex optimization, but extending their success to general nonlinear programming remains challenging.
-In these settings, first-order or iterative linear algebra-based implementations often struggle to achieve high accuracy.
-For instance, it has been previously reported that ADMM fails to converge reliably below a tolerance of $10^{-3}$ on the AC optimal power flow (OPF) problem~\cite{kimLeveragingGPUBatching2021}.
-Second-order methods with direct linear algebra, when implemented correctly, can offer a significantly faster convergence and more robust convergence behaviors.
-In particular, by solving a Newton system at each iteration, they can provide fast local convergence and high accuracy, even in the presence of nonconvexities.
+The previous two strategies are well suited to large-scale convex optimization, but extending their success to general nonlinear programming remains challenging. 
+In particular, for nonconvex settings, first-order or iterative linear algebra-based implementations often struggle to achieve high accuracy. 
+For instance, it has been previously reported that ADMM fails to converge reliably below a tolerance of $10^{-3}$ on the AC optimal power flow (OPF) problem~\cite{kimLeveragingGPUBatching2021}. 
+However, second-order methods with direct linear algebra, when implemented correctly, can offer significantly faster convergence and more robust convergence behaviors. 
+In particular, by solving a Newton system at each iteration, they can provide fast local convergence and high robustness, even in the presence of nonconvexities.
 
-However, second-order methods with direct linear algebra is substantially more challenging to implement on GPUs.
-This is becuase direct solution methods require the efficient factorization of large sparse, indefinite Karush–Kuhn–Tucker (KKT) systems.
-Even as of now, to the best of our knowledge, no GPU-based direct solver can efficiently solve these sparse indefinite KKT systems faced in large-scale nonlinear optimization applications.
-Historically, GPU-based sparse solvers have lagged behind their CPU counterparts, both in performance and robustness.
-In particular, it has been reported that GPU sovlers do not offer significant accelerations for power system optimization problems ~\cite{swirydowicz2021linear,tasseff2019exploring}.
-Furthermore, some direct sparse solvers, such as CUSOLVERRF, were available, their performance was often subpar compared to CPU-based solvers~\cite{swirydowicz2021linear}.
-Thus, even though several direct sparse solvers were available for GPUs, they were not widely adopted in practice for solving large-scale nonlinear optimization problems.
+However, second-order methods with direct linear algebra are substantially more challenging to implement on GPUs.  
+This is because direct solution methods require the efficient factorization of large sparse, indefinite Karush–Kuhn–Tucker (KKT) systems.  
+Even as of now, to the best of our knowledge, no GPU-based direct solver can directly handle these sparse indefinite KKT systems encountered in large-scale nonlinear optimization applications.  
+Furthermore, historically, GPU-based sparse solvers have lagged behind their CPU counterparts in both performance and robustness.  
+In particular, it has been reported that GPU solvers do not offer significant acceleration for power system optimization problems~\cite{swirydowicz2021linear,tasseff2019exploring}.  
+Although several direct sparse solvers, such as CUSOLVERRF, were available on GPUs, they were not widely adopted in practice for solving large-scale nonlinear optimization problems due to their limited performance and robustness.  
 
-This state of affairs has changed in recent years, with two advances: the development of pivoting-free interior-point methods and the emergence of new GPU-native sparse direct solvers.
-First, the KKT system reformulation strategy, known as condensed-space methods, has been proposed to address the challenges of solving indefinite KKT systems within interior-point methods.
-There are various forms of such reformulations, including the equality relaxation method and the so-called HyKKT method, which utilizes the hybrid Golub-Greif method (adapted in~\cite{regev2023hykkt}) to convert the indefinite KKT system into a Shcur complement system whose preconditioner can be obtained with Cholesky factorization.
+This situation has changed in recent years, with two advances: the development of pivoting-free interior-point methods and the emergence of new GPU-native sparse direct solvers.  
+First, the KKT system reformulation strategy, known as condensed-space methods, has been proposed to address the challenges of solving indefinite KKT systems within interior-point methods.  
+There are various forms of such reformulations, including the equality relaxation method (so-called LiftedKKT) and the hybrid Golub-Greif method (so-called HyKKT; adapted in~\cite{regev2023hykkt}).  
+Alternatively, null-space methods (also known as reduced-Hessian methods) eliminate equality constraints to reduce the KKT system to a dense problem, which maps well to GPU architectures \cite{pacaud2022condensed}.  
 These strategies transform the indefinite KKT system into a symmetric positive-definite (SPD) system, which can be solved using Cholesky factorization with static pivoting.
-Furthermore, recent advances in GPU-based sparse direct solvers have significantly improved their performance and robustness.
-Especailly for solving positive definite or quasi-definite systems, which does not require sophisticated pivoting strategeis, GPU solvers now often surpass CPU-based solvers in terms of performance especially for large-scale instances.
-In November 2023, NVIDIA released {\tt cuDSS}, a new sparse direct solver providing efficient sparse factorizations with significantly improved performance over earlier GPU-based solvers.
-These advances, combined with recent developments in automatic differentiation and interior-point methods that avoid numerical pivoting, enable robust and scalable second-order methods fully on GPU.
-In particular, coupling {\tt cuDSS} with a GPU-native AD engine allows us to solve large-scale nonlinear problems like OPF up to 10× faster than previous state-of-the-art methods~\cite{shin2023accelerating}.
-Alternatively, null-space methods (also known as reduced-Hessian methods) eliminate equality constraints to reduce the KKT system to a dense problem, which maps well to GPU architectures.
-Our previous work has shown that this approach can be highly effective for interior-point methods, provided the number of degrees of freedom remains moderate~\cite{pacaud2022condensed}.
-These developments open the door to fully GPU-resident second-order solvers that are both robust and performant, even on challenging nonconvex problems.
+
+Furthermore, recent advances in GPU-based sparse direct solvers have significantly improved their performance and robustness.  
+Especially for solving positive definite or quasi-definite systems, which do not require sophisticated pivoting strategies, GPU solvers now often surpass the performance of CPU-based solvers.  
+Notably, in November 2023, NVIDIA released {\tt cuDSS}, a new sparse direct solver providing efficient sparse factorizations with significantly improved performance over earlier GPU-based solvers.  
+These advances, combined with recent developments in automatic differentiation and interior-point methods that avoid numerical pivoting, enable robust and scalable second-order methods to be implemented fully on GPUs.  
+In particular, coupling {\tt cuDSS} with a GPU-native AD engine allows us to solve large-scale nonlinear problems like OPF up to 10× faster than previous state-of-the-art methods~\cite{shin2023accelerating}.  
+
 
 \add{
-  The condensed-space methods have several known limitations.
-  Although condensed KKT systems is still sparse in many problem instances, for certain problem instances, performing the elimination of the inequality constraints often lead to significantly increased nonzero entries in the condensed KKT system. In the worst case, if there is a fully dense constraint, both the equality relaxation and HyKKT methods mentioned above can lead to fully dense condensed KKT systems, which can be prohibitively expensive to solve. 
-  Due to this aspect, condensed-space methods are inherently unsuitable for problems with dense constraints.
-  Accordingly, when these methods are benchmarked against standard benchmark sets, such as CUTEst, they are bound to exhibit varied performance, depending on the existence of such dense constraints.
-  Furthermore, due to the nature of the condensed KKT systems, the condition number of the condensed KKT system can be significantly larger than that of the original KKT system, which can lead to numerical issues in practice.
-  In this paper, we provide a theoretical analysis of the numerical properties of the condensed KKT systems, showing that the increased condition number is controlled and does not lead to significant numerical issues in practice.
-  However, when compared to the standard IPM with augmetned KKT systems, the condensed-space methods exhibit more variability in robustness of the convergence. 
+Neverthelss, the condensed-space methods have several known limitations.
+Although condensed KKT systems are still sparse in many problem instances, for certain problem instances, performing the elimination of the inequality constraints often leads to significantly increased nonzero entries in the condensed KKT system.
+In the worst case, if there is a fully dense constraint, both the equality relaxation and HyKKT methods mentioned above can lead to fully dense condensed KKT systems, which can be prohibitively expensive to solve.
+Due to this aspect, condensed-space methods are inherently unsuitable for problems with dense constraints.
+Accordingly, when these methods are benchmarked against standard benchmark sets, such as CUTEst, they are bound to exhibit varied performance, due to the presence of the instances with such dense constraints.
+Furthermore, due to the nature of the condensed KKT systems, the condition number of the condensed KKT system can be significantly larger than that of the original KKT system, which can lead to numerical issues in practice.
+When compared to the standard IPM with augmented KKT systems, the condensed-space methods exhibit more variability in the robustness of convergence \cite{shin2023accelerating}.
 }
 
 \add{
-\paragraph{A full Software Stack for  GPU-Accelerated Nonlinear Programming.}
-Solving constrained, large-scale nonlinear optimization problems on GPUs requires tight coordination between three key components:
-(i) a high-level modeling interface,
-(ii) a nonlinear optimization solver,
-(iii) a sparse linear solver.
-In the classical CPU-based setting, most widely used software stack for nonlinear optimization consists of using AMPL~\cite{fourer1990ampl} for modeling, Ipopt for the solver, and HSL library (MA27, MA57, etc.) for sparse factorization.
-To fully benefit from the computational power of GPUs, the entire optimization pipeline must remain on the device, from model evaluation to linear system solves.
-If any component is not GPU-compatible, it is necessary to introduces costly CPU–GPU communication, similar to double-buffering in MPI-based distributed systems.
-This avoids costly transfers between host (CPU) and device (GPU) memory.
-For older generations of PCIe interface, this can be a major bottleneck.
-While new architectures such as NVIDIA's GH200 offer unified memory and faster CPU–GPU communication, they still incur slowdowns compared to a fully GPU-resident approach, which we target.
-Thus, in order to achieve high performance, it is essential that all components of the optimization pipeline are GPU-native and operate directly in GPU memory.
-The GPU-native software stack used within this paper is provided by ExaModels.jl, MadNLP.jl, and {\tt cuDSS}.
+\paragraph{A full Software Stack for GPU-Accelerated Nonlinear Programming.}
+The state-of-the-art nonlinear optimization software stack consists of three key components:  
+(i) a high-level modeling interface,  
+(ii) a nonlinear optimization solver,  
+(iii) a sparse linear solver.  
+In the classical CPU-based setting, the most widely used software stack for nonlinear optimization consists of AMPL~\cite{fourer1990ampl} for modeling, Ipopt for the solver, and the HSL library (MA27, MA57, etc.) for sparse factorization.  
+It is important to note that in order to fully benefit from the computational power of GPUs, the entire optimization pipeline must be implemented on the GPU.
+If any component is not GPU-compatible, it is necessary to introduce costly CPU–GPU communication, similar to double-buffering in MPI-based distributed systems. 
+This avoids expensive transfers between host (CPU) and device (GPU) memory. 
+For older generations of the PCIe interface, this can be a major bottleneck. 
+Thus, in order to achieve high performance, it is essential that all components of the optimization pipeline are GPU-native and operate directly in GPU memory. 
+The GPU-native software stack used within this paper is provided by ExaModels.jl, MadNLP.jl, and {\tt cuDSS}. 
 This paper focuses on the second component, the nonlinear optimization solver, while the other two components are briefly described below.
 
+ExaModels.jl is an algebraic modeling system designed for efficient model function and derivative evaluations on GPUs~\cite{shin2023accelerating}. 
+ExaModels.jl provides a symbolic modeling front-end where users can define their optimization problems in a structure-revealing fashion, similarly to the constraint template implemented in Gravity~\cite{hijazi2018gravity}. 
+Unlike classical modeling interfaces such as AMPL, JuMP, and CasADi, which provide flexible modeling features, ExaModels.jl follows a different philosophy: it enforces strict compliance with the iterator-based modeling syntax, allowing the modeling system to store the model equations in a structured fashion. 
+This ensures that the model function and derivative evaluations can be implemented as parallelizable GPU kernels. 
+For the structured model functions, ExaModels.jl applies the reverse-mode automatic differentiation to compute the derivatives, which is executed over GPU-resident data arrays. 
+To the best of our knowledge, ExaModels.jl is currently the only available GPU-native modeling interface that provides automatic differentiation capabilities for nonlinear programming (except for machine learning, which does not have extensive support for sparse models).
 
-ExaModels.jl is an algebraic modeling system designed for efficient model function and derivative evaluations on GPUs~\cite{shin2023accelerating}.
-ExaModels.jl provides a symbolic modeling front-end where users can define their optimization problems in a structure-revealing fashion, similarly to the constraint template implemented in Gravity~\cite{hijazi2018gravity}.
-Unlike classical modeling interfaces such as AMPL, JuMP, and CasADi which provide flexible modeling features, ExaModels.jl follows a different philosophy: it enforces a strict compliance to the iterator-based modeling syntax, which allows the modeling system to store the model equations in a structured fashion.
-This ensures that the model function and derivative evaluations can be implemented in a form of parallelizable GPU kernels.
-For the structured model functions, ExaModels.jl apply the reverse-mode automatic differentiation to compute the derivatives, which is executed over GPU-resident data arrays.
-To the best of our knowledge, ExaModels.jl is currently the only available GPU-native modeling interface that provides automatic differentiation capabilities for nonlinear programming (except for machine learning which does not have extensive support for sparse models).
-
-NVIDIA's {\tt cuDSS} library~\cite{nvidiaNVIDIACuDSSPreview} provides a high-performance sparse direct solver.
-The library supports Cholesky, LDL$^\top$, and LU factorizations, enabling efficient solution of symmetric positive-definite and quasi-definite systems.
-When the hybrid host/device execution mode is disabled, reordering (a major part of the analysis phase) is executed on the host, while symbolic factorization (another part of the analysis phase), numerical factorization and solve are executed on the GPU.
-Partial pivoting strategies are available, but the 2x2 pivoting strategy, which is commonly employed within sparse indefinite solvers, is not supported. Thus, limiting their direct usage within the classical augmented system-based interior-point methods.
+NVIDIA's {\tt cuDSS} library~\cite{nvidiaNVIDIACuDSSPreview} provides a high-performance sparse direct solver. 
+The library supports Cholesky, LDL$^\top$, and LU factorizations, enabling the efficient solution of symmetric positive definite and quasi-definite systems. 
+When the hybrid host/device execution mode is disabled, reordering (a major part of the analysis phase) is executed on the host, while symbolic factorization (another part of the analysis phase), numerical factorization, and solve are executed on the GPU.
+Since ordering is performed only once, the overhead of performing operation on CPU and transferring data between CPU and GPU memory is not significant.
+Partial pivoting strategies are available, but the 2x2 pivoting strategy, commonly employed within sparse indefinite solvers, is not supported, thus limiting their direct usage within the classical augmented system-based interior-point methods. 
 CUDSS.jl, a community-maintained Julia wrapper for {\tt cuDSS}, provides a user-friendly interface to the library, enabling seamless integration with Julia-based optimization solvers such as MadNLP.jl.
 }
 
 \subsection{Contributions}
-In this article, we \add{assess the performance of a filter line-search
-interior-point method on modern GPUs. Our aim is
-to solve large-scale nonconvex nonlinear programs to optimality.}
-We focus on the two condensed-space methods
-introduced in~\cite{regev2023hykkt,shin2023accelerating}.
-We implement both algorithms inside the GPU-accelerated solver MadNLP,
-and leverage the GPU-accelerated automatic differentiation
-backend ExaModels~\cite{shin2023accelerating} \add{to accelerate the evaluation
-of the derivatives on the GPU}.
-\add{
+In this article, we aim to theoretically and empirically assess the capabilities of the GPU-accelerated solution strategies for large-scale sparse nonlinear programs.
+Although we utilize the full GPU-resident software stack, we focus on the nonlinear optimization solver component, which is based on filter line-search interior point method with two variants of condensed-space KKT system reformulation strategies: HyKKT~\cite{regev2023hykkt} and LiftedKKT~\cite{shin2023accelerating}.
 Our main contributions are summarized below:
-
+\add{
 \begin{enumerate}
-\item We perform a rigorous error analysis of the condesned-space IPM methods for two condensed-space methods under study: HyKKT and LiftedKKT. We extend classical results from~\cite{wright1998ill} to show that the condensed KKT matrices are structurally ill-conditioned in a controlled manner. This yields accurate error bounds for the Schur complement used in the HyKKT method as well as the condensed KKT system within LiftedKKT.
-\item We provide a fully GPU-resident software stack---consist of ExaModels.jl (derivative evaluation), MadNLP.jl (interior point solver), and CUDSS.jl (an interface to NVIDIA's direct sparse solver)---for solving large-scale sparse nonlinear optimization problems, based on two different condensed-space KKT system reformulation strategies: HyKKT and LiftedKKT.  Compared to our previous work~\cite{shin2023accelerating}, we (i) additionally have implemented HyKKT method, (ii) have replaced the linear solver {\tt cusolverRF} used in~\cite{shin2023accelerating} with NVIDIA's new {\tt cuDSS} library. As a result, the interior-point method is executed entirely on the GPU, from model evaluation to KKT system solve. 
-\item We conduct a comparative study of the two condensed-space methods, analyzing their accuracy and runtime performance. We go beyond traditional OPF test cases by including large-scale problems from the CUTEst benchmark~\cite{gould2015cutest}. Our findings demonstrate that the condensed-space IPM enables a remarkable ten-time acceleration in solving large-scale OPF instances when utilizing the GPU. However, performance outcomes on the \add{CUTEst} benchmark exhibit more variability. As CUTEst library contains a large number of tiny problems with less than tens of variables, the performance of the GPU solver is often limited by the overhead of transferring data between CPU and GPU memory. For larger problems, where Ipopt takes longer than 1 second, our GPU solver is competitive with the CPU-based Ipopt solver, but exhibit less robustness and performance variability across different problem types. One of the main reasons for variability in performance is due to the fact that a single dense row can incur dense condensed KKT system, which can make the factorization of the condensed KKT system significantly more expensive.
-\item We demonstrate that condensed-space methods can be beneficial for a wide range of parallel architectures, not limited to GPUs. In fact, the condensed-space strategies presented in this paper is suitable not only for GPUs, but also for other parallel architectures, such as multi-core CPUs on shared memory. We provide numerical results of the two condensed-space methods on multi-core CPUs, showing that they can offer substantial speed-ups for large-scale instances, though less pronounced than on GPUs. In particular, our numerical results reveal that the parallel CPU solvers, such as HSL MA86 and Pardiso, are particularly efficient at solving the condensed KKT systems. 
+\item We perform a rigorous error analysis of the condensed-space IPM methods for two condensed-space methods under study: HyKKT and LiftedKKT. We extend classical results from~\cite{wright1998ill} to show that the condensed KKT matrices are structurally ill-conditioned in a controlled manner. This yields accurate error bounds for the Schur complement used in the HyKKT method as well as for the condensed KKT system within LiftedKKT.
+\item We provide a fully GPU-resident software stack---consisting of ExaModels.jl (derivative evaluation), MadNLP.jl (interior point solver), and CUDSS.jl (an interface to NVIDIA's direct sparse solver)---for solving large-scale sparse nonlinear optimization problems, based on two different condensed-space KKT system reformulation strategies: HyKKT and LiftedKKT. Compared to our previous work~\cite{shin2023accelerating}, we (i) have additionally implemented the HyKKT method, and (ii) have replaced the linear solver {\tt cusolverRF} used in~\cite{shin2023accelerating} with NVIDIA's new {\tt cuDSS} library. As a result, the interior-point method is executed entirely on the GPU, from model evaluation to KKT system solving. 
+\item We conduct a comparative study of the two condensed-space methods, analyzing their accuracy and runtime performance. We go beyond traditional OPF test cases by including large-scale problems from the CUTEst benchmark~\cite{gould2015cutest}. Our findings demonstrate that the condensed-space IPM enables a remarkable tenfold acceleration in solving large-scale OPF instances when utilizing the GPU. However, performance outcomes on the CUTEst benchmark exhibit more variability. As the CUTEst library contains a large number of small problems with fewer than tens of variables, the performance of the GPU solver is often limited by the overhead of transferring data between CPU and GPU memory. For larger problems, where Ipopt takes longer than 1 second, our GPU solver is competitive with the CPU-based Ipopt solver, but exhibits less robustness and performance variability across different problem types. One of the main reasons for variability in performance is due to the fact that a single dense row can incur a dense condensed KKT system, which can make the factorization of the condensed KKT system significantly more expensive.
+\item We demonstrate that condensed-space methods can be beneficial for a wide range of parallel architectures, not limited to GPUs. In fact, the condensed-space strategies presented in this paper are suitable not only for GPUs but also for other parallel architectures, such as multi-core CPUs on shared memory. We provide numerical results of the two condensed-space methods on multi-core CPUs, showing that they can offer substantial speed-ups for large-scale instances, though less pronounced than on GPUs. In particular, our numerical results reveal that the parallel CPU solvers, such as HSL MA86 and Pardiso, are particularly efficient at solving the condensed KKT systems.
+  % SS: it might be good to include some numbers here.
 \end{enumerate}
 }
 
 \subsection{Notations}
 By default, the norm $\|\cdot\|$ refers to the 2-norm.
-We define the conditioning of a matrix $A$ as
-$\cond(A) = \| A \| \|A^{-1} \|$. % Sungho: I wonder if subscript 2 is necessary in that it is clear from the context that we're connsidering 2 norm.
-For any real number $x$, we denote by $\widehat{x}$ its floating
-point representation.
-We denote $\epstol$ as the smallest positive number such that
-$\widehat{x} \leq (1 + \tau) x$ for $|\tau| < \epstol$.
+We define the conditioning of a matrix $A$ as $\cond(A) = \| A \| \|A^{-1} \|$.
+For any real number $x$, we denote by $\widehat{x}$ its floating point representation.
+We denote $\epstol$ as the smallest positive number such that $\widehat{x} \leq (1 + \tau) x$ for $|\tau| < \epstol$.
 In double precision, $\epstol = 1.1 \times 10^{-16}$.
-% SS: truncation error should be smaller than this; 1e-16 is the roundoff error.
 We use the following notations to proceed with our error analysis.
+% SS: truncation error should be smaller than this; 1e-16 is the roundoff error.
 For $p \in \mathbb{N}$ and a positive variable $h$:
 \begin{itemize}
-  \item We write $x = O(h^p)$ if there exists a constant $b > 0$
-    such that $\| x \| \leq b h^p$;
-  \item We write $x = \Omega(h^p)$ if there exists a constant $a > 0$
-    such that $\| x \| \geq a h^p$;
-  \item We write $x = \Theta(h^p)$ if there exists two constants $0 < a < b$
-    such that $a h^p \leq \| x \| \leq b h^p$.
+  \item We write $x = O(h^p)$ if there exists a constant $b > 0$ such that $\| x \| \leq b h^p$;
+  \item We write $x = \Omega(h^p)$ if there exists a constant $a > 0$ such that $\| x \| \geq a h^p$;
+  \item We write $x = \Theta(h^p)$ if there exist two constants $0 < a < b$ such that $a h^p \leq \| x \| \leq b h^p$.
 \end{itemize}
 
 %%% Local Variables:
