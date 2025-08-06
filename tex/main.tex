@@ -67,22 +67,21 @@ Mihai Anitescu
 \input{sections/kkt_systems.tex}
 \input{sections/conditioning.tex}
 \input{sections/implementation.tex}
-% \input{sections/numerics.tex}
+\input{sections/numerics.tex}
 
 \section{Conclusion}
 \add{
-This study pushes forward the capabilities of GPU architectures for solving nonlinear programs.
-We compared two approaches for solving the KKT systems that arise at each iteration of an interior-point method, both relying on a condensed-space formulation.
-Despite the emergence of ill-conditioned matrices, our theoretical analysis shows that the resulting loss of accuracy is benign in floating-point arithmetic, owing to structural properties of the interior-point method.
-Numerically, both methods prove competitive for solving large-scale nonlinear problems.
-Compared to state-of-the-art CPU-based solver toolchains, our framework runs fully on the GPU.
-It includes the modeling backend, the optimization solver, and the linear solver.
-This GPU-based implementation achieves up to a 10× speed-up on large-scale OPF problems.
-While performance is more variable across the CUTEst benchmarks, our solver consistently remains competitive with its CPU-based counterpart.
-
-Looking ahead, we plan to improve the robustness of the two condensed KKT methods, with a particular emphasis on achieving stable convergence at tighter tolerances (below $10^{-8}$).
+This paper investigates the theoretical and numerical properties of two condensed-space interior-point methods for solving large-scale nonlinear programming problems on GPUs.  
+Despite the emergence of ill-conditioned matrices, our theoretical analysis shows that the resulting loss of accuracy is benign in floating-point arithmetic, owing to the structural properties of the interior-point method.  
+Numerically, both methods prove competitive for solving large-scale nonlinear problems.  
+The fully GPU-resident software stack we developed, which includes MadNLP.jl, cuDSS, and ExaModels.jl, demonstrates its effectiveness on large-scale optimal power flow (OPF) problems from the pglib-opf library.  
+Notably, this GPU-based implementation achieves up to a 10× speed-up on large-scale OPF problems.  
+While performance is more variable across the CUTEst benchmarks, our solver consistently remains competitive with its CPU-based counterpart.  
+When focused on the instances with non-trivial size, the GPU implementation achieves considerable speed-ups, though the total number of converged instances is substantially lower than on the CPU.  
+These results highlight both the potential (high performance and scalability) and the limitations (robustness and convergence) of GPU-based interior-point methods for nonlinear programming.  
+Looking ahead, we plan to improve the robustness of the two condensed KKT methods, with a particular emphasis on achieving stable convergence at tighter tolerances (below $10^{-8}$).  
 Moreover, the sparse Cholesky solver can be further customized to align with the specific structure and needs of interior-point algorithms~\cite{wright1999modified}.
-Improving both methods on GPUs opens the door to solving large-scale problems that remain intractable on classical CPU architectures, such as multiperiod and security-constrained OPF problems.
+% Improving both methods on GPUs opens the door to solving large-scale problems that remain intractable on classical CPU architectures, such as multiperiod and security-constrained OPF problems.
 }
 
 \section{Acknowledgements}

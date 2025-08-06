@@ -1,26 +1,35 @@
-\section{Solving KKT systems on the GPU}
-The GPU has emerged as a new prominent computing hardware not only for graphics-related but also for general-purpose computing.
+\section{Solving KKT Systems on the GPU}
+The GPU has emerged as a prominent computing hardware not only for graphics-related tasks but also for general-purpose computing.
 GPUs employ a SIMD formalism that yields excellent throughput for parallelizing small-scale operations.
 However, their utility remains limited when computational algorithms require global communication.
-Sparse factorization algorithms, which heavily rely on numerical pivoting, pose significant challenges for implementation on GPUs. Previous research has demonstrated that GPU-based linear solvers significantly lag behind their CPU counterparts \cite{swirydowicz2021linear,tasseff2019exploring}.
-One emerging strategy is to utilize sparse factorization techniques that do not necessitate numerical pivoting \cite{regev2023hykkt,shin2023accelerating}
-by leveraging the structure of the condensed KKT system \eqref{eq:kkt:condensed}.
+Sparse factorization algorithms, which heavily rely on numerical pivoting, pose significant challenges for implementation on GPUs.
+Previous research has demonstrated that GPU-based linear solvers significantly lag behind their CPU counterparts \cite{swirydowicz2021linear,tasseff2019exploring}.
+One emerging strategy is to utilize sparse factorization techniques that do not necessitate numerical pivoting \cite{regev2023hykkt,shin2023accelerating} by leveraging the structure of the condensed KKT system \eqref{eq:kkt:condensed}.
+
 We present two alternative methods to solve \eqref{eq:kkt:condensed}.
-On the one hand, HyKKT is introduced in \S\ref{sec:kkt:golubgreif} and uses the hybrid
-strategy of Golub \& Greif~\cite{golub2003solving,regev2023hykkt}.
-On the other hand, LiftedKKT~\cite{shin2023accelerating} uses an equality relaxation strategy and
-is presented in \S\ref{sec:kkt:sckkt}.
+On the one hand, HyKKT is introduced in \S\ref{sec:kkt:golubgreif} and uses the hybrid strategy of Golub \& Greif~\cite{golub2003solving,regev2023hykkt}. On the other hand, LiftedKKT~\cite{shin2023accelerating} employs an equality relaxation strategy and is presented in \S\ref{sec:kkt:sckkt}.
+Before we introduce these methods, we make the following observation, which allows us to simplify the setting for our anlalysis.
+\begin{remark}
+  \label{rmk:dualreg}
+  \add{
+The primal-dual regularization parameters $(\delta_w,\delta_c)$ are typically determined by examining the inertia of the system $K_2$.
+In particular, the dual regularization $\delta_c$ is activated if zero eigenvalues are detected or if the filter line-search algorithm is entering a feasibility restoration phase~\cite[Section 3.3]{wachter2006implementation}. The primal regularization $\delta_w$ is activated if the number of positive eigenvalues is less than the desired amount of $n + m_i$. For a positive $\delta_c$, one can solve the KKT system \eqref{eq:kkt:condensed} by solving the following equations:
+\begin{equation}\label{eqn:primal}
+  \left( K + \frac{1}{\delta_c} G^\top G \right) d_x = \bar{r}_1 - \frac{1}{\delta_c} \bar{r}_2 \;,
+\end{equation}
+and by setting $d_y = \delta_c^{-1} (G d_x - \bar{r}_2)$. The system in \eqref{eqn:primal} is a Schur complement of the original condensed system in \eqref{eq:kkt:condensed} and is positive definite if the system in \eqref{eq:kkt:condensed} has the correct inertia $(n, m_e, 0)$. That is, under the application of the standard inertia correction procedure, it can always be Cholesky factorizable.
+Thus, when discussing the special treatment of the condensed KKT system \eqref{eq:kkt:condensed}, we may assume that the dual regularization is $\delta_c = 0$, as $\delta_c > 0$ will only simplify the solution procedure.
+Therefore, in the remainder of this paper, we will assume $\delta_c = 0$ for ease of analysis.
+  }
+\end{remark}
+
+
 
 \subsection{Golub \& Greif strategy: HyKKT}
 \label{sec:kkt:golubgreif}
-The Golub \& Greif~\cite{golub2003solving} strategy reformulates the KKT system
-using an Augmented Lagrangian formulation.
-It has been recently revisited in \cite{regev2023hykkt}
-to solve the condensed KKT system~\eqref{eq:kkt:condensed} on the GPU.
-\add{We suppose that the dual regularization is $\delta_c = 0$:
-a positive dual regularization simplifies the solution of the
-KKT system~\eqref{eq:kkt:condensed}, as explained in Remark~\ref{rmk:dualreg}.}
-Then, the trick is to reformulate the condensed KKT system \eqref{eq:kkt:condensed} in an equivalent form
+The Golub \& Greif~\cite{golub2003solving} strategy reformulates the KKT system using an Augmented Lagrangian formulation.
+It has been recently revisited in \cite{regev2023hykkt} to solve the condensed KKT system~\eqref{eq:kkt:condensed} on the GPU.
+The key idea is to reformulate the condensed KKT system \eqref{eq:kkt:condensed} in an equivalent form:
 \begin{equation}
   \label{eq:kkt:hykkt}
   \begin{bmatrix}
@@ -36,73 +45,36 @@ Then, the trick is to reformulate the condensed KKT system \eqref{eq:kkt:condens
     \bar{r}_2
   \end{bmatrix} \; ,
 \end{equation}
-where we have introduced the regularized matrix $K_\gamma := K + \gamma G^\top G$.
-We note by $Z$ a basis of the null-space of the Jacobian $G$.
-Using a classical result from~\cite{debreu1952definite},
-if $G$ is full row-rank then there
-exists a threshold value $\underline{\gamma}$ such that
-for all $\gamma > \underline{\gamma}$, the reduced Hessian $Z^\top K Z$
-is positive definite if and only if $K_\gamma$ is positive definite.
-Using the Sylvester's law of inertia stated in \eqref{eq:ipm:inertia}, we deduce
-that for $\gamma > \underline{\gamma}$, $\inertia(K_2) = (n + m_i, m_e +m_i, 0)$
-if and only if the condensed matrix $K_\gamma$ is positive definite.
+where we introduce the regularized matrix $K_\gamma := K + \gamma G^\top G$ \add{(recall $\delta_c=0$ is assumed per Remark \ref{rmk:dualreg})}.
+We denote by $Z$ a basis of the null space of the Jacobian $G$.
+Using a classical result from~\cite{debreu1952definite}, if $G$ is full row-rank, then there exists a threshold value $\underline{\gamma}$ such that for all $\gamma > \underline{\gamma}$, the reduced Hessian $Z^\top K Z$ is positive definite if and only if $K_\gamma$ is positive definite.
+Using Sylvester's law of inertia stated in \eqref{eq:ipm:inertia}, we deduce that for $\gamma > \underline{\gamma}$, $\inertia(K_2) = (n + m_i, m_e + m_i, 0)$ if and only if the condensed matrix $K_\gamma$ is positive definite.
 
-The linear solver HyKKT~\cite{regev2023hykkt}
-leverages the positive definiteness of $K_\gamma$ to solve
-\eqref{eq:kkt:hykkt} using a hybrid direct-iterative method
-that uses the following steps:
+The linear solver HyKKT~\cite{regev2023hykkt} leverages the positive definiteness of $K_\gamma$ to solve \eqref{eq:kkt:hykkt} using a hybrid direct-iterative method with the following steps:
 \begin{enumerate}
-  \item Assemble $K_\gamma$ and factorize it using sparse Cholesky ;
-  \item Solve the Schur complement of \eqref{eq:kkt:hykkt} using a conjugate gradient (\CG)
-    algorithm to recover the dual descent direction:
+  \item Assemble $K_\gamma$ and factorize it using sparse Cholesky;
+  \item Solve the Schur complement of \eqref{eq:kkt:hykkt} using a conjugate gradient (\CG) algorithm to recover the dual descent direction:
     \begin{equation}
       \label{eq:kkt:schurcomplhykkt}
       (G K_\gamma^{-1} G^\top) d_y = G K_\gamma^{-1} (\bar{r}_1 + \gamma G^\top \bar{r}_2) - \bar{r}_2 \; .
     \end{equation}
-  \item Solve the system $K_\gamma d_x = \bar{r}_1 + \gamma G^\top \bar{r}_2 - G^\top d_y$
-    to recover the primal descent direction.
+  \item Solve the system $K_\gamma d_x = \bar{r}_1 + \gamma G^\top \bar{r}_2 - G^\top d_y$ to recover the primal descent direction.
 \end{enumerate}
-The method uses a sparse Cholesky factorization along with the conjugate gradient (\CG) algorithm \cite{hestenes-stiefel-1952}.
-The sparse Cholesky factorization has the advantage of being stable without
-numerical pivoting, rendering the algorithm tractable on a GPU.
-Each \CG iteration requires the application of sparse triangular solves with the
-factors of $K_\gamma$. For that reason,
-HyKKT is efficient only if the \CG solver converges in a small number of iterations.
-Fortunately, the eigenvalues of the Schur-complement $S_\gamma := G K_\gamma^{-1} G^\top$
-all converge to $\frac{1}{\gamma}$ as we increase the regularization parameter
-$\gamma$ \cite[Theorem 4]{regev2023hykkt}, implying that $\lim_{\gamma \to \infty} \cond(S_\gamma) = 1$.
-Because the convergence of the \CG method depends on the number of distinct eigenvalues of $S_{\gamma}$,
-the larger the $\gamma$, the faster the convergence of
-the \CG algorithm in \eqref{eq:kkt:schurcomplhykkt}.
-\CR \cite{hestenes-stiefel-1952} and \CAR \cite{montoison-orban-saunders-2023} can also be used as an alternative to \CG.
+The method employs a sparse Cholesky factorization along with the conjugate gradient (\CG) algorithm \cite{hestenes-stiefel-1952}.
+The sparse Cholesky factorization is advantageous as it is stable without numerical pivoting, making the algorithm tractable on a GPU.
+Each \CG iteration requires applying sparse triangular solves with the factors of $K_\gamma$.
+For this reason, HyKKT is efficient only if the \CG solver converges in a small number of iterations.
+Fortunately, the eigenvalues of the Schur complement $S_\gamma := G K_\gamma^{-1} G^\top$ all converge to $\frac{1}{\gamma}$ as we increase the regularization parameter $\gamma$ \cite[Theorem 4]{regev2023hykkt}, implying that $\lim_{\gamma \to \infty} \cond(S_\gamma) = 1$.
+Since the convergence of the \CG method depends on the number of distinct eigenvalues of $S_{\gamma}$, the larger the $\gamma$, the faster the convergence of the \CG algorithm in \eqref{eq:kkt:schurcomplhykkt}.
+Options such as \CR \cite{hestenes-stiefel-1952} and \CAR \cite{montoison-orban-saunders-2023} can also be used as alternatives to \CG.
 Although we observe similar performance, these methods ensure a monotonic decrease in the residual norm of \eqref{eq:kkt:schurcomplhykkt} at each iteration.
 
 \begin{remark}
-  \label{rmk:dualreg}
   \add{
-    The dual regularization $\delta_c$ can become positive during the IPM iterations.
-    This is the case if the primal-dual regularization detects
-    a degenerate Jacobian $G$ or if the filter line-search algorithm is entering a feasibility
-    restoration phase~\cite[Section 3.3]{wachter2006implementation}.
-    For a positive $\delta_c$ the Golub \& Greif strategy becomes not necessary, as
-    solving the system \eqref{eq:kkt:condensed} translates to solving
-    \begin{equation*}
-      \left( K + \frac{1}{\delta_c} G^\top G \right) d_x = \bar{r}_1 - \frac{1}{\delta_c} \bar{r}_2 \;,
-    \end{equation*}
-    and setting $d_y = \delta_c^{-1} (G d_x - \bar{r}_2)$.
-  }
-\end{remark}
-
-\begin{remark}
-  \add{
-    We have seen that the parameter $\gamma$ should be set above a given threshold $\underline{\gamma}$
-    for $K_\gamma$ to be positive definite. However, a large value of $\gamma$ increase
-    the ill-conditioning in $K_\gamma$, hence deteriorating the solution's quality.
-    In \cite{golub2003solving}, the authors recommend choosing $\gamma = \| K \| / \|G\|^2$,
-    % SS: we need to clarify what type of norm this is
-    which is offering a good empirical trade-off.
-    In \cite[Lemma 2.10]{gould2010spectral}, a tighter estimate is given for the threshold
-    $\underline{\gamma}$, if $G$ has full row-rank and $Z^\top K Z$ is positive definite:
+    The parameter $\gamma$ should be set above a given threshold $\underline{\gamma}$ for $K_\gamma$ to ensure positive definiteness of the system in \eqref{eq:kkt:schurcomplhykkt}.
+    However, from the numerical stand-point, it is desired to choose moderate values of $\gamma$, since large $\gamma$ increases the ill-conditioning in $K_\gamma$, hence deteriorating the quality of the solution.
+    In \cite{golub2003solving}, the authors recommend choosing $\gamma = \| K \| / \|G\|^2$, which offers a good empirical trade-off.
+    In \cite[Lemma 2.10]{gould2010spectral}, a tighter estimate is provided for the threshold $\underline{\gamma}$ if $G$ has full row-rank and $Z^\top K Z$ is positive definite:
     \begin{equation}
       \label{eq:kkt:boundgamma}
       \underline{\gamma} = \dfrac{1}{\sigma_{\min}^2} \left(
@@ -110,60 +82,44 @@ Although we observe similar performance, these methods ensure a monotonic decrea
       \right) \; ,
     \end{equation}
     % SS: $Y$ should be introduced here
-    with $\sigma_{\min}$ the smallest nonzero singular value of the Jacobian $G$,
-    $\lambda_{\min}^Z > 0$ the smallest eigenvalue of $Z^\top K Z$
-    and $\lambda_{\min}^Y$ the smallest eigenvalue of $Y^\top K Y$.
-    We observe from \eqref{eq:kkt:boundgamma} that $\underline{\gamma}$ is
-    inversely proportional to $\lambda_{\min}^Z$ and $\sigma_{\min}$, meaning
-    it can reach a large magnitude if $G$ has nearly aligned rows or
-    $Z^\top K Z$ is closed to be indefinite.
+    with $\sigma_{\min}$ being the smallest nonzero singular value of the Jacobian $G$, $\lambda_{\min}^Z > 0$ the smallest eigenvalue of $Z^\top K Z$, and $\lambda_{\min}^Y$ the smallest eigenvalue of $Y^\top K Y$.
+    From \eqref{eq:kkt:boundgamma}, we observe that $\underline{\gamma}$ is inversely proportional to $\lambda_{\min}^Z$ and $\sigma_{\min}$, indicating that it can reach a large magnitude if $G$ has nearly aligned rows or if $Z^\top K Z$ is close to being indefinite.
+    In other words, HyKKT may have difficulties in solving problems with nearly dependent equality constraints or when the reduced Hessian is close to being indefinite.
   }
 \end{remark}
 
 
 
 
-\subsection{Equality relaxation strategy: LiftedKKT}
+
+\subsection{Equality Relaxation Strategy: LiftedKKT}
 \label{sec:kkt:sckkt}
 
-For a small relaxation parameter $\tau > 0$ (chosen based on the numerical tolerance of the optimization solver
-$\varepsilon_{tol}$), the equality relaxation strategy~\cite{shin2023accelerating} approximates
-the equalities with lifted inequalities:
+For a small relaxation parameter $\tau > 0$ (chosen based on the numerical tolerance of the optimization solver $\varepsilon_{tol}$), the equality relaxation strategy~\cite{shin2023accelerating} approximates the equalities with lifted inequalities:
 \begin{equation}
   \label{eq:problemrelaxation}
     \min_{x \in \mathbb{R}^n} \;  f(x)
 \quad \text{subject to}\quad
      - \tau \leq g(x) \leq \tau \;,~  h(x) \leq 0  \; .
 \end{equation}
-The problem~\eqref{eq:problemrelaxation} has only inequality constraints.
-After introducing slack variables, the condensed KKT system \eqref{eq:kkt:condensed} reduces to
+The problem~\eqref{eq:problemrelaxation} has only inequality constraints. After introducing slack variables, the condensed KKT system \eqref{eq:kkt:condensed} reduces to
 \begin{equation}
   \label{eq:liftedkkt}
     K_\tau \,d_x = - r_1 - H_\tau^\top(D_H r_4 - C r_2) \; ,
 \end{equation}
-with $H_\tau = \big(G^\top ~ H^\top \big)^\top$ and
-$K_\tau := W + \delta_w I + H_\tau^\top D_H H_\tau$.
-Using the relation~\eqref{eq:ipm:inertia}, the matrix $K_\tau$
-is guaranteed to be positive definite if the primal regularization parameter $\delta_w$ is adequately large.
-As such, the parameter $\delta_w$ is chosen dynamically using the inertia information of the system in \eqref{eq:kkt:condensed}.
-Therefore, $K_\tau$ can be factorized with a Cholesky decomposition, satisfying the key requirement of stable pivoting for the implementation on the GPU. The relaxation causes error in the final solution.
-Fortunately, the error is in the same order of the solver tolerance, thus it does not significantly deteriorate the solution quality for small $\varepsilon_{tol}$.
+with $H_\tau = \big(G^\top ~ H^\top\big)^\top$ and
+$K_\tau := W + \delta_w I + H_\tau^\top D_H H_\tau$ \add{(recall $\delta_c=0$ is assumed per Remark \ref{rmk:dualreg})}. Using the relation~\eqref{eq:ipm:inertia}, the matrix $K_\tau$
+is guaranteed to be positive definite if the primal regularization parameter $\delta_w$ is adequately large. As such, the parameter $\delta_w$ is chosen dynamically using the inertia information of the system in \eqref{eq:kkt:condensed}. Therefore, $K_\tau$ can be factorized with a Cholesky decomposition, satisfying the key requirement of stable pivoting for implementation on the GPU. The relaxation introduces an error in the final solution. Fortunately, the error is of the same order as the solver tolerance, thus it does not significantly deteriorate the solution quality for small $\varepsilon_{tol}$.
 
-While this method can be implemented with small modification in the optimization solver, the presence of tight inequality in \eqref{eq:problemrelaxation} causes severe ill-conditioning throughout the IPM iterations. Thus,
-using an accurate iterative refinement algorithm is necessary to get a reliable convergence behavior.
+While this method can be implemented with minor modifications in the optimization solver, the presence of tight inequalities in \eqref{eq:problemrelaxation} causes severe ill-conditioning throughout the IPM iterations. Therefore, using an accurate iterative refinement algorithm is necessary to achieve reliable convergence behavior.
+
 
 \subsection{Discussion}
-We have introduced two algorithms to solve
-KKT systems on the GPU. As opposed to classical implementations,
-the two methods do not require computing a sparse \lblt factorization of the KKT
-system and use instead alternate reformulations based on the condensed KKT
-system~\eqref{eq:kkt:condensed}. Both strategies
-rely on a Cholesky factorization: HyKKT factorizes a positive
-definite matrix $K_\gamma$ obtained with an Augmented Lagrangian strategy
-whereas LiftedKKT factorizes a positive definite matrix $K_\tau$
-after using an equality relaxation strategy.
-We will see in the next section that the ill-conditioned matrices $K_\gamma$ and $K_\tau$
-have a specific structure that limits the loss of accuracy in IPM.
+We have introduced two algorithms to solve KKT systems on the GPU.
+Unlike classical implementations, the two methods do not require computing a sparse \lblt factorization of the KKT system and instead utilize alternate reformulations based on the condensed KKT system~\eqref{eq:kkt:condensed}.
+Both strategies rely on a Cholesky factorization: HyKKT factors a positive definite matrix $K_\gamma$ obtained using an Augmented Lagrangian strategy, whereas LiftedKKT factors a positive definite matrix $K_\tau$ after employing an equality relaxation strategy.
+We will demonstrate in the next section that the ill-conditioned matrices $K_\gamma$ and $K_\tau$ possess a specific structure that limits the loss of accuracy in IPM.
+
 
 
 %%% Local Variables:
