@@ -1,4 +1,4 @@
-\section{Primal-dual interior-point method} 
+\section{Primal-dual interior-point method}
 
 The interior-point method (IPM) is among the most popular algorithms
 to solve nonlinear programs. The basis of the algorithm is to
@@ -125,7 +125,7 @@ the IPM decreases the barrier parameter $\mu$ to find a solution closer to
 the original KKT conditions~\eqref{eq:kktconditions}.
 
 In IPM, the bulk of the workload is the computation of the Newton
-step \eqref{eq:newton_step}, which involves assembling the Jacobian 
+step \eqref{eq:newton_step}, which involves assembling the Jacobian
 $\nabla_w F_\mu(w_k)$ of the KKT conditions and solving the resulting linear system to compute
 the descent direction $d_k$.
 By writing out all the blocks, the system in~\eqref{eq:newton_step} expands as the \add{$5 \times 5$}
@@ -288,9 +288,9 @@ The condensed KKT system~\eqref{eq:kkt:condensed} is often discarded,
 as its conditioning is worse
 than that of \eqref{eq:kkt:augmented} (implying less accurate solutions).
 Additionally, condensation may result in increased fill-in within the condensed system \eqref{eq:kkt:condensed}~\cite[Section 19.3, p.571]{nocedal_numerical_2006}.
-In the worst cases, \eqref{eq:kkt:condensed} itself may become fully dense if an inequality row is completely dense (fortunately, this scenario is rarer than in the normal equations commonly encountered in linear programming).
+In the worst cases, \eqref{eq:kkt:condensed} itself may become fully dense if an inequality row is completely dense.
 Consequently, condensation methods are not commonly utilized in practical optimization settings.
-To the best of our knowledge, Artelys Knitro~\cite{waltz2006interior} is the only solver that supports computing the descent direction with \eqref{eq:kkt:condensed}.
+To the best of our knowledge, Knitro~\cite{waltz2006interior} is the only solver that supports computing the descent direction with \eqref{eq:kkt:condensed}.
 
 
 %%% Local Variables:

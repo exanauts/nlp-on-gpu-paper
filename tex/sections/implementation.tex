@@ -1,8 +1,8 @@
 \section{Implementation}
 \label{sec:num:implementation}
 All our implementations use the Julia language \cite{bezanson-edelman-karpinski-shah-2017}.
-We utilized our local workstation to generate the results on the CPU, which is equipped with an AMD EPYC 7443 processor (3.2GHz).
-For the GPU results, we used an NVIDIA A100 GPU (with CUDA 12.3) on the Polaris testbed at Argonne National Laboratory 
+We utilized our local workstation to generate the results on the CPU, which is equipped with an AMD EPYC 7443 processor (3.2GHz) with 24 processors.
+For the GPU results, we used an NVIDIA A100 GPU (with CUDA 12.3) on the Polaris testbed at Argonne National Laboratory
 \footnote{\url{https://www.alcf.anl.gov/polaris}}.
 
 
@@ -23,14 +23,13 @@ This approach caters to the SIMD architecture of the GPU by assigning each expre
 ExaModels.jl is efficient at evaluating the problem's derivatives and offers a speedup often greater than 100 compared
 to standard tools like AMPL or JuMP (see Figure~\ref{fig:examodels}). As a result, the time spent in the evaluation of the model becomes
 negligible compared to the time spent in the linear solver.
-ExaModels.jl outperforms traditional modeling tools like JuMP and AMPL, even when running on CPUs.
-This performance advantage arises from ExaModels.jl compiling derivative evaluation kernels specifically for the given problem, whereas JuMP and AMPL depend on a precompiled interpreter to evaluate the model's derivatives.
+ExaModels.jl compiles the derivative evaluation kernels specifically for the given problem, whereas JuMP and AMPL depend on a precompiled interpreter to evaluate the model's derivatives.
 Conversely, ExaModels.jl necessitates compilation time to create the derivative evaluation kernels, which can become substantial for problems involving a large number of heterogeneous constraints.
 Within this paper, we have always excluded the compilation time from the reported timings.
 
 \begin{figure}[!ht]
   \centering
-  \includegraphics[width=.9\textwidth]{figures/benchmark_autodiff.pdf} 
+  \includegraphics[width=.9\textwidth]{figures/benchmark_autodiff.pdf}
   \caption{Evolution of the time spent evaluating the problem's derivatives (gradient, Jacobian, Hessian)
       as we increase the problem's dimension {\tt nh}. In this benchmark, we compare four different
   instances from the COPS benchmark~\cite{dolan2002benchmarking}: {\tt rocket}, {\tt robot}, {\tt pinene}, and {\tt dirichlet}.}
@@ -51,7 +50,7 @@ We solve the KKT systems assembled within MadNLP using various sparse linear sol
     respectively in \eqref{eq:kkt:hykkt} and in \eqref{eq:liftedkkt}.
   \item {\tt cuDSS}: Implements \llt, \ldlt and \lu decompositions on an NVIDIA GPU.
     We use the \ldlt factorization to factorize the ill-conditioned condensed matrices $K_\gamma$ on the GPU,
-    as \ldlt is more robust than the Cholesky factorization.
+    (here, we have observed that \ldlt is more robust than the Cholesky factorization).
   \item {\tt Krylov.jl}: Contains the \CG method
     used in the Golub \& Greif strategy to solve \eqref{eq:kkt:schurcomplhykkt} on both CPU and GPU architectures.
 \end{itemize}

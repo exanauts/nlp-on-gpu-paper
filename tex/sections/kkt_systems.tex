@@ -8,7 +8,7 @@ One emerging strategy is to utilize sparse factorization techniques that do not 
 
 We present two alternative methods to solve \eqref{eq:kkt:condensed}.
 On the one hand, HyKKT is introduced in \S\ref{sec:kkt:golubgreif} and uses the hybrid strategy of Golub \& Greif~\cite{golub2003solving,regev2023hykkt}. On the other hand, LiftedKKT~\cite{shin2023accelerating} employs an equality relaxation strategy and is presented in \S\ref{sec:kkt:sckkt}.
-Before we introduce these methods, we make the following observation, which allows us to simplify the setting for our anlalysis.
+Before we introduce these methods, we make the following observation, which allows us to simplify the setting for our analysis.
 \begin{remark}
   \label{rmk:dualreg}
   \add{
@@ -18,8 +18,7 @@ In particular, the dual regularization $\delta_c$ is activated if zero eigenvalu
   \left( K + \frac{1}{\delta_c} G^\top G \right) d_x = \bar{r}_1 - \frac{1}{\delta_c} \bar{r}_2 \;,
 \end{equation}
 and by setting $d_y = \delta_c^{-1} (G d_x - \bar{r}_2)$. The system in \eqref{eqn:primal} is a Schur complement of the original condensed system in \eqref{eq:kkt:condensed} and is positive definite if the system in \eqref{eq:kkt:condensed} has the correct inertia $(n, m_e, 0)$. That is, under the application of the standard inertia correction procedure, it can always be Cholesky factorizable.
-Thus, when discussing the special treatment of the condensed KKT system \eqref{eq:kkt:condensed}, we may assume that the dual regularization is $\delta_c = 0$, as $\delta_c > 0$ will only simplify the solution procedure.
-Therefore, in the remainder of this paper, we will assume $\delta_c = 0$ for ease of analysis.
+Thus, when discussing the special treatment of the condensed KKT system \eqref{eq:kkt:condensed}, we assume that the dual regularization is $\delta_c = 0$, as $\delta_c > 0$ will only simplify the solution procedure.
   }
 \end{remark}
 
@@ -63,10 +62,9 @@ The linear solver HyKKT~\cite{regev2023hykkt} leverages the positive definitenes
 The method employs a sparse Cholesky factorization along with the conjugate gradient (\CG) algorithm \cite{hestenes-stiefel-1952}.
 The sparse Cholesky factorization is advantageous as it is stable without numerical pivoting, making the algorithm tractable on a GPU.
 Each \CG iteration requires applying sparse triangular solves with the factors of $K_\gamma$.
-For this reason, HyKKT is efficient only if the \CG solver converges in a small number of iterations.
+For this reason, HyKKT is efficient only if the \CG solver converges in few iterations.
 Fortunately, the eigenvalues of the Schur complement $S_\gamma := G K_\gamma^{-1} G^\top$ all converge to $\frac{1}{\gamma}$ as we increase the regularization parameter $\gamma$ \cite[Theorem 4]{regev2023hykkt}, implying that $\lim_{\gamma \to \infty} \cond(S_\gamma) = 1$.
 Since the convergence of the \CG method depends on the number of distinct eigenvalues of $S_{\gamma}$, the larger the $\gamma$, the faster the convergence of the \CG algorithm in \eqref{eq:kkt:schurcomplhykkt}.
-Options such as \CR \cite{hestenes-stiefel-1952} and \CAR \cite{montoison-orban-saunders-2023} can also be used as alternatives to \CG.
 Although we observe similar performance, these methods ensure a monotonic decrease in the residual norm of \eqref{eq:kkt:schurcomplhykkt} at each iteration.
 
 \begin{remark}
@@ -102,7 +100,7 @@ For a small relaxation parameter $\tau > 0$ (chosen based on the numerical toler
 \quad \text{subject to}\quad
      - \tau \leq g(x) \leq \tau \;,~  h(x) \leq 0  \; .
 \end{equation}
-The problem~\eqref{eq:problemrelaxation} has only inequality constraints. After introducing slack variables, the condensed KKT system \eqref{eq:kkt:condensed} reduces to
+The problem~\eqref{eq:problemrelaxation} has only inequality constraints. As a result, the condensed KKT system \eqref{eq:kkt:condensed} reduces to
 \begin{equation}
   \label{eq:liftedkkt}
     K_\tau \,d_x = - r_1 - H_\tau^\top(D_H r_4 - C r_2) \; ,
