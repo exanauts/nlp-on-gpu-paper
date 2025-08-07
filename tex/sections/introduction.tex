@@ -1,7 +1,7 @@
 \section{Introduction}
 General-purpose GPU computing has emerged as a fundamental component of scientific computing and machine learning, particularly in its ability to train and deploy large-scale artificial intelligence (AI) models. As a computing platform, the modern GPU hardware offer two major advantages: (1) substantial parallel computing power and (2) improved power efficiency.
 
-Despite their achievements in scientific computing and machine learning, GPUs have been underutilized in classical mathematical programming, including linear programming (LP) and nonlinear programming (NLP). In machine learning applications, the parallelization is mostly utilized at the low-level matrix operations, via the libraries like NVIDIA's {\tt cuBLAS} or AMD's {\tt rocBLAS}. In contrast, most classical mathematical programming applications exhibit limited parallelism at the BLAS operation level due to the inherent sparsity of the underlying problem instances, which prevents straight-forward utilization of parallel resources. Although certain categories of sparse matrix operations can be parallelized, the development of efficient sparse matrix kernels on GPUs poses significant challenges, particularly for sparse matrix factorizations. Classical solution methodologies typically depend on direct linear solvers that employ sophisticated numerical pivoting strategies to maintain numerical stability. However, these techniques are inherently sequential, creating difficulties for effective parallelization on GPUs. As a result, until recently, the full potential of GPU computing has not been realized within the mathematical programing domain.
+Despite their achievements in scientific computing and machine learning, GPUs have been underutilized in classical mathematical programming, including linear programming (LP) and nonlinear programming (NLP). In machine learning applications, the parallelization is mostly utilized at the low-level matrix operations, via the libraries like NVIDIA's {\tt cuBLAS} or AMD's {\tt rocBLAS}. In contrast, most classical mathematical programming applications exhibit limited parallelism at the BLAS operation level due to the inherent sparsity of the underlying problem instances, which prevents straightforward utilization of parallel resources. Although certain categories of sparse matrix operations can be parallelized, the development of efficient sparse matrix kernels on GPUs poses significant challenges, particularly for sparse matrix factorizations. Classical solution methodologies typically depend on direct linear solvers that employ sophisticated numerical pivoting strategies to maintain numerical stability. However, these techniques are inherently sequential, creating difficulties for effective parallelization on GPUs. As a result, until recently, the full potential of GPU computing has not been realized within the mathematical programming domain.
 
 Recent advancements in GPU computing techniques are beginning to change this landscape. Here are some significant developments, driven either by the hardware, software, or the emergence of new applications:
 
@@ -64,10 +64,10 @@ Coupling {\tt cuDSS} with a GPU-native AD engine allows us to solve large-scale 
 Nevertheless, the condensed-space methods have several known limitations.
 Although condensed KKT systems remain sparse in many problem instances,  performing the elimination of the inequality constraints often leads to significantly increased nonzero entries in the condensed KKT system
 for certain instances.
-In the worst case, if there is a fully dense constraint, both the equality relaxation and HyKKT methods mentioned above can lead to fully dense condensed KKT systems, which can be prohibitively expensive to solve.
+The worst case is a fully dense constraint where both the equality relaxation and HyKKT methods mentioned above can lead to fully dense condensed KKT systems, leading to a prohibitively expensive to solve.
 Due to this aspect, condensed-space methods are inherently unsuitable for problems with dense constraints.
 Accordingly, when these methods are compared against standard benchmark sets, such as CUTEst, they are bound to exhibit varied performance, due to the presence of the instances with such dense constraints.
-Furthermore, due to the nature of the condensed KKT systems, the condition number of the condensed KKT system can be significantly larger than that of the original KKT system, which can lead to numerical issues in practice.
+Furthermore, due to the nature of the condensed KKT systems, the condition number of the condensed KKT system can be significantly larger than that of the original KKT system, which can lead to numerical issues.
 }
 
 \add{
@@ -90,12 +90,12 @@ ExaModels.jl provides a symbolic modeling front-end where users can define their
 Unlike classical modeling interfaces such as AMPL, JuMP, and CasADi, which provide flexible modeling features, ExaModels.jl follows a different philosophy: it enforces strict compliance with the iterator-based modeling syntax, allowing the modeling system to store the model equations in a structured fashion.
 This ensures that the model function and derivative evaluations can be implemented as parallelizable GPU kernels.
 For the structured model functions, ExaModels.jl applies the reverse-mode automatic differentiation to compute the derivatives, then executed over GPU-resident data arrays.
-To the best of our knowledge, ExaModels.jl is currently the only available GPU-native modeling interface that provides automatic differentiation capabilities for nonlinear programming (except for machine learning, which does not have extensive support for sparse models).
+To the best of our knowledge, ExaModels.jl is currently the only available GPU-native sparse modeling interface that provides automatic differentiation capabilities for nonlinear programming beyond unconstrained problems in machine learning.
 
 NVIDIA's {\tt cuDSS} library~\cite{nvidiaNVIDIACuDSSPreview} provides a high-performance sparse direct solver.
 The library supports Cholesky, LDL$^\top$, and LU factorizations, enabling the efficient solution of symmetric positive definite and quasi-definite systems.
 When the hybrid host/device execution mode is disabled, reordering (a major part of the analysis phase) is executed on the host, while symbolic factorization (another part of the analysis phase), numerical factorization, and solve are executed on the GPU.
-Since ordering is performed only once, the overhead of performing operation on CPU and transferring data between CPU and GPU memory is not significant.
+Since ordering is inherently sequential, it is precomputed once on the CPU and transferred to the GPU without any impact on performance. 
 Partial pivoting strategies are available, but the 2x2 pivoting strategy --- commonly employed within sparse indefinite solvers -- is not supported, thus limiting their direct usage within the classical augmented system-based interior-point methods.
 CUDSS.jl, a community-maintained Julia wrapper for {\tt cuDSS}, provides a user-friendly interface to the library, enabling seamless integration with Julia-based optimization solvers such as MadNLP.jl.
 }
