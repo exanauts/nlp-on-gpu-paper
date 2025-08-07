@@ -91,7 +91,7 @@ This has been clarified in \S6.1.4 in the revision.
 The condensed KKT system is denser than the original Hessian $W$ and could potentially be much denser. It is not clear why the Authors say that this phenomenon is ``rarer that in the normal equations commonly encountered in LP' (page 8). For the purpose of using IPMs on GPUs, this approach makes sense because it avoids pivoting. However, the issues mentioned for approach $K_1$ remain valid, limiting the applicability of the technique. This is even more problematic when the term $G^TG$ is added as well.
 \end{quotereviewer}
 
-\answer The reviewer is right to point this issue.
+\answer The reviewer is right to point out this issue.
 In particular, the condenstation strategy can lead to a fully dense KKT system if the Jacobian has a fully dense row (similarly to the normal equations being fully dense if the Jacobian has a fully dense column).
 We have updated the numerical
 results to replace the COPS benchmark by the CUTEst benchmark, and have included a thorough
@@ -367,7 +367,7 @@ what do "it", "init", and "lin" mean in Table 4? What does "analysis" refer to i
 \end{quotereviewer}
 
 \answer
-We thank the reviewer for pointing this issue. We have clarified
+We thank the reviewer for pointing out this issue. We have clarified
 the meaning of each column in the captions of Tables 1-4.
 
 \begin{quotereviewer}
