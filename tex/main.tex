@@ -39,7 +39,8 @@
 
 
 \title{
-  Condensed-Space Interior-Point Methods for Large-Scale Sparse Nonlinear Programming on GPUs.
+ Condensed Interior-Point Methods for Scalable Nonlinear Programming on  GPUs
+  % Condensed-Space Interior-Point Methods for Large-Scale Sparse Nonlinear Programming on GPUs.
   % Condensed-space methods for nonlinear programming on GPUs
 }
 \author{François Pacaud \and
@@ -75,9 +76,9 @@ This paper investigates the theoretical and numerical properties of two condense
 Despite the emergence of ill-conditioned matrices, our theoretical analysis shows that the resulting loss of accuracy is benign in floating-point arithmetic, owing to the structural properties of the interior-point method.
 Numerically, both methods prove competitive for solving large-scale nonlinear problems.
 The fully GPU-resident software stack we developed, which includes MadNLP.jl, cuDSS, and ExaModels.jl, demonstrates its effectiveness on large-scale optimal power flow (OPF) problems from the pglib-opf library.
-Notably, this GPU-based implementation achieves up to a 10× speed-up on large-scale OPF problems.
+Notably, this GPU-based implementation achieves up to a 10× speedup on large-scale OPF problems.
 While performance is more variable across the CUTEst benchmarks, our solver consistently remains competitive with its CPU-based counterpart.
-When focused on the instances with non-trivial size, the GPU implementation achieves considerable speed-ups, at the price of reduced robustness in the linear solver. These results highlight both the potential (high performance and scalability) and the limitations (robustness and convergence) of GPU-based interior-point methods for nonlinear programming.
+When focused on the instances with non-trivial size, the GPU implementation achieves considerable speedups, at the price of reduced robustness in the linear solver. These results highlight both the potential (high performance and scalability) and the limitations (robustness and convergence) of GPU-based interior-point methods for nonlinear programming.
 Looking ahead, we plan to improve the robustness of the two condensed KKT methods, with a particular emphasis on achieving stable convergence at tighter tolerances (below $10^{-8}$).
 Moreover, the sparse Cholesky solver can be further customized to align with the specific structure and needs of interior-point algorithms~\cite{wright1999modified}.
 % Improving both methods on GPUs opens the door to solving large-scale problems that remain intractable on classical CPU architectures, such as multiperiod and security-constrained OPF problems.
