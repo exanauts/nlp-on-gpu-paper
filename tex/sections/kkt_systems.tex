@@ -45,7 +45,8 @@ The key idea is to reformulate the condensed KKT system \eqref{eq:kkt:condensed}
   \end{bmatrix} \; ,
 \end{equation}
 where we introduce the regularized matrix $K_\gamma := K + \gamma G^\top G$ \add{(recall $\delta_c=0$ is assumed per Remark \ref{rmk:dualreg})}.
-We denote by $Z$ a basis of the null space of the Jacobian $G$.
+\add{Let $\begin{bmatrix} Y & Z \end{bmatrix}$ be an orthogonal
+matrix, where $Z$ encodes the basis of the null-space of the Jacobian $G$.}
 Using a classical result from~\cite{debreu1952definite}, if $G$ is full row-rank, then there exists a threshold value $\underline{\gamma}$ such that for all $\gamma > \underline{\gamma}$, the reduced Hessian $Z^\top K Z$ is positive definite if and only if $K_\gamma$ is positive definite.
 Using Sylvester's law of inertia stated in \eqref{eq:ipm:inertia}, we deduce that for $\gamma > \underline{\gamma}$, $\inertia(K_2) = (n + m_i, m_e + m_i, 0)$ if and only if the condensed matrix $K_\gamma$ is positive definite.
 

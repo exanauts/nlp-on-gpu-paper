@@ -67,7 +67,7 @@ In this regard, LiftedKKT and HyKKT are not only GPU-friendly methods, but is mo
 In addition, (ii) the performance of the GPU solver cuDSS is still better than the CPU solvers.
 In partiuclar, we have found that setting the number of threads to 8 gives the best performance in Pardiso and in HSL MA86, the parallel
 scalability remaining limited on the CPU.
-This comes from the fact that GPU parallelism is more effective at handling the sparse linear systems arising from many nonlinear program instances (e.g. OPF problems). 
+This comes from the fact that GPU parallelism is more effective at handling the sparse linear systems arising from many nonlinear program instances (e.g. OPF problems).
 
 \begin{quotereviewer}
 I understand that the Authors want to compare with a common situation in nonlinear programming (i.e. MA57 with OpenBLAS), but the use of a better linear solver and a better BLAS library may have a large effect on the CPU performance. It may even be that the best performance on a CPU is comparable with the speed up observed on the GPU, in some cases.
@@ -179,8 +179,8 @@ and HyKKT are failing, and explain why the failures are occuring.
 Overall, the issue of accuracy (which is thoroughly discussed theoretically) should be discussed better for the numerical results. This is a crucial aspect for the usability of an interior point solver.
 \end{quotereviewer}
 
-\answer We have included a new paragraph discussing the accuracy issue in HyKKT/LiftedKKT.
-% SS: we need to point the reviewer directly to the new paragraph
+\answer We have included a new paragraph discussing the accuracy
+in \S 6.1.2 in the revision, and in Figure 2.
 
 \begin{quotereviewer}
 Cholmod seems to perform well in Figure 2, better than MA27. Why are the rest of the tests performed only with MA27 then? It would make a lot of sense to compare to Cholmod as well, since it is not doing pivoting.
@@ -277,7 +277,7 @@ space approaches LiftedKKT and HyKKT. Our contributions are:
 We have clarified our contributions in the introduction.
 
 Additionally, while we do not assert this as a scientific contribution, a notable distinction from [37] is our adoption of a different linear solver, cuDSS. We have developed an interface for the NVIDIA sparse linear solver cuDSS, which is also integrated with the MadNLP.jl solver. In contrast, our previous work [37] utilized the older linear solver {\tt cusolverRF}. As the performance improvements are significant and as GPU sparse solvers are advancing rapidly, the updated numerical results may be of considerable interest to the community.
- 
+
 \begin{quotereviewer}
 2.b. The results presented in Table 4 for a limited number of COPS instances do not paint
 a consistent picture, making it unclear what the central message is. Is the claim that
@@ -344,9 +344,8 @@ concerns interior-point methods, and also the claim for NLP is too broad with th
 \end{quotereviewer}
 
 \answer
-TODO: should we change the title?
-% SS: I concur with the reviewer's perspective on this matter. I propose we revise the title to "Condensed-Space Interior-Point Methods for Solving Large-Scale Sparse Nonlinear Programs on GPUs."
-
+The title has been changed to \emph{Condensed Interior-Point Methods for Scalable Nonlinear Programming on GPUs}
+in the revision.
 
 \begin{quotereviewer}
 2. The condition number analysis in Section 4 is fairly standard. It would be helpful for the
