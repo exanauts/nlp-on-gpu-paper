@@ -8,7 +8,7 @@ In a standard implementation, the
 resulting system is solved iteratively with a Newton method (used in conjunction
 with a line-search method for globalization).
 
-This section provides a brief overview of the IPM algorithm and their numerical implementation.
+This section provides a brief overview of the IPM algorithm and its numerical implementation.
 In Section \ref{sec:ipm:problem}, we give a description of a nonlinear programming problem formulation.
 We detail in Section \ref{sec:ipm:kkt} the Newton step computation within each IPM iteration.
 
@@ -74,7 +74,7 @@ The set of active constraints at a point $x$ is denoted by:
   \mathcal{B}(x) := \{ i \in\{ 1, \cdots, m_i\} \; | \; h_i(x) = 0 \} \; .
 \end{equation}
 The inactive set is defined as the complement $\mathcal{N}(x) := \{1, \cdots, m_i \} \setminus \mathcal{B}(x)$.
-We note $m_a$ the number of active constraints.
+We denote by $m_a$ the number of active constraints.
 The active Jacobian is defined as $A(x) := \begin{bmatrix} \nabla g(x) \\ \nabla h_{\mathcal{B}}(x) \end{bmatrix} \in \mathbb{R}^{(m_e + m_a) \times n}$.
 
 
@@ -101,8 +101,8 @@ For positive $(x, s, v) > 0$, we solve the system
   \end{bmatrix} = 0
    \; .
 \end{equation}
-We introduce in \eqref{eq:kkt_ipm} the diagonal matrices $X = \diag(x_1, \cdots, x_n)$
-and $S = \diag(s_1, \cdots, s_{m_i})$, along with the vector of ones $e$.
+We introduce in \eqref{eq:kkt_ipm} the diagonal matrix
+$S = \diag(s_1, \cdots, s_{m_i})$, along with the vector of ones $e$.
 As we drive the barrier parameter $\mu$ to $0$, the solution of the
 system $F_\mu(x, s, y, z, v) = 0$ tends to the solution of the
 KKT conditions~\eqref{eq:kktconditions}.
@@ -128,7 +128,7 @@ In IPM, the bulk of the workload is the computation of the Newton
 step \eqref{eq:newton_step}, which involves assembling the Jacobian
 $\nabla_w F_\mu(w_k)$ of the KKT conditions and solving the resulting linear system to compute
 the descent direction $d_k$.
-By writing out all the blocks, the system in~\eqref{eq:newton_step} expands as the \add{$5 \times 5$}
+By writing out all the blocks, the system in~\eqref{eq:newton_step} expands as the $5 \times 5$
 \emph{unreduced KKT system} of the following form:
 \begin{equation}
   \label{eq:kkt:unreduced}
@@ -160,8 +160,8 @@ By writing out all the blocks, the system in~\eqref{eq:newton_step} expands as t
 \end{equation}
 where we have introduced the Hessian $W_k = \nabla^2_{x x} L(w_k)$ and
 the two Jacobians $G_k = \nabla g(x_k)$, $H_k = \nabla h(x_k)$.
-In addition, we define $X_k$, $S_k$, $U_k$ and $V_k$ the diagonal matrices built respectively
-from the vectors $x_k$, $s_k$, $u_k$ and $v_k$.
+In addition, we define $S_k$, $U_k$ and $V_k$ the diagonal matrices built respectively
+from the vectors $s_k$, $u_k$ and $v_k$.
 Note that~\eqref{eq:kkt:unreduced} can be symmetrized by performing simple block row and column operations.
 In what follows, we will omit the iteration counter $k$ to simplify the notations.
 
@@ -202,7 +202,7 @@ $r_4 := h(x) + s$.
 Once \eqref{eq:kkt:augmented} is solved, we recover the updates on bound multipliers with
 $d_v = - S^{-1}(V d_s - \mu e) - v$.
 
-\add{Note that we have added additional regularization terms $\delta_w \geq 0 $
+Note that we have added additional regularization terms $\delta_w \geq 0 $
 and $\delta_c \geq 0$ in \eqref{eq:kkt:augmented}, to ensure the
 matrix is invertible.
 Without the regularization terms in \eqref{eq:kkt:augmented}, the augmented KKT system is non-singular
@@ -213,7 +213,7 @@ The condition is satisfied if the inertia (defined as the respective numbers
 of positive, negative and zero eigenvalues) of the matrix~\eqref{eq:kkt:augmented} is $(n + m_i, m_i + m_e, 0)$.
 We use the inertia-controlling method introduced in \cite[Section 3.1]{wachter2006implementation}
 to regularize the augmented matrix by adding multiple of the identity
-on the diagonal of \eqref{eq:kkt:augmented} if the inertia is not equal to $(n+m_i, m_e+m_i, 0)$.}
+on the diagonal of \eqref{eq:kkt:augmented} if the inertia is not equal to $(n+m_i, m_e+m_i, 0)$.
 
 As a consequence, the system \eqref{eq:kkt:augmented} is usually factorized using
 an inertia-revealing \lblt factorization~\cite{duff1983multifrontal}.

@@ -124,7 +124,7 @@ condensed matrix $K_\gamma$ exhibits a structured ill-conditioning.
 \subsubsection{Invariant subspaces in $K_\gamma$}
 Without regularization we have that $K_\gamma = W + H^\top D_s H + \gamma G^\top G$, with
 the diagonal $D_s = S^{-1} V$.
-We note by $m_a$ the cardinality of the active set $\mathcal{B}$,
+We denote by $m_a$ the cardinality of the active set $\mathcal{B}$,
 $H_{\cactive}$ the Jacobian of active inequality constraints, $H_{\cinactive}$ the
 Jacobian of inactive inequality constraints and by
 $A := \begin{bmatrix} H_{\cactive}^\top & G^\top \end{bmatrix}^\top$ the active Jacobian.
@@ -395,16 +395,15 @@ Proposition~\ref{prop:cond:boundcondensedmatrix}.
   \end{itemize}
   \label{hyp:cond:wellcond}
 \end{assumption}
-Condition (a) implies \add{both}
+Condition (a) implies both
 $s_{min} = \Theta(\Xi)$ and $s_{max} = \Theta(\Xi)$ (Proposition \ref{prop:cond:boundslack}).
 Condition (b) supposes in addition $\gamma = \Theta(\Xi^{-1})$, making
 the matrix $\Sigma_L$ well-conditioned with
 $\underline{\sigma} = \Theta(\Xi^{-1})$,
 $\overline{\sigma} = \Theta(\Xi^{-1})$ and $\overline{\sigma}/\underline{\sigma} = \Theta(1)$.
-\add{This is in line with the recommendation in \cite{golub2003solving},
+This is in line with the recommendation in \cite{golub2003solving},
   where the authors recommend chosing $\gamma = \frac{\|K\|}{\|G\|^2}$
   (as here the condition (a) implies that $\|K \| = \Theta(\Xi)$).
-}
 Condition (c) ensures that $\cond(K_\gamma) = \Theta(\overline{\sigma})$
 satisfies $\cond(K_\gamma) \epstol \ll 1$
 (implying the Cholesky factorization runs to completion).
@@ -687,7 +686,7 @@ removes the equality constraints from the optimization problems, simplifying
 the solution of the condensed KKT system to \eqref{eq:liftedkkt}.
 The active Jacobian $A$ reduces to the active inequalities $A = H_{\cactive}$,
 and we recover the original setting presented in \cite{wright1998ill}.
-Using the same arguments than in \eqref{eq:cond:boundderivationhykkt},
+Using the same arguments as in \eqref{eq:cond:boundderivationhykkt},
 the error in the right-hand-side is bounded by $O(\Xi^{-1} \epstol)$ and is in the
 range space of the active Jacobian $A$. Using \eqref{eq:cond:inversecondensed},
 we can show that the absolute error on $\widehat{d}_x$ is bounded by

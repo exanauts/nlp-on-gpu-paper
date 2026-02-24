@@ -42,8 +42,8 @@ We solve the KKT systems assembled within MadNLP using various sparse linear sol
   \item {\tt HSL MA27}: Implements the multifrontal \lblt factorization on the CPU~\cite{duff1983multifrontal}.
   \item {\tt HSL MA57}: Implements the multifrontal \lblt factorization on the CPU~\cite{duff1983multifrontal},
     using multithreaded BLAS kernels in the elimination algorithm.
-  \item \add{{\tt HSL MA86}: Implements a fine-grained multicore parallel supernodal \lblt factorization on the CPU.}
-  \item \add{{\tt Panua Pardiso}: Implements shared-memory parallel supernodal Cholesky, \ldlt and \lblt factorizations on the CPU.}
+  \item {\tt HSL MA86}: Implements a fine-grained multicore parallel supernodal \lblt factorization on the CPU.
+  \item {\tt Panua Pardiso}: Implements shared-memory parallel supernodal Cholesky, \ldlt and \lblt factorizations on the CPU.
   \item {\tt CHOLMOD}: Implements the Cholesky and \ldlt factorizations on the CPU % Sungho: Maybe LDLFactorizations.jl instead, once the results are updated.
     (using the AMD ordering \cite{amestoy-david-duff-2004} by default).
     It factorizes the condensed matrices $K_\gamma$ and $K_\tau$ appearing

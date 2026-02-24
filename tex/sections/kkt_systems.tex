@@ -11,7 +11,6 @@ On the one hand, HyKKT is introduced in \S\ref{sec:kkt:golubgreif} and uses the 
 Before we introduce these methods, we make the following observation, which allows us to simplify the setting for our analysis.
 \begin{remark}
   \label{rmk:dualreg}
-  \add{
 The primal-dual regularization parameters $(\delta_w,\delta_c)$ are typically determined by examining the inertia of the system $K_2$.
 In particular, the dual regularization $\delta_c$ is activated if zero eigenvalues are detected or if the filter line-search algorithm is entering a feasibility restoration phase~\cite[Section 3.3]{wachter2006implementation}. The primal regularization $\delta_w$ is activated if the number of positive eigenvalues is less than the desired amount of $n + m_i$. For a positive $\delta_c$, one can solve the KKT system \eqref{eq:kkt:condensed} by solving the following equations:
 \begin{equation}\label{eqn:primal}
@@ -19,7 +18,6 @@ In particular, the dual regularization $\delta_c$ is activated if zero eigenvalu
 \end{equation}
 and by setting $d_y = \delta_c^{-1} (G d_x - \bar{r}_2)$. The system in \eqref{eqn:primal} is a Schur complement of the original condensed system in \eqref{eq:kkt:condensed} and is positive definite if the system in \eqref{eq:kkt:condensed} has the correct inertia $(n, m_e, 0)$. That is, under the application of the standard inertia correction procedure, it can always be Cholesky factorizable.
 Thus, when discussing the special treatment of the condensed KKT system \eqref{eq:kkt:condensed}, we assume that the dual regularization is $\delta_c = 0$, as $\delta_c > 0$ will only simplify the solution procedure.
-  }
 \end{remark}
 
 
@@ -44,9 +42,9 @@ The key idea is to reformulate the condensed KKT system \eqref{eq:kkt:condensed}
     \bar{r}_2
   \end{bmatrix} \; ,
 \end{equation}
-where we introduce the regularized matrix $K_\gamma := K + \gamma G^\top G$ \add{(recall $\delta_c=0$ is assumed per Remark \ref{rmk:dualreg})}.
-\add{Let $\begin{bmatrix} Y & Z \end{bmatrix}$ be an orthogonal
-matrix, where $Z$ encodes the basis of the null-space of the Jacobian $G$.}
+where we introduce the regularized matrix $K_\gamma := K + \gamma G^\top G$ (recall $\delta_c=0$ is assumed per Remark \ref{rmk:dualreg}).
+Let $\begin{bmatrix} Y & Z \end{bmatrix}$ be an orthogonal
+matrix, where $Z$ encodes the basis of the null-space of the Jacobian $G$.
 Using a classical result from~\cite{debreu1952definite}, if $G$ is full row-rank, then there exists a threshold value $\underline{\gamma}$ such that for all $\gamma > \underline{\gamma}$, the reduced Hessian $Z^\top K Z$ is positive definite if and only if $K_\gamma$ is positive definite.
 Using Sylvester's law of inertia stated in \eqref{eq:ipm:inertia}, we deduce that for $\gamma > \underline{\gamma}$, $\inertia(K_2) = (n + m_i, m_e + m_i, 0)$ if and only if the condensed matrix $K_\gamma$ is positive definite.
 
@@ -69,7 +67,6 @@ Since the convergence of the \CG method depends on the number of distinct eigenv
 Although we observe similar performance, these methods ensure a monotonic decrease in the residual norm of \eqref{eq:kkt:schurcomplhykkt} at each iteration.
 
 \begin{remark}
-  \add{
     The parameter $\gamma$ should be set above a given threshold $\underline{\gamma}$ for $K_\gamma$ to ensure positive definiteness of the system in \eqref{eq:kkt:schurcomplhykkt}.
     However, from the numerical stand-point, it is desired to choose moderate values of $\gamma$, since large $\gamma$ increases the ill-conditioning in $K_\gamma$, hence deteriorating the quality of the solution.
     In \cite{golub2003solving}, the authors recommend choosing $\gamma = \| K \| / \|G\|^2$, which offers a good empirical trade-off.
@@ -84,7 +81,6 @@ Although we observe similar performance, these methods ensure a monotonic decrea
     with $\sigma_{\min}$ being the smallest nonzero singular value of the Jacobian $G$, $\lambda_{\min}^Z > 0$ the smallest eigenvalue of $Z^\top K Z$, and $\lambda_{\min}^Y$ the smallest eigenvalue of $Y^\top K Y$.
     From \eqref{eq:kkt:boundgamma}, we observe that $\underline{\gamma}$ is inversely proportional to $\lambda_{\min}^Z$ and $\sigma_{\min}$, indicating that it can reach a large magnitude if $G$ has nearly aligned rows or if $Z^\top K Z$ is close to being indefinite.
     In other words, HyKKT may have difficulties in solving problems with nearly dependent equality constraints or when the reduced Hessian is close to being indefinite.
-  }
 \end{remark}
 
 
@@ -107,7 +103,7 @@ The problem~\eqref{eq:problemrelaxation} has only inequality constraints. As a r
     K_\tau \,d_x = - r_1 - H_\tau^\top(D_H r_4 - C r_2) \; ,
 \end{equation}
 with $H_\tau = \big(G^\top ~ H^\top\big)^\top$ and
-$K_\tau := W + \delta_w I + H_\tau^\top D_H H_\tau$ \add{(recall $\delta_c=0$ is assumed per Remark \ref{rmk:dualreg})}. Using the relation~\eqref{eq:ipm:inertia}, the matrix $K_\tau$
+$K_\tau := W + \delta_w I + H_\tau^\top D_H H_\tau$ (recall $\delta_c=0$ is assumed per Remark \ref{rmk:dualreg}). Using the relation~\eqref{eq:ipm:inertia}, the matrix $K_\tau$
 is guaranteed to be positive definite if the primal regularization parameter $\delta_w$ is adequately large. As such, the parameter $\delta_w$ is chosen dynamically using the inertia information of the system in \eqref{eq:kkt:condensed}. Therefore, $K_\tau$ can be factorized with a Cholesky decomposition, satisfying the key requirement of stable pivoting for implementation on the GPU. The relaxation introduces an error in the final solution. Fortunately, the error is of the same order as the solver tolerance, thus it does not significantly deteriorate the solution quality for small $\varepsilon_{tol}$.
 
 While this method can be implemented with minor modifications in the optimization solver, the presence of tight inequalities in \eqref{eq:problemrelaxation} causes severe ill-conditioning throughout the IPM iterations. Therefore, using an accurate iterative refinement algorithm is necessary to achieve reliable convergence behavior.

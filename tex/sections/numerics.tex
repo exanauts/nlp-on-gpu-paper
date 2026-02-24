@@ -2,6 +2,8 @@
 First, we assess in \S\ref{sec:num:pprof} the performance of the two hybrid solvers, LiftedKKT and HyKKT.
 The GPU implementation is compared to state-of-the-art solvers running on the CPU.
 Then, we present in \S\ref{sec:num:opf} the results reported on the PGLIB OPF benchmark, complemented in \S\ref{sec:num:cutest} by the CUTEst benchmark.
+\add{We emphasize that all the results have been generated using double precision, both
+on the CPU and on the GPU.}
 
 
 \subsection{Performance analysis of HyKKT and LiftedKKT on a large-scale instance}
@@ -12,7 +14,7 @@ Our formulation with ExaModels has
 a total of 674,562 variables, 661,017 equality constraints, and 378,045
 inequality constraints.
 Our previous work has pointed out that as soon as the OPF model is evaluated
-on the GPU using ExaModels, \add{the time spent in AD becomes negligible, and}
+on the GPU using ExaModels, the time spent in AD becomes negligible, and
 the KKT solver becomes the bottleneck in the numerical implementation~\cite{shin2023accelerating}.
 
 
@@ -20,17 +22,16 @@ the KKT solver becomes the bottleneck in the numerical implementation~\cite{shin
 We evaluate the individual performance of the cuDSS solver when
 factorizing the matrix $K_{\gamma}$ at the first IPM iteration (here with
 $\gamma = 10^7$). We compare the times to perform the symbolic analysis,
-the factorization, and the triangular solves with those reported in CHOLMOD \add{
-  (running single-threaded), HSL MA86, and Panua Pardiso with sparse Cholesky.
-  The CPU implementations achieved their highest efficiency when configured with 8 threads.
-  Therefore, in the remainder of this paper, we will consistently present the performance of the linear solvers operating in parallel using 8 threads.
-}
+the factorization, and the triangular solves with those reported in CHOLMOD
+(running single-threaded), HSL MA86, and Panua Pardiso with sparse Cholesky.
+The CPU implementations achieved their highest efficiency when configured with 8 threads.
+Therefore, in the remainder of this paper, we will consistently present the performance of the linear solvers operating in parallel using 8 threads.
 
 The results are displayed in Table~\ref{tab:linsol:time}.
 We benchmark in parallel the three decompositions implemented in cuDSS (\llt, \ldlt, \lu).
 We observe that the analysis phase is four times slower for cuDSS compared to CHOLMOD.
 The ordering happening within the symbolic analysis is performed on CPU, so it cannot benefit from the GPU parallelism \cite{nvidiaNVIDIACuDSSPreview}. Fortunately, the analysis can be performed only once, and the symbolic factorization can be reused if the optimization problem is re-solved with the same sparsity structure.
-The numerical factorization is about two times faster in cuDSS \add{than in HSL MA86}, with a time almost independent of the factorization being used.
+The numerical factorization is about two times faster in cuDSS than in HSL MA86, with a time almost independent of the factorization being used.
 
 
 \begin{table}[!ht]
@@ -49,8 +50,8 @@ The numerical factorization is about two times faster in cuDSS \add{than in HSL 
       \bottomrule
     \end{tabular}
   }
-  \caption{Comparing the performance of cuDSS with CHOLMOD\add{, Pardiso, and HSL MA86
-      (both running in parallel using 8 threads)}.
+  \caption{Comparing the performance of cuDSS with CHOLMOD, Pardiso, and HSL MA86
+      (both running in parallel using 8 threads).
     The column for ``analysis'' displays the time spent in the symbolic analysis (computation
     of a reordering to minimize fill-in and construction of the elimination tree).
     The columns for ``factorization'' and ``backsolves'' display the time spent in the numerical
@@ -69,7 +70,8 @@ In Figure~\ref{fig:hybrid:gamma}, we depict the evolution of the number of \CG i
 We observe that the number of CG iterations decreases by a factor of 10 as we increase $\gamma$, but the norm of the relative residual increases linearly as we increase $\gamma$.
 Thus, a trade-off exists between the time spent in \CG and the accuracy of the solution.
 
-On the numerical side, the table in Figure~\ref{fig:hybrid:gamma} compares the time spent in the IPM solver on the CPU (using \add{Pardiso}) and on the GPU (using the solver {\tt cuDSS}). Overall, {\tt cuDSS} is faster than \add{Pardiso}, leading to a 4x-8x speed-up in the total IPM solution time. We also note that the assembly of the condensed matrix $K_\gamma$ parallelizes well on the GPU, with a reduction in the assembly time from $\approx 8s$ on the CPU to $\approx 0.2s$ on the GPU.
+On the numerical side, the table in Figure~\ref{fig:hybrid:gamma} compares the time spent in the IPM solver on the CPU (using Pardiso) and on the GPU (using the solver {\tt cuDSS}). Overall, {\tt cuDSS} is faster than Pardiso, leading to a 4x-8x speed-up in the total IPM solution time. We also note that the assembly of the condensed matrix $K_\gamma$ parallelizes well on the GPU, with a reduction in the assembly time from $\approx 8s$ on the CPU to $\approx 0.2s$ on the GPU \add{(the assembly of the KKT system is not
+parallelized on the CPU)}.
 
 \begin{figure}[!ht]
   \centering
@@ -93,18 +95,18 @@ On the numerical side, the table in Figure~\ref{fig:hybrid:gamma} compares the t
     Above: Decomposition of IPM solution time across
     (a) condensation time (cond.), (b) \CG time, (c) total time
     spent in the linear solver (linsol.) and (d) total time spent in
-    IPM solver (IPM). \add{We compare the performance of cuDSS with those obtained
-    by Pardiso running in parallel on the CPU using 8 threads.}
+    IPM solver (IPM). We compare the performance of cuDSS with those obtained
+    by Pardiso running in parallel on the CPU using 8 threads.
     Below: Impact of $\gamma$ on the total number of \CG iterations
     and the norm of the relative residual at each IPM iteration.
     The peak observed in the norm of the relative residual corresponds
     to the primal-dual regularization performed inside the IPM algorithm,
     applied when the matrix $K_\gamma$ is not positive definite.
-    \add{The column for {\tt it} displays the number of iterations,
+    The column for {\tt it} displays the number of iterations,
     whereas the columns for {\tt cond.}, {\tt CG}, {\tt linsol} and {\tt IPM}
     display the time spent in assembling the condensed KKT matrix,
     the time spent in the conjugate gradient, the time spent in the linear
-    solver (including CG) and the total time spent in the IPM algorithm, respectively.}
+    solver (including CG) and the total time spent in the IPM algorithm, respectively.
     \label{fig:hybrid:gamma}
   }
 \end{figure}
@@ -121,18 +123,18 @@ in IPM).
 
 We compare in Table~\ref{tab:sckkt:performance} the performance obtained by LiftedKKT
 as we decrease the IPM tolerance $\varepsilon_{tol}$.
-We display both the runtimes on the CPU (using \add{Pardiso} with Cholesky) and on the GPU (using {\tt cuDSS}-\ldlt).
+We display both the runtimes on the CPU (using Pardiso with Cholesky) and on the GPU (using {\tt cuDSS}-\ldlt).
 The slacks associated with the relaxed equality constraints are converging to a value below $2 \tau$,
 leading to highly ill-conditioned terms in the diagonal matrices $D_s$.
 As a consequence, the conditioning of the matrix $K_\tau$ in \eqref{eq:liftedkkt} can increase
 above $10^{18}$, leading to a nearly singular linear system.
-\add{However, the factorization succeeds} and the loss of accuracy caused by the ill-conditioning is tamed by the multiple
+However, the factorization succeeds and the loss of accuracy caused by the ill-conditioning is tamed by the multiple
 Richardson iterations in the iterative refinement, reducing the relative accuracy in the residual down to an acceptable level.
 As a result, {\tt cuDSS} can solve
 the problem to optimality in $\approx 20s$, a time comparable with HyKKT (see Figure~\ref{fig:hybrid:gamma}).
-\add{We observe that updating the parameter $\tau$ changes the total number of iterations
+We observe that updating the parameter $\tau$ changes the total number of iterations
   in IPM: this is expected, as we solve a different problem~\eqref{eq:problemrelaxation}
-every time we update the regularization $\tau$.}
+every time we update the regularization $\tau$.
 
 \begin{table}[!ht]
   \centering
@@ -151,20 +153,22 @@ every time we update the regularization $\tau$.}
     \hline
   \end{tabular}
   }
-  \label{tab:sckkt:performance}
   \caption{Performance of the equality-relaxation
     strategy as we decrease the IPM tolerance $\varepsilon_{tol}$.
-    The table displays the wall time on the CPU \add{(using Pardiso-\ldlt)}
-    and on the GPU (using cuDSS-\ldlt).
+    The table displays the wall time on the CPU (using Pardiso-\ldlt)
+    and on the GPU (using cuDSS-\ldlt). \add{The accuracy is defined
+    as the norm of the residual $\|K x - b\|_\infty$, with the vector $x$ the
+    solution returned by LiftedKKT.}
+  \label{tab:sckkt:performance}
   }
 \end{table}
 
 \subsubsection{Breakdown of the time spent in one IPM iteration}
 We decompose the time spent in a single IPM iteration for LiftedKKT and HyKKT.
 As a reference running on the CPU, we show the time spent in the solver HSL MA27:
-\add{The factorization time in HSL MA57 is 1.9s, compared to 1.2s for HSL MA27 (here,
+The factorization time in HSL MA57 is 1.9s, compared to 1.2s for HSL MA27 (here,
   increasing the number of threads in the BLAS backend used by HSL MA57 does not make
-a difference).}
+a difference).
 Hence, the block elimination algorithm implemented in HSL MA57 is not beneficial there.
 
 When solving the KKT system, the time can be decomposed into: (1) assembling the
@@ -172,13 +176,12 @@ KKT system, (2) factorizing the KKT system, and (3) computing the descent direct
 As depicted in Figure~\ref{fig:timebreakdown}, we observe
 that constructing the KKT system represents only a fraction of the computation time, compared
 to the factorization and the triangular solves.
-\add{The condensed strategies LiftedKKT and HyKKT leads to faster factorization time,
+The condensed strategies LiftedKKT and HyKKT leads to faster factorization time,
 as the condensed KKT system can be factorized efficiently in parallel. HSL MA86
 factorizes the condensed system almost 10 times faster than HSL MA27, and using
 cuDSS leads to an additional 4x speed-up.
 We focus exclusively on comparing the parallel CPU solvers (MA86 and Pardiso) for the Lifted/HyKKT formulations,
 as the factorization of the augmented KKT system~\eqref{eq:kkt:augmented} does not parallelize well on the CPU~\cite{tasseff2019exploring}.
-}
 Once the KKT system is factorized, computing the descent direction with LiftedKKT is faster than with HyKKT
 (0.01s compared to 0.07s) as HyKKT has to run a \CG algorithm to completion to solve the Schur complement
 system~\eqref{eq:kkt:schurcomplhykkt} --- hence requiring additional backsolves in the linear solver.
@@ -207,13 +210,12 @@ system~\eqref{eq:kkt:schurcomplhykkt} --- hence requiring additional backsolves 
   \includegraphics[width=.9\textwidth]{figures/breakdown.pdf}
   \caption{Breakdown of the time spent in one IPM iteration
     for different linear solvers, when solving {\tt 78484epigrids}.
-    \add{HSL MA27 factorizes the original augmented KKT system \eqref{eq:kkt:augmented},
+    HSL MA27 factorizes the original augmented KKT system \eqref{eq:kkt:augmented},
     and is used as a reference.
     The column for {\tt build} shows the time spent in assembling the KKT matrix,
     whereas the columns for {\tt factorize} and {\tt backsolve} display the time
     spent in the numerical factorization and in the triangular solves, respectively.
-    }
-    \add{We set up Pardiso and HSL MA86 to run in parallel using 8 threads.}
+    We set up Pardiso and HSL MA86 to run in parallel using 8 threads.
   \label{fig:timebreakdown}}
 \end{figure}
 
@@ -227,7 +229,7 @@ We compare the GPU solver configured with LiftedKKT and HyKKT against the CPU so
 For IPM solvers, we use the MadNLP solver~\cite{shin2021graph} with the ExaModels.jl modeling tool.
 We set the IPM tolerance to $10^{-6}$.
 Regarding HyKKT, we set $\gamma = 10^7$, following the analysis in \S\ref{sec:num:tuninghykkt}.
-The Dolan \& Moré performance profile~\cite{dolan2002benchmarking} is displayed in Figure~\ref{fig:opf:pprof}. \add{The performance profile on the left compares LiftedKKT and HyKKT with MadNLP+Ma27. As a baseline, we include the performance obtained by Ipopt and Knitro, which also run with HSL MA27. Overall, the performance of HSL MA27 on the CPU is consistent with what was reported in \cite{babaeinejadsarookolaee2019power}. The second performance profile on the right focuses on the performance obtained with LiftedKKT and HyKKT, using various sparse linear solvers. We observe that cuDSS leads to the fastest solution time compared to Panua Pardiso and HSL MA86 running in parallel on the CPU using 8 threads.}
+The Dolan \& Moré performance profile~\cite{dolan2002benchmarking} is displayed in Figure~\ref{fig:opf:pprof}. The performance profile on the left compares LiftedKKT and HyKKT with MadNLP+Ma27. As a baseline, we include the performance obtained by Ipopt and Knitro, which also run with HSL MA27. Overall, the performance of HSL MA27 on the CPU is consistent with what was reported in \cite{babaeinejadsarookolaee2019power}. The second performance profile on the right focuses on the performance obtained with LiftedKKT and HyKKT, using various sparse linear solvers. We observe that cuDSS leads to the fastest solution time compared to Panua Pardiso and HSL MA86 running in parallel on the CPU using 8 threads.
 
 The detailed results are displayed in Table~\ref{tab:opf:benchmark}: The table displays the time spent on initialization, the time spent in the linear solver, and the total solving time. On the GPU, LiftedKKT+cuDSS is faster than HyKKT+cuDSS on small and medium instances; indeed, the algorithm does not have to run a \CG algorithm at each IPM iteration, limiting the number of triangular solves performed at each iteration. Both LiftedKKT+cuDSS and HyKKT+cuDSS are significantly faster than HSL MA27. HyKKT+cuDSS is slower when solving {\tt 8387\_pegase}, as in this particular instance, the parameter $\gamma$ is not set high enough to reduce the total number of \CG iterations, leading to a 4x slowdown compared to LiftedKKT+cuDSS. Nevertheless, the performance of HyKKT+cuDSS improves on the largest instances, with almost an 8x speed-up compared to the reference HSL MA27.
 
@@ -242,9 +244,7 @@ and the A100 is relatively similar, and the cheaper A1000 GPU is already
 faster than HSL MA27 running on the CPU.
 
 
-\add{
 Among all nonlinear programs, the OPF problems have a very specific sparsity structure that leads to the formulation of a highly sparse KKT linear system~\eqref{eq:kkt:augmented}. The super-sparse structure explains why HSL MA27 yields better results than HSL MA57, which can utilize parallelism at the BLAS level, as previously reported in \cite{tasseff2019exploring}. For that reason, the numerical results obtained for the OPF instances may not be representative of the performance of HyKKT and LiftedKKT on generic nonlinear programs. In the next section, we analyze the performance of HyKKT and LiftedKKT on the CUTEst benchmark to provide a better overview of the methods' limitations.
-}
 
 \begin{table}[!ht]
   \centering
@@ -252,12 +252,11 @@ Among all nonlinear programs, the OPF problems have a very specific sparsity str
     \input{tables/opf_benchmark.tex}
   }
   \caption{OPF benchmark, solved with a tolerance {\tt tol=1e-6}.
-    \add{
 The derivatives are evaluated using ExaModels.jl.
 The column for {\tt init} displays the time spent initializing the IPM solver, including the initial symbolic factorization in the linear solver.
-The columns for {\tt AD}, {\tt lin}, and {\tt total} display the time spent in the evaluation of the derivatives using AD, the time spent in the linear solver, and the total time spent in the IPM algorithm.
+The columns for {\tt AD}, {\tt lin}, {\tt time/it} and {\tt total} display the time spent in the evaluation of the derivatives using AD, the time spent in the linear solver, the average time spent at each iteration, and the total time spent in the IPM algorithm.
       % SS: We should check the discrepancy between the total time versus init + AD + lin. For case78484, solver internal time seems to be unreasonably high.
-  } \label{tab:opf:benchmark}}
+   \label{tab:opf:benchmark}}
 \end{table}
 
 \begin{figure}[!ht]
@@ -267,9 +266,9 @@ The columns for {\tt AD}, {\tt lin}, and {\tt total} display the time spent in t
     \includegraphics[width=.5\textwidth]{figures/pprof-pglib-condensed.pdf}
   \end{tabular}
   \caption{Performance profile for the PGLIB OPF benchmark, solved
-    with a tolerance {\tt tol=1e-6}. \add{Left: comparing LiftedKKT+cuDSS and
+    with a tolerance {\tt tol=1e-6}. Left: comparing LiftedKKT+cuDSS and
       HyKKT+cuDSS with HSL MA27. Right: comparing LiftedKKT and HyKKT
-    with various parallel sparse linear solvers. }
+    with various parallel sparse linear solvers.
   \label{fig:opf:pprof}}
 \end{figure}
 
@@ -284,7 +283,6 @@ The columns for {\tt AD}, {\tt lin}, and {\tt total} display the time spent in t
 
 \subsection{Benchmark on CUTEst instances}
 \label{sec:num:cutest}
-\add{
   We have observed in the previous section that both LiftedKKT
 and HyKKT outperform state-of-the-art solvers running with HSL MA27 when running on the GPU.
 However, the OPF instances are specific nonlinear instances.
@@ -336,7 +334,7 @@ or problems with a dynamical structure ({\tt MARINE}, {\tt ROBOTARM}).
 Interestingly, we observe that the condensed-space methods can
 efficiently accommodate dense condensed matrices $K_\tau$ and $K_\gamma$
 provided they remain small enough ({\tt EIGENAU}, {\tt EIGENCCO}, {\tt EIGENB2}, {\tt MSQRTB}, where the size of the dense condensed matrix is at most $\approx 2,500 \times 2,500$, compared to more $10,000 \times 10,000$ in the unfavorable cases).
-}
+
 
 \begin{figure}[!ht]
   \centering
@@ -345,10 +343,10 @@ provided they remain small enough ({\tt EIGENAU}, {\tt EIGENCCO}, {\tt EIGENB2},
     \includegraphics[width=.5\textwidth]{figures/pprof-cutest-large.pdf}\\
     (a) & (b)
   \end{tabular}
-  \caption{\add{Performance profiles for the CUTEst benchmark, selecting
+  \caption{Performance profiles for the CUTEst benchmark, selecting
     all instances with more than 1,000 variables and at least 1 constraint.
     The profile (a) displays the entire benchmark, whereas the profile (b)
-    selects only the largest instances where Ipopt takes more than 1s to run.}
+    selects only the largest instances where Ipopt takes more than 1s to run.
     \label{fig:cutest:pprof}}
 \end{figure}
 
@@ -357,14 +355,11 @@ provided they remain small enough ({\tt EIGENAU}, {\tt EIGENCCO}, {\tt EIGENB2},
   \resizebox{\textwidth}{!}{
     \input{tables/cutest_benchmark.tex}
   }
-  \caption{\add{CUTEst benchmark, solved with a tolerance {\tt tol=1e-6}.
+  \caption{CUTEst benchmark, solved with a tolerance {\tt tol=1e-6}.
       The derivatives are evaluated with CUTEst.
       The column {\tt init} displays the time spent initializing the IPM
       solver, including the initial symbolic factorization in the linear solver.
-      The columns {\tt AD}, {\tt lin} and {\tt total} display the time
-      spent in the evaluation of the derivatives using AD, the time spent
-      in the linear solver and the total time spent in the IPM algorithm.
-    }
+      The columns for {\tt AD}, {\tt lin}, {\tt time/it} and {\tt total} display the time spent in the evaluation of the derivatives using AD, the time spent in the linear solver, the average time spent at each iteration, and the total time spent in the IPM algorithm.
   \label{tab:cutest:benchmark}}
 \end{table}
 
