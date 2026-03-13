@@ -4,6 +4,9 @@ All our implementations use the Julia language \cite{bezanson-edelman-karpinski-
 We utilized our local workstation to generate the results on the CPU, which is equipped with an AMD EPYC 7443 processor (3.2GHz) with 24 processors.
 For the GPU results, we used an NVIDIA A100 GPU (with CUDA 12.3) on the Polaris testbed at Argonne National Laboratory
 \footnote{\url{https://www.alcf.anl.gov/polaris}}.
+\add{Julia uses Just-in-Time (JIT) compilation to compile the code at runtime.
+  The wall-time reported in the benchmark does not include the compilation time.
+}
 
 
 \paragraph{IPM solver.}
@@ -40,6 +43,7 @@ Within this paper, we have always excluded the compilation time from the reporte
 We solve the KKT systems assembled within MadNLP using various sparse linear solvers, chosen based on the KKT formulation (\eqref{eq:kkt:condensed}, \eqref{eq:kkt:augmented}, \eqref{eq:kkt:unreduced}) and the device (CPU, GPU) being utilized. We utilize the following solvers:
 \begin{itemize}
   \item {\tt HSL MA27}: Implements the multifrontal \lblt factorization on the CPU~\cite{duff1983multifrontal}.
+    \add{HSL MA27 supports single-threading only.}
   \item {\tt HSL MA57}: Implements the multifrontal \lblt factorization on the CPU~\cite{duff1983multifrontal},
     using multithreaded BLAS kernels in the elimination algorithm.
   \item {\tt HSL MA86}: Implements a fine-grained multicore parallel supernodal \lblt factorization on the CPU.
@@ -48,11 +52,13 @@ We solve the KKT systems assembled within MadNLP using various sparse linear sol
     (using the AMD ordering \cite{amestoy-david-duff-2004} by default).
     It factorizes the condensed matrices $K_\gamma$ and $K_\tau$ appearing
     respectively in \eqref{eq:kkt:hykkt} and in \eqref{eq:liftedkkt}.
+    \add{CHOLMOD supports multi-threading.}
   \item {\tt cuDSS}: Implements \llt, \ldlt and \lu decompositions on an NVIDIA GPU.
     We use the \ldlt factorization to factorize the ill-conditioned condensed matrices $K_\gamma$ on the GPU,
     (here, we have observed that \ldlt is more robust than the Cholesky factorization).
   \item {\tt Krylov.jl}: Contains the \CG method
     used in the Golub \& Greif strategy to solve \eqref{eq:kkt:schurcomplhykkt} on both CPU and GPU architectures.
+    \add{In our experiments, Krylov.jl runs in serial on the CPU.}
 \end{itemize}
 CHOLMOD \cite{chen-davis-hager-rajamanickam-2008} is shipped with Julia.
 For the HSL linear solvers, we utilize libHSL \cite{fowkes-lister-montoison-orban-2024} with the Julia interface HSL.jl \cite{montoison-orban-hsl-2021}.

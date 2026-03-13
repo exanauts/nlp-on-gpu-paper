@@ -229,7 +229,13 @@ We compare the GPU solver configured with LiftedKKT and HyKKT against the CPU so
 For IPM solvers, we use the MadNLP solver~\cite{shin2021graph} with the ExaModels.jl modeling tool.
 We set the IPM tolerance to $10^{-6}$.
 Regarding HyKKT, we set $\gamma = 10^7$, following the analysis in \S\ref{sec:num:tuninghykkt}.
-The Dolan \& Moré performance profile~\cite{dolan2002benchmarking} is displayed in Figure~\ref{fig:opf:pprof}. The performance profile on the left compares LiftedKKT and HyKKT with MadNLP+Ma27. As a baseline, we include the performance obtained by Ipopt and Knitro, which also run with HSL MA27. Overall, the performance of HSL MA27 on the CPU is consistent with what was reported in \cite{babaeinejadsarookolaee2019power}. The second performance profile on the right focuses on the performance obtained with LiftedKKT and HyKKT, using various sparse linear solvers. We observe that cuDSS leads to the fastest solution time compared to Panua Pardiso and HSL MA86 running in parallel on the CPU using 8 threads.
+The Dolan \& Moré performance profile~\cite{dolan2002benchmarking} is displayed in Figure~\ref{fig:opf:pprof}.
+\add{The x-axis displays the performance ratio, measuring how far a given solver is from
+  the best solver on each problem.
+  The y-axis shows the fraction of test problems for which the solver is within a given factor of the best solver.
+  The higher the curve, the better the solver.
+}
+The performance profile on the left compares LiftedKKT and HyKKT with MadNLP+Ma27. As a baseline, we include the performance obtained by Ipopt and Knitro, which also run with HSL MA27. Overall, the performance of HSL MA27 on the CPU is consistent with what was reported in \cite{babaeinejadsarookolaee2019power}. The second performance profile on the right focuses on the performance obtained with LiftedKKT and HyKKT, using various sparse linear solvers. We observe that cuDSS leads to the fastest solution time compared to Panua Pardiso and HSL MA86 running in parallel on the CPU using 8 threads.
 
 The detailed results are displayed in Table~\ref{tab:opf:benchmark}: The table displays the time spent on initialization, the time spent in the linear solver, and the total solving time. On the GPU, LiftedKKT+cuDSS is faster than HyKKT+cuDSS on small and medium instances; indeed, the algorithm does not have to run a \CG algorithm at each IPM iteration, limiting the number of triangular solves performed at each iteration. Both LiftedKKT+cuDSS and HyKKT+cuDSS are significantly faster than HSL MA27. HyKKT+cuDSS is slower when solving {\tt 8387\_pegase}, as in this particular instance, the parameter $\gamma$ is not set high enough to reduce the total number of \CG iterations, leading to a 4x slowdown compared to LiftedKKT+cuDSS. Nevertheless, the performance of HyKKT+cuDSS improves on the largest instances, with almost an 8x speed-up compared to the reference HSL MA27.
 
@@ -265,7 +271,7 @@ The columns for {\tt AD}, {\tt lin}, {\tt time/it} and {\tt total} display the t
     \includegraphics[width=.5\textwidth]{figures/pprof-pglib.pdf} &
     \includegraphics[width=.5\textwidth]{figures/pprof-pglib-condensed.pdf}
   \end{tabular}
-  \caption{Performance profile for the PGLIB OPF benchmark, solved
+  \caption{Performance profile \add{for 29 instances of the} PGLIB OPF benchmark, solved
     with a tolerance {\tt tol=1e-6}. Left: comparing LiftedKKT+cuDSS and
       HyKKT+cuDSS with HSL MA27. Right: comparing LiftedKKT and HyKKT
     with various parallel sparse linear solvers.
@@ -283,11 +289,7 @@ The columns for {\tt AD}, {\tt lin}, {\tt time/it} and {\tt total} display the t
 
 \subsection{Benchmark on CUTEst instances}
 \label{sec:num:cutest}
-  We have observed in the previous section that both LiftedKKT
-and HyKKT outperform state-of-the-art solvers running with HSL MA27 when running on the GPU.
-However, the OPF instances are specific nonlinear instances.
-In particular, the OPF instances exhibit extreme sparsity (with fewer than 10 non-zero coefficients per row, on average, in the augmented KKT system). Therefore, they cannot be considered representative nonlinear programs.
-For that reason, we complement our analysis by looking
+We complement our analysis by looking
 at the performance of LiftedKKT and HyKKT on large-scale CUTEst instances.
 Since the parallel solution approaches are intended for large-scale problems, we select the instances with more than 1,000 variables and
 at least 1 constraint.
@@ -295,9 +297,14 @@ at least 1 constraint.
 As for the PGLIB benchmark, we set the IPM tolerance to $10^{-6}$ and
 uses $\gamma = 10^7$ in HyKKT.
 We use the package {\tt CUTEst.jl} to decode the SIF instances on the CPU.
+\add{CUTEst evaluates the models on the CPU only.}
 To use CUTEst on the GPU with HyKKT+cuDSS and
 Lifted+cuDSS, we have implemented a wrapper
-moving the sensitivities (gradient, constraints, Jacobian and Hessian) on the GPU using a copy.
+that copy the sensitivities \add{evaluated on the CPU} (gradient, constraints, Jacobian and Hessian) to the GPU.
+\add{Hence, each IPM iteration requires copying to the GPU four arrays, whose size are respectively
+proportional to the number of variables, the number of constraints, the number of nonzeros
+in the Jacobian and the number of nonzeros in the Hessian. The total number of copy for one IPM solve
+is proportional to the total number of iterations in the algorithm}.
 As a result, the evaluation of the derivatives is not as fast as if they were
 evaluated on the GPU, and the GPU solvers are slightly penalized by the
 data exchange between the CPU and the GPU.
@@ -344,7 +351,7 @@ provided they remain small enough ({\tt EIGENAU}, {\tt EIGENCCO}, {\tt EIGENB2},
     (a) & (b)
   \end{tabular}
   \caption{Performance profiles for the CUTEst benchmark, selecting
-    all instances with more than 1,000 variables and at least 1 constraint.
+    all instances with more than 1,000 variables and at least 1 constraint \add{(413 instances in total)}.
     The profile (a) displays the entire benchmark, whereas the profile (b)
     selects only the largest instances where Ipopt takes more than 1s to run.
     \label{fig:cutest:pprof}}

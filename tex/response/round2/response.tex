@@ -1,0 +1,276 @@
+\documentclass[10pt,a4paper]{article}
+%\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{eurosym}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{framed}
+
+\newenvironment{reviewer}
+{\begin{framed}\begin{minipage}{0.9\textwidth}\textbf{\reviewername.}\newline \it }%
+    {\end{minipage}\end{framed}}
+
+\newenvironment{quotereviewer}{\vspace{.5cm}{\underline\reviewername} ``\it\footnotesize}{''}
+% {\begin{framed}\begin{minipage}{.9\textwidth}\textbf{\reviewername.}\newline ``\it}%
+%     {''\end{minipage}\end{framed}}
+
+\newcommand{\answer}{\vspace{1mm}\underline{Answer.} }
+
+% improved to work inside math
+\newcommand{\nb}[3]{
+    {\colorbox{#2}{\bfseries\sffamily\tiny\textcolor{white}{#1}}}
+    {\textcolor{#2}{\text{$\blacktriangleright$}{\textcolor{#2}{#3}}\text{$\blacktriangleleft$}}}}
+
+
+\setlength{\parindent}{0pt}
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\newcommand{\todo}{\noindent\red{TODO: }}
+
+
+\begin{document}
+
+\title{\textbf{Answers to Reviewers}\\
+}
+%\author{}
+% \date{}
+\maketitle
+
+\section*{Introduction}
+We thank the three reviewers for their comprehensive feedback on the revision of our paper. The comments pointed to several issues in the revision. We have revised the paper accordingly. We have addressed one by one the comments made by the technical editor and the two reviewers in the following sections.
+
+\section{Technical editor}
+\def\reviewername{Technical editor}
+\bigskip
+
+\begin{quotereviewer}
+section 6: was this all in double precision (which is the impression I got, given the condition numbers of 1e18)? or single? (and would it be interesting to explore mixed precision algorithms)
+\end{quotereviewer}
+
+\answer
+We confirm that all the results are using double precision on the GPU.
+We have experimented with single precision, but the accuracy remains too limited for the interior-point method.
+We agree with the technical editor that mixed precision algorithms are an interesting venue for future work,
+in particular for the solution of the sparse KKT systems.
+
+
+\begin{quotereviewer}
+I was not able to rerun the experiments, as the setup is quite involved and not just a toy example. I tried on a linux cluster with access to an NVIDIA L40 gpu (using julia 1.11.6 and CUDA 12.1.1) but ran into problems, as I mention below. However, even without running the code, the paper was written carefully and honestly and I have no reasons to suspect the results.
+\end{quotereviewer}
+
+\answer
+We are sorry to hear that the technical editor was not able to rerun the experiments.
+We are welcoming their feedback on this issue. Since the release of the initial version of this paper,
+we have been able to improve the user documentation and the installation procedure.
+The two KKT solvers HybridKKT and LiftedKKT are now fully integrated in MadNLP.
+
+In particular, we have detailed how to solve a nonlinear program
+with LiftedKKT in the documentation\footnote{\url{https://madsuite.org/MadNLP.jl/dev/tutorials/gpu/}}.
+On its end, the linear solver HybridKKT has been developed in a new package\footnote{\url{https://github.com/MadNLP/HybridKKT.jl}}.
+We have tried to improve the user experience as much as possible, to avoid the issues listed
+above by the technical editor.
+
+
+\section{Reviewer 1}
+\def\reviewername{Reviewer~\#1}
+\bigskip
+
+\begin{quotereviewer}
+1. Contribution 3. The statement “For larger problems (where Ipopt takes longer than 1 second), our
+GPU solver is competitive with the CPU-based Ipopt solver” is not clearly supported by the results
+shown in Fig. 6. The authors should either revise this claim or provide additional quantitative evidence
+to substantiate it.
+\end{quotereviewer}
+
+\answer
+We have removed the mentioned sentence to revise our claim in the revision.
+
+\begin{quotereviewer}
+2. Contribution 4. This contribution discusses the benefits of condensed-space methods beyond GPUs,
+but the experimental evidence is not sufficient to support that claim. If the claim is about the performance of the condensed-space IPM, the comparison should be based on NLP solve time under comparable configurations. Drawing conclusions from the timing of a single condensed KKT solve is not solid,
+since overall performance depends on the number of IPM iterations and other per-iteration costs. More
+importantly, the ACOPF and CUTEst experiments only report results for condensed IPM + cuDSS
+on GPUs, but do not include corresponding CPU results for condensed IPM + single-thread CPU
+linear solver (e.g., MA27) or condensed IPM + multi-thread CPU linear solver (e.g., MA86, Pardiso).
+Without these CPU baselines, it is unclear whether condensed-space strategies are broadly beneficial
+on multi-core CPUs, or whether the observed advantages are specific to the GPU linear solver setup. I
+recommend adding these missing CPU end-to-end configurations (single-thread and multi-thread) for
+ACOPF and CUTEst, or revising the claim to match the limited scope of the reported results.
+\end{quotereviewer}
+
+\answer
+We thank the reviewer for pointing this limitation to us.
+We have changed the Table 3 in the numerical section to include the time
+to solution for Ipopt (with HSL MA27) and the two condensed strategies
+LiftedKKT and HyKKT running in parallel on the CPU with Pardiso (using 8 threads).
+The results are not as good as what was observed previously on the single condensed KKT solve (Figure 3):
+on the CPU, the time-to-solution achieved by LiftedKKT and HyKKT remains on par with what is observed with HSL MA27.
+As a consequence, we have revisited our claim in the introduction (Contribution 4), using this sentence:
+\begin{quote}
+  \textit{Our results on the OPF benchmark show that when running on the CPU with Pardiso,
+  HyKKT and LiftedKKT achieve a time to solution on par with HSL MA27 on large-scale OPF instances.}
+\end{quote}
+
+\begin{quotereviewer}
+2. Page 25, line 42: The paper states that ExaModels.jl compilation time is excluded. Since Julia
+relies on JIT compilation, other Julia-based solvers in the experiments (e.g., MadNLP.jl, CUDA.jl
+and cuDSS.jl) also incur compilation overhead on the first run, unlike Ipopt or Knitro. Please clarify
+whether the compilation time of MadNLP.jl and cuDSS.jl is also excluded, and state this explicitly if so.
+\end{quotereviewer}
+
+\answer
+The reviewer is right. We have clarified that the compilation time of
+MadNLP.jl and cuDSS.jl have been excluded.
+
+\begin{quotereviewer}
+3. Page 26, line 23: The paper does not clearly state the threading support of several solvers. Please
+explicitly clarify whether HSL MA27, CHOLMOD, and Krylov.jl support single-threading only or also
+multi-threading.
+\end{quotereviewer}
+
+\answer
+This has been clarified in the revision that HSL MA27 and Krylov runs in serial
+on the CPU. CHOLMOD supports multi-threading.
+
+\begin{quotereviewer}
+8. Page 29, Table 2: Please explain why the number of IPM iterations first increases and then decreases
+as the tolerance is tightened.
+\end{quotereviewer}
+
+\answer
+We observe this behavior only with Pardiso-LDL with $\varepsilon = 10^{-6}$: the number of iterations
+reported with cuDSS-LDL remains consistent ($\approx$110) as we tighten the tolerance.
+We don't have access to Pardiso's internals, as the code is closed source. However,
+we believe this phenomenon is caused by the pivot perturbation strategy used by Pardiso
+to achieve faster performance when factorizing symmetric indefinite systems \cite{schenk2006fast}. This
+pivot perturbation strategy has to be safeguarded by additional iterative refinement
+steps to retain an accurate solution.
+
+
+\begin{quotereviewer}
+10. Pages 30–31 (Figures 3 and 4): For the 78484epigrids instance, LiftedKKT outperforms HyKKT
+in Fig. 3 for all linear solvers, whereas Fig. 4 shows HyKKT performing best. These results appear
+contradictory. Is the 78484epigrids instance sufficiently representative to support the conclusions in
+Section 6.1.4?
+\end{quotereviewer}
+
+\answer
+The Figure 3 focuses on the time to solve a single KKT system (where
+indeed LiftedKKT exhibits better performance than HyKKT) whereas
+the Figure 4 looks at the time spent in the optimization itself.
+On the PGLIB benchmark, we observe that LiftedKKT requires more primal-dual
+regularization than HyKKT to reach optimality, which impacts negatively
+its performance as it has to perform additional factorizations at each IPM
+iteration. We observe this behavior consistently across the PGLIB benchmark:
+for that reason, we think 78484epigrids is representative enough for the OPF instances.
+
+
+\begin{quotereviewer}
+Page 31, line 11: Although Dolan and Moré's performance profiles are cited, the meaning of the
+x-axis and y-axis should be briefly explained for completeness.
+\end{quotereviewer}
+
+\answer
+The meaning of the x-axis and the y-axis has been clarified in the revision.
+
+\begin{quotereviewer}
+12. Page 31, line 21: The text refers to “small and medium instances,” but Table 3 does not report the
+number of variables or constraints. The authors should explain how instance size can be inferred (e.g.,
+from naming conventions).
+\end{quotereviewer}
+
+\answer
+To clarify the meaning of small and medium instances, we have added in
+Table 3 the number of variables and number of constraints for each instance
+in the PGLIB benchmark.
+
+\begin{quotereviewer}
+13. Pages 31–32: The last paragraph of Section 6.2 and the first paragraph of Section 6.3 appear to be
+largely redundant.
+\end{quotereviewer}
+
+\answer
+We have removed the first paragraph of Section 6.3 in the revision to avoid redundancy.
+
+\begin{quotereviewer}
+14. Page 33, line 18: While the selection criteria for benchmark instances are described, the total number
+of selected instances is not reported. This information cannot be inferred from the performance profiles
+alone.
+\end{quotereviewer}
+
+\answer
+We have reported in the caption of each performance profile the total number
+of instances being solved.
+
+
+\begin{quotereviewer}
+15. Page 33, line 22 (data movement): The statement about “moving the sensitivities on the GPU
+using a copy” is unclear. Please clarify how many data transfers occur per NLP solve, and whether
+this happens at every iteration or only once.
+\end{quotereviewer}
+
+\answer
+We have added a new sentence to explain that we have to move the sensitivities
+from the host memory to the device memory at each iteration, as CUTest evaluates
+the model only on the CPU. The total number of memcopy is proportional to the
+total number of iterations in the algorithm.
+
+\begin{quotereviewer}
+16. Page 35, Table 4: Please explain why LUKVLE8 is classified as an unfavorable case while LUKVLE12
+is favorable, given their seemingly similar problem structures.
+\end{quotereviewer}
+
+\answer
+Looking at it more closely, LUKVLE8 ({\it augmented Lagrangian
+function with discrete boundary value constraints}) and LUKVLE12
+({\it chained HS47 problem}) do not share the same
+structure. We display in Figure~\ref{fig:spy} the sparsity patterns
+of the condensed matrices for LUKVLE8 and LUKVLE12: we observe that
+the condensed matrix of LUKVLE12 has an almost dense row, which increases the number of nonzeros
+in the following Cholesky decomposition. In our observations, cuDSS
+is better at handling such dense substructures.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{tabular}{cc}
+    \includegraphics[width=.4\textwidth]{./spy_lukvle8.png} &
+    \includegraphics[width=.4\textwidth]{./spy_lukvle12.png}
+  \end{tabular}
+  \caption{Sparsity pattern of the condensed matrices
+    for LUKVLE8 (left) and LUKVLE12 (right).
+    \label{fig:spy}
+  }
+\end{figure}
+
+
+\section{Reviewer 2}
+\def\reviewername{Reviewer~\#2}
+\bigskip
+
+\begin{quotereviewer}
+Page 28, line 22: clarify if the assembly of the matrix is parallelized on the CPU.
+\end{quotereviewer}
+
+\answer
+The assembly of the matrix is not parallelized on the CPU. We have make that explicit in the revision.
+
+\begin{quotereviewer}
+Table 3 and 4: given the large difference in number of IPM iterations for some instances, it would be good to report also the time per iteration. In this way, the actual performance of the linear solver on a single iteration can be evaluated, without considering the fact that sometimes one of the approaches may ``get lucky'' and perform much fewer iterations.
+\end{quotereviewer}
+
+\answer
+We have followed \reviewername\ suggestion and have included the time per iterations in Tables 3 and 4.
+
+
+\bibliographystyle{apalike}
+\bibliography{biblio.bib}
+\end{document}
+
+%%% Local Variables:
+%%% mode: LaTeX
+%%% TeX-master: t
+%%% End:
