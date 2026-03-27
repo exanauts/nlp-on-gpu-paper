@@ -1,16 +1,14 @@
 \section{Primal-dual interior-point method}
 
 The interior-point method (IPM) is among the most popular algorithms
-to solve nonlinear programs. The basis of the algorithm is to
-reformulate the Karush-Kuhn-Tucker (KKT) conditions of the nonlinear program as a smooth
-system of nonlinear equations using a homotopy method~\cite{nocedal_numerical_2006}.
-In a standard implementation, the
-resulting system is solved iteratively with a Newton method (used in conjunction
-with a line-search method for globalization).
+for solving nonlinear programs. The algorithm is based on
+reformulating the Karush-Kuhn-Tucker (KKT) conditions of the nonlinear program as a smooth
+system of nonlinear equations using a homotopy-based method~\cite{nocedal_numerical_2006}.
+In a standard implementation, the resulting system is solved iteratively using a Newton method combined with a line-search method for globalization.
 
 This section provides a brief overview of the IPM algorithm and its numerical implementation.
-In Section \ref{sec:ipm:problem}, we give a description of a nonlinear programming problem formulation.
-We detail in Section \ref{sec:ipm:kkt} the Newton step computation within each IPM iteration.
+Section \ref{sec:ipm:problem} describes the nonlinear programming problem formulation.
+In Section \ref{sec:ipm:kkt}, we detail the Newton step computation within each IPM iteration.
 
 \subsection{Problem formulation and KKT conditions}
 \label{sec:ipm:problem}
@@ -21,11 +19,11 @@ We are interested in solving the following nonlinear program:
 \quad \text{subject to}\quad
      g(x) = 0 \; , ~ h(x) \leq 0 \; ,
 \end{equation}
-with $f:\mathbb{R}^n \to \mathbb{R}$ a real-valued function
+where $f:\mathbb{R}^n \to \mathbb{R}$ is a real-valued function
 encoding the objective, $g: \mathbb{R}^n \to \mathbb{R}^{m_e}$
 encoding the equality constraints, and $h: \mathbb{R}^{n} \to
 \mathbb{R}^{m_i}$ encoding the inequality constraints.
-In what follows, we suppose that the functions $f, g, h$ are smooth
+We assume that the functions $f, g, h$ are smooth
 and twice differentiable.
 
 We reformulate \eqref{eq:problem} using non-negative slack variables $s \geq 0$
@@ -42,14 +40,13 @@ into the equivalent formulation
   \right.
 \end{equation}
 In~\eqref{eq:slack_problem}, the inequality constraints
-are encoded inside the variable bounds on the slack variables.
+are encoded as variable bounds on the slack variables.
 We denote by $y \in \mathbb{R}^{m_e}$ and $z \in \mathbb{R}^{m_i}$ the multipliers associated
-resp. to the equality constraints and the inequality constraints.
-Similarly, we denote
-by $v \in \mathbb{R}^{m_i}$ the multipliers associated
-to the bounds $s \geq 0$.
+with the equality and inequality constraints, respectively.
+Similarly, we denote by $v \in \mathbb{R}^{m_i}$ the multipliers associated
+with the bounds $s \geq 0$.
 
-Using the dual variable $(y, z, v)$, we define the Lagrangian of \eqref{eq:slack_problem} as
+Using the dual variables $(y, z, v)$, we define the Lagrangian of \eqref{eq:slack_problem} as
 \begin{equation}
   \label{eq:lagrangian}
   L(x, s, y, z, v) = f(x) + y^\top g(x) + z^\top \big(h(x) +s\big)
@@ -68,24 +65,24 @@ The KKT conditions of \eqref{eq:slack_problem} are:
     \end{align}
 \end{subequations}
 The notation $s \perp v$ is a shorthand for the complementarity
-condition $s_i v_i = 0$ (for all $i=1,\cdots, n$).
+condition $s_i v_i = 0$ for all $i=1,\cdots, m_i$.
 The set of active constraints at a point $x$ is denoted by:
 \begin{equation}
   \mathcal{B}(x) := \{ i \in\{ 1, \cdots, m_i\} \; | \; h_i(x) = 0 \} \; .
 \end{equation}
-The inactive set is defined as the complement $\mathcal{N}(x) := \{1, \cdots, m_i \} \setminus \mathcal{B}(x)$.
+The inactive set is the complement $\mathcal{N}(x) := \{1, \cdots, m_i \} \setminus \mathcal{B}(x)$.
 We denote by $m_a$ the number of active constraints.
 The active Jacobian is defined as $A(x) := \begin{bmatrix} \nabla g(x) \\ \nabla h_{\mathcal{B}}(x) \end{bmatrix} \in \mathbb{R}^{(m_e + m_a) \times n}$.
 
 
 \subsection{Solving the KKT conditions with the interior-point method}
 \label{sec:ipm:kkt}
-The interior-point method aims at finding a stationary point
+The interior-point method aims to find a stationary point
 satisfying the KKT conditions~\eqref{eq:kktconditions}.
 The complementarity constraints \eqref{eq:kktconditions:comps}
 render the KKT conditions non-smooth, complicating the solution of
-the whole system~\eqref{eq:kktconditions}.
-IPM uses a homotopy continuation method to solve a simplified
+the system~\eqref{eq:kktconditions}.
+The IPM uses a homotopy continuation method to solve a simplified
 version of \eqref{eq:kktconditions}, parameterized by a barrier
 parameter $\mu > 0$~\cite[Chapter 19]{nocedal_numerical_2006}.
 For positive $(x, s, v) > 0$, we solve the system
@@ -104,12 +101,11 @@ For positive $(x, s, v) > 0$, we solve the system
 We introduce in \eqref{eq:kkt_ipm} the diagonal matrix
 $S = \diag(s_1, \cdots, s_{m_i})$, along with the vector of ones $e$.
 As we drive the barrier parameter $\mu$ to $0$, the solution of the
-system $F_\mu(x, s, y, z, v) = 0$ tends to the solution of the
+system $F_\mu(x, s, y, z, v) = 0$ tends toward the solution of the
 KKT conditions~\eqref{eq:kktconditions}.
 
-We note that at a fixed parameter $\mu$, the function $F_\mu(\cdot)$
-is smooth. Hence, the system \eqref{eq:kkt_ipm} can be solved iteratively
-using a regular Newton method. For a primal-dual iterate
+At a fixed parameter $\mu$, the function $F_\mu(\cdot)$ is smooth. Hence, the system \eqref{eq:kkt_ipm} can be solved iteratively
+using a sandard Newton method. For a primal-dual iterate
 $w_k := (x_k, s_k, y_k, z_k, v_k)$, the next iterate is computed as
 $w_{k+1} = w_k + \alpha_k d_k$, where $d_k$ is a descent
 direction computed by solving the linear system
@@ -117,14 +113,14 @@ direction computed by solving the linear system
   \label{eq:newton_step}
   \nabla_w F_{\mu}(w_k) d_k = -F_{\mu}(w_k) \; .
 \end{equation}
-The step $\alpha_k$ is computed using a line-search algorithm, in a way
-that ensures that the bounded variables remain positive
+The step $\alpha_k$ is computed using a line-search algorithm
+to ensure that the bounded variables remain positive
 at the next primal-dual iterate: $(x_{k+1}, s_{k+1}, v_{k+1}) > 0$.
 Once the iterates are sufficiently close to the central path,
-the IPM decreases the barrier parameter $\mu$ to find a solution closer to
+the IPM decreases the barrier parameter $\mu$ to obtain a solution closer to
 the original KKT conditions~\eqref{eq:kktconditions}.
 
-In IPM, the bulk of the workload is the computation of the Newton
+In the IPM, the bulk of the computational effort lies in the computation of the Newton
 step \eqref{eq:newton_step}, which involves assembling the Jacobian
 $\nabla_w F_\mu(w_k)$ of the KKT conditions and solving the resulting linear system to compute
 the descent direction $d_k$.
@@ -158,17 +154,17 @@ By writing out all the blocks, the system in~\eqref{eq:newton_step} expands as t
        S_k v_k - \mu e
   \end{bmatrix} \; ,
 \end{equation}
-where we have introduced the Hessian $W_k = \nabla^2_{x x} L(w_k)$ and
-the two Jacobians $G_k = \nabla g(x_k)$, $H_k = \nabla h(x_k)$.
-In addition, we define $S_k$, $U_k$ and $V_k$ the diagonal matrices built respectively
+where $W_k = \nabla^2_{x x} L(w_k)$ is the Hessian and
+$G_k = \nabla g(x_k)$, $H_k = \nabla h(x_k)$ are the Jacobians.
+In addition, we define $S_k$, $U_k$ and $V_k$ as the diagonal matrices built respectively
 from the vectors $s_k$, $u_k$ and $v_k$.
-Note that~\eqref{eq:kkt:unreduced} can be symmetrized by performing simple block row and column operations.
-In what follows, we will omit the iteration counter $k$ to simplify the notations.
+Note that~\eqref{eq:kkt:unreduced} can be symmetrized using simple block row and column operations.
+Hereafter, we omit the iteration counter $k$ to simplify the notation.
 
 \paragraph{Augmented KKT system.}
-It is usual to remove in \eqref{eq:kkt:unreduced} the blocks associated
-to the bound multipliers $v$ and solve instead the regularized
-$4 \times 4$ symmetric system, called the \emph{augmented KKT system}:
+It is standard practice to eliminate in \eqref{eq:kkt:unreduced} the blocks associated
+with the bound multipliers $v$ and solve the regularized
+$4 \times 4$ symmetric system, known as the \emph{augmented KKT system}:
 \begin{equation}
   \label{eq:kkt:augmented}
   \tag{$K_2$}
@@ -194,42 +190,42 @@ $4 \times 4$ symmetric system, called the \emph{augmented KKT system}:
   \end{bmatrix} \; ,
 \end{equation}
 with the diagonal matrix $D_s := S^{-1} V$.
-The vectors forming the right-hand-sides are given respectively by
+The vectors forming the right-hand sides are
 $r_1 := \nabla f(x) + \nabla g(x)^\top y + \nabla h(x)^\top z$,
 $r_2 := z - \mu S^{-1} e$,
 $r_3 := g(x)$,
 $r_4 := h(x) + s$.
-Once \eqref{eq:kkt:augmented} is solved, we recover the updates on bound multipliers with
+Once \eqref{eq:kkt:augmented} is solved, we recover the updates for the bound multipliers via
 $d_v = - S^{-1}(V d_s - \mu e) - v$.
 
-Note that we have added additional regularization terms $\delta_w \geq 0 $
-and $\delta_c \geq 0$ in \eqref{eq:kkt:augmented}, to ensure the
+Note that we have added regularization terms $\delta_w \geq 0$
+and $\delta_c \geq 0$ in \eqref{eq:kkt:augmented} to ensure that the
 matrix is invertible.
-Without the regularization terms in \eqref{eq:kkt:augmented}, the augmented KKT system is non-singular
+Without these terms, the augmented KKT system is non-singular
 if and only if the Jacobian $J = \begin{bmatrix} G \; &\; 0 \\ H \;&\; I \end{bmatrix}$
-is full row-rank and the matrix $\begin{bmatrix} W  & 0 \\ 0 & D_s \end{bmatrix}$
+has full row rank and the matrix $\begin{bmatrix} W  & 0 \\ 0 & D_s \end{bmatrix}$
 projected onto the null-space of the Jacobian $J$ is definite~\cite{benzi2005numerical}.
-The condition is satisfied if the inertia (defined as the respective numbers
+The condition is satisfied if the inertia (the numbers
 of positive, negative and zero eigenvalues) of the matrix~\eqref{eq:kkt:augmented} is $(n + m_i, m_i + m_e, 0)$.
 We use the inertia-controlling method introduced in \cite[Section 3.1]{wachter2006implementation}
 to regularize the augmented matrix by adding multiple of the identity
 on the diagonal of \eqref{eq:kkt:augmented} if the inertia is not equal to $(n+m_i, m_e+m_i, 0)$.
 
-As a consequence, the system \eqref{eq:kkt:augmented} is usually factorized using
+As a result, the system \eqref{eq:kkt:augmented} is usually factorized using
 an inertia-revealing \lblt factorization~\cite{duff1983multifrontal}.
-Krylov methods are often not competitive when solving~\eqref{eq:kkt:augmented},
-as the block diagonal terms $D_s$ are getting increasingly
-ill-conditioned near the solution. Their use in IPM has been limited to
-linear and convex quadratic programming \cite{gondzio-2012} (when paired
-with a suitable preconditioner). We also refer to \cite{cao2016augmented}
+Krylov methods are often not competitive for solving~\eqref{eq:kkt:augmented},
+because the block diagonal terms $D_s$ become increasingly
+ill-conditioned near the solution. Their use in the IPM has been limited to
+linear and convex quadratic programming \cite{gondzio-2012} when paired
+with a suitable preconditioner. We also refer to \cite{cao2016augmented}
 for an efficient implementation of a preconditioned conjugate gradient
-on GPU, for solving the Newton step arising in an augmented Lagrangian interior-point
+on GPU for solving the Newton step in an augmented Lagrangian interior-point
 approach.
 
 \paragraph{Condensed KKT system.}
 The $4 \times 4$ KKT system \eqref{eq:kkt:augmented} can be further
-reduced down to a $2 \times 2$ system by eliminating the two blocks
-$(d_s, d_z)$ associated to the inequality constraints.
+reduced to a $2 \times 2$ system by eliminating the two blocks
+$(d_s, d_z)$ associated with the inequality constraints.
 The resulting system is called the \emph{condensed KKT system}:
 \begin{equation}
   \label{eq:kkt:condensed}
@@ -253,14 +249,14 @@ The resulting system is called the \emph{condensed KKT system}:
   \end{bmatrix}
    \; ,
 \end{equation}
-where we have introduced the \emph{condensed matrix} $K := W + \delta_w I  + H^\top D_H H$
-and the two diagonal matrices
+where $K := W + \delta_w I  + H^\top D_H H$ is the \emph{condensed matrix}
+and the two diagonal matrices are:
 \begin{equation}
   C := \big(I + \delta_c(D_s + \delta_w I)\big)^{-1} \; , \quad
   D_H := (D_s + \delta_w I) C \; .
 \end{equation}
-Using the solution of the system~\eqref{eq:kkt:condensed},
-we recover the updates on the slacks and inequality multipliers with
+Using the solution of~\eqref{eq:kkt:condensed},
+we recover the updates for the slacks and inequality multipliers via
 $d_z = -C r_2 + D_H(H d_x + r_4)$ and $d_s = -(D_s + \delta_w I)^{-1}(r_2 + d_z)$.
 Using Sylvester's law of inertia, we can prove that
 \begin{equation}
@@ -268,29 +264,29 @@ Using Sylvester's law of inertia, we can prove that
   \inertia(K_2) = (n+m_i, m_e+m_i, 0) \iff
   \inertia(K_1) = (n, m_e, 0) \;.
 \end{equation}
-This indicates that one can check the inertia of $K_1$ to indirectly check the inertia of $K_2$, which, in turn, can be used to determine the regularization parameters $\delta_w$ and $\delta_c$ needed to ensure that the solution to the KKT system $d_k$ is in a descent direction.
+This indicates that one can check the inertia of $K_1$ to indirectly check the inertia of $K_2$, which, in turn, can be used to determine the regularization parameters $\delta_w$ and $\delta_c$ needed to ensure that the KKT step $d_k$ is a descent direction.
 
 \paragraph{Iterative refinement.}
-Compared to \eqref{eq:kkt:unreduced}, the diagonal matrix $D_s$ introduces an additional ill-conditioning in \eqref{eq:kkt:augmented}, which is amplified in the condensed form~\eqref{eq:kkt:condensed}: the elements in the diagonal tend to infinity if a variable converges to its bound and to $0$ if the variable is inactive.
-To address the numerical errors arising from such ill-conditioning, most implementations of IPM employ Richardson iterations on the original system~\eqref{eq:kkt:unreduced} to refine the solution returned by the direct sparse linear solver (see \cite[Section 3.10]{wachter2006implementation}).
+Compared to \eqref{eq:kkt:unreduced}, the diagonal matrix $D_s$ introduces additional ill-conditioning in \eqref{eq:kkt:augmented}, which is amplified in the condensed form~\eqref{eq:kkt:condensed}: diagonal elements tend to infinity if a variable approaches its bound and to $0$ if the variable is inactive.
+To address the numerical errors arising from such ill-conditioning, most implementations of the IPM employ Richardson iterations on the original system~\eqref{eq:kkt:unreduced} to refine the solution returned by the direct sparse linear solver (see \cite[Section 3.10]{wachter2006implementation}).
 
 \subsection{Discussion}
-We have obtained three different formulations of the KKT systems
+We have identified three formulations of the KKT systems
 appearing at each IPM iteration. The original formulation
 \eqref{eq:kkt:unreduced} has better
 conditioning than the two alternatives \eqref{eq:kkt:augmented} and
-\eqref{eq:kkt:condensed}, but it is of much larger size.
-The second formulation~\eqref{eq:kkt:augmented}, which is often called \textit{augmented KKT system}, is
+\eqref{eq:kkt:condensed}, but it is much larger.
+The second formulation~\eqref{eq:kkt:augmented}, often called the \textit{augmented KKT system}, is
 used by default in state-of-the-art nonlinear solvers~\cite{wachter2006implementation,waltz2006interior}.
-The system~\eqref{eq:kkt:augmented} is typically factorized using a \lblt factorization: for sparse matrices, the Duff and Reid
+The system~\eqref{eq:kkt:augmented} is typically factorized using an \lblt factorization: for sparse matrices, the Duff and Reid
 multifrontal algorithm~\cite{duff1983multifrontal} is the preferred method (as implemented in the HSL linear solvers MA27 and MA57~\cite{duff2004ma57}).
-The condensed KKT system~\eqref{eq:kkt:condensed} is often discarded,
-as its conditioning is worse
+The condensed KKT system~\eqref{eq:kkt:condensed} is often discarded because
+its conditioning is worse
 than that of \eqref{eq:kkt:augmented} (implying less accurate solutions).
 Additionally, condensation may result in increased fill-in within the condensed system \eqref{eq:kkt:condensed}~\cite[Section 19.3, p.571]{nocedal_numerical_2006}.
 In the worst cases, \eqref{eq:kkt:condensed} itself may become fully dense if an inequality row is completely dense.
 Consequently, condensation methods are not commonly utilized in practical optimization settings.
-To the best of our knowledge, Knitro~\cite{waltz2006interior} is the only solver that supports computing the descent direction with \eqref{eq:kkt:condensed}.
+To the best of our knowledge, Knitro~\cite{waltz2006interior} is the only solver that supports computing the descent direction using \eqref{eq:kkt:condensed}.
 
 
 %%% Local Variables:
